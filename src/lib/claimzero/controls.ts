@@ -6,23 +6,76 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Project } from "./data";
 
 export const CONTROL_STATUSES = [
-  "Evidence Not Located",
-  "Work Not Started",
-  "Work In Progress",
-  "Complete-Verified",
+  "N/A",
+  "NOT_STARTED",
+  "EVIDENCE_NOT_LOCATED",
+  "IN_PROGRESS",
+  "COMPLETE_UNVERIFIED",
+  "COMPLETE_VERIFIED",
+  "CONTROLLED_ASSUMPTION",
+  "BLOCKED",
+  "OVERDUE",
+  "ADVERSE",
+  "ACCEPTED_RISK",
+  "SUPERSEDED",
 ] as const;
 export type ControlStatus = (typeof CONTROL_STATUSES)[number];
+
+export const STATUS_LABEL: Record<ControlStatus, string> = {
+  "N/A": "N/A",
+  NOT_STARTED: "Not Started",
+  EVIDENCE_NOT_LOCATED: "Evidence Not Located",
+  IN_PROGRESS: "In Progress",
+  COMPLETE_UNVERIFIED: "Complete — Unverified",
+  COMPLETE_VERIFIED: "Complete — Verified",
+  CONTROLLED_ASSUMPTION: "Controlled Assumption",
+  BLOCKED: "Blocked",
+  OVERDUE: "Overdue",
+  ADVERSE: "Adverse",
+  ACCEPTED_RISK: "Accepted Risk",
+  SUPERSEDED: "Superseded",
+};
 
 export const DOMAINS = ["cost", "schedule", "design", "quality", "people", "compliance"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
 export type Tier = "A" | "B" | "C";
 
+export const CRITICALITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
+export type Criticality = (typeof CRITICALITIES)[number];
+
+export const IRREVERSIBILITIES = ["VERY_HIGH", "HIGH", "MEDIUM", "LOW"] as const;
+export type Irreversibility = (typeof IRREVERSIBILITIES)[number];
+
+export const DELIVERY_MODELS = ["SEQUENTIAL", "FAST_TRACK", "DESIGN_BUILD", "HYBRID"] as const;
+
+export const CRITICALITY_COLOR: Record<Criticality, string> = {
+  CRITICAL: "var(--cz-critical)",
+  HIGH: "var(--cz-serious)",
+  MEDIUM: "var(--cz-warn)",
+  LOW: "var(--cz-ink-3)",
+};
+
+export const IRREVERSIBILITY_COLOR: Record<Irreversibility, string> = {
+  VERY_HIGH: "var(--cz-critical)",
+  HIGH: "var(--cz-serious)",
+  MEDIUM: "var(--cz-warn)",
+  LOW: "var(--cz-ink-3)",
+};
+
 export const STATUS_COLOR: Record<ControlStatus, string> = {
-  "Evidence Not Located": "var(--cz-critical)",
-  "Work Not Started": "var(--cz-serious)",
-  "Work In Progress": "var(--cz-warn)",
-  "Complete-Verified": "var(--cz-good)",
+  "N/A": "var(--cz-ink-3)",
+  NOT_STARTED: "var(--cz-serious)",
+  EVIDENCE_NOT_LOCATED: "var(--cz-critical)",
+  IN_PROGRESS: "var(--cz-warn)",
+  COMPLETE_UNVERIFIED: "var(--cz-warn)",
+  COMPLETE_VERIFIED: "var(--cz-good)",
+  CONTROLLED_ASSUMPTION: "var(--cz-warn)",
+  BLOCKED: "var(--cz-critical)",
+  OVERDUE: "var(--cz-critical)",
+  ADVERSE: "var(--cz-critical)",
+  ACCEPTED_RISK: "var(--cz-ink-2)",
+  SUPERSEDED: "var(--cz-ink-3)",
 };
 
 export interface ControlSpec {
@@ -41,7 +94,20 @@ export interface ControlSpec {
   /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
   continuous: boolean;
   active: boolean;
+  criticality: Criticality;
+  irreversibility: Irreversibility;
+  inherits_forward: boolean;
+  title: string;
+  objective: string;
+  responsible_seat: string;
+  supporting_seats: string;
+  trigger_logic: string;
+  dependencies: string;
+  downstream_exposure: string;
+  /** Comma-separated delivery models; blank means all. */
+  applicable_delivery_models: string;
 }
+
 
 export interface ControlInstance {
   id: string;
@@ -101,12 +167,14 @@ function seededStatus(projectId: number, controlId: string, stageNumber: number,
   for (const ch of controlId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const r = (h % 100) / 100;
   const behind = current - stageNumber; // earlier stages are mostly closed out
-  if (behind >= 2) return r < 0.9 ? "Complete-Verified" : "Evidence Not Located";
-  if (behind === 1) return r < 0.75 ? "Complete-Verified" : r < 0.85 ? "Work In Progress" : "Evidence Not Located";
-  if (r < 0.35) return "Complete-Verified";
-  if (r < 0.62) return "Work In Progress";
-  if (r < 0.84) return "Work Not Started";
-  return "Evidence Not Located";
+  if (behind >= 2) return r < 0.9 ? "COMPLETE_VERIFIED" : "EVIDENCE_NOT_LOCATED";
+  if (behind === 1) return r < 0.75 ? "COMPLETE_VERIFIED" : r < 0.85 ? "IN_PROGRESS" : "EVIDENCE_NOT_LOCATED";
+  if (r < 0.3) return "COMPLETE_VERIFIED";
+  if (r < 0.38) return "COMPLETE_UNVERIFIED";
+  if (r < 0.62) return "IN_PROGRESS";
+  if (r < 0.84) return "NOT_STARTED";
+  return "EVIDENCE_NOT_LOCATED";
+
 }
 
 export async function fetchRegister(): Promise<ControlSpec[]> {
@@ -200,21 +268,24 @@ export function stageGate(
         : c.stage_number === stage.stage_number),
   );
 
-  const open = specs
+  // N/A controls are excluded from both numerator and denominator.
+  const scored = specs.filter((c) => instances.get(c.control_id)?.status !== "N/A");
+
+  const open = scored
     .map((c) => ({ spec: c, inst: instances.get(c.control_id) }))
-    .filter((x) => x.inst?.status !== "Complete-Verified")
+    .filter((x) => x.inst?.status !== "COMPLETE_VERIFIED")
     .map((x) => ({
       control_id: x.spec.control_id,
       requirement: x.spec.requirement,
-      status: (x.inst?.status ?? "Evidence Not Located") as ControlStatus,
+      status: (x.inst?.status ?? "EVIDENCE_NOT_LOCATED") as ControlStatus,
     }));
-  const verified = specs.length - open.length;
+  const verified = scored.length - open.length;
   return {
     stage,
-    applicable: specs.length,
+    applicable: scored.length,
     verified,
-    completeness: specs.length ? Math.round((verified / specs.length) * 100) : 0,
-    ready: specs.length > 0 && open.length === 0,
+    completeness: scored.length ? Math.round((verified / scored.length) * 100) : 0,
+    ready: scored.length > 0 && open.length === 0,
     openItems: open,
   };
 }
@@ -280,7 +351,19 @@ export const REGISTER_CSV_COLUMNS = [
   "min_tier",
   "domain",
   "continuous",
+  "criticality",
+  "irreversibility",
+  "inherits_forward",
+  "title",
+  "objective",
+  "responsible_seat",
+  "supporting_seats",
+  "trigger_logic",
+  "dependencies",
+  "downstream_exposure",
+  "applicable_delivery_models",
 ] as const;
+
 
 /** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
 export function parseCsv(text: string): string[][] {
@@ -326,9 +409,21 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
       const v = (r[i] ?? "").trim();
       if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
       if (h === "stage_number") rec[h] = Number(v);
-      else if (h === "continuous") rec[h] = /^(true|yes|y|1)$/i.test(v);
+      else if (h === "continuous" || h === "inherits_forward") rec[h] = /^(true|yes|y|1)$/i.test(v);
       else if (h === "min_tier") rec[h] = (v || "A").toUpperCase();
-      else rec[h] = v;
+      else if (h === "criticality") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = CRITICALITIES.includes(up as Criticality) ? up : "HIGH";
+      } else if (h === "irreversibility") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = IRREVERSIBILITIES.includes(up as Irreversibility) ? up : "MEDIUM";
+      } else if (h === "applicable_delivery_models") {
+        rec[h] = v
+          .split(",")
+          .map((m) => m.trim().toUpperCase().replace(/[\s-]+/g, "_"))
+          .filter((m) => (DELIVERY_MODELS as readonly string[]).includes(m))
+          .join(",");
+      } else rec[h] = v;
     });
     return rec as Partial<ControlSpec>;
   });

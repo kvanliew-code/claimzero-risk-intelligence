@@ -5,8 +5,13 @@ import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CONTROL_STATUSES,
+  CRITICALITIES,
+  CRITICALITY_COLOR,
   DOMAINS,
+  IRREVERSIBILITIES,
+  IRREVERSIBILITY_COLOR,
   STATUS_COLOR,
+  STATUS_LABEL,
   appliesTo,
   ensureInstances,
   evaluateEscalations,
@@ -20,7 +25,9 @@ import {
   type ControlInstance,
   type ControlSpec,
   type ControlStatus,
+  type Criticality,
   type EscalationRule,
+  type Irreversibility,
   type StageConfig,
 } from "@/lib/claimzero/controls";
 
@@ -74,6 +81,17 @@ function Pill({
   );
 }
 
+function Badge({ color, label }: { color: string; label: string }) {
+  return (
+    <span
+      className="rounded-[3px] border px-1.5 py-[1px] font-cz-mono text-[9.5px] tracking-[0.05em]"
+      style={{ borderColor: color, color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function Controls() {
   const { project } = api.useLoaderData();
   const [register, setRegister] = useState<ControlSpec[]>([]);
@@ -85,6 +103,8 @@ function Controls() {
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
   const [fOwner, setFOwner] = useState<string>("All");
   const [fDomain, setFDomain] = useState<string>("All");
+  const [fCrit, setFCrit] = useState<Criticality | "All">("All");
+  const [fIrr, setFIrr] = useState<Irreversibility | "All">("All");
   const [open, setOpen] = useState<string | null>(null);
 
   const stageNumber = stageNumberFor(project);
@@ -143,6 +163,8 @@ function Controls() {
     if (fStatus !== "All" && st !== fStatus) return false;
     if (fOwner !== "All" && c.primary_owner_role !== fOwner) return false;
     if (fDomain !== "All" && c.domain !== fDomain) return false;
+    if (fCrit !== "All" && c.criticality !== fCrit) return false;
+    if (fIrr !== "All" && c.irreversibility !== fIrr) return false;
     return true;
   });
 
@@ -232,7 +254,7 @@ function Controls() {
                           <li key={o.control_id}>
                             <span className="font-cz-mono text-[11px]">{o.control_id}</span> —{" "}
                             {o.requirement}{" "}
-                            <span style={{ color: STATUS_COLOR[o.status] }}>({o.status})</span>
+                            <span style={{ color: STATUS_COLOR[o.status] }}>({STATUS_LABEL[o.status]})</span>
                           </li>
                         ))}
                       </ul>
@@ -286,7 +308,7 @@ function Controls() {
               </Pill>
               {CONTROL_STATUSES.map((s) => (
                 <Pill key={s} active={fStatus === s} onClick={() => setFStatus(s)}>
-                  {s}
+                  {STATUS_LABEL[s]}
                 </Pill>
               ))}
             </div>
@@ -307,12 +329,36 @@ function Controls() {
                 </Pill>
               ))}
             </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="cz-eyebrow mr-1 text-[9px]">Criticality</span>
+              <Pill active={fCrit === "All"} onClick={() => setFCrit("All")}>
+                all
+              </Pill>
+              {CRITICALITIES.map((c) => (
+                <Pill key={c} active={fCrit === c} onClick={() => setFCrit(c)}>
+                  {c}
+                </Pill>
+              ))}
+              <span className="cz-eyebrow mr-1 ml-3 text-[9px]">Irreversibility</span>
+              <Pill active={fIrr === "All"} onClick={() => setFIrr("All")}>
+                all
+              </Pill>
+              {IRREVERSIBILITIES.map((i) => (
+                <Pill key={i} active={fIrr === i} onClick={() => setFIrr(i)}>
+                  {i}
+                </Pill>
+              ))}
+            </div>
+
 
             {/* families */}
             <div className="mt-3.5 space-y-3">
               {families.map(([family, specs]) => {
-                const verified = specs.filter(
-                  (s) => instMap.get(s.control_id)?.status === "Complete-Verified",
+                const scored = specs.filter(
+                  (s) => instMap.get(s.control_id)?.status !== "N/A",
+                );
+                const verified = scored.filter(
+                  (s) => instMap.get(s.control_id)?.status === "COMPLETE_VERIFIED",
                 ).length;
                 return (
                   <div
@@ -322,12 +368,14 @@ function Controls() {
                     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-cz-grid px-3.5 py-2">
                       <div className="font-cz-sans text-[13px] font-bold">{family}</div>
                       <div className="font-cz-mono text-[10.5px] text-cz-ink-3">
-                        {verified}/{specs.length} Complete-Verified
+                        {verified}/{scored.length} Complete — Verified
+                        {scored.length !== specs.length && ` · ${specs.length - scored.length} N/A`}
                       </div>
                     </div>
+
                     {specs.map((s) => {
                       const inst = instMap.get(s.control_id);
-                      const status = inst?.status ?? "Evidence Not Located";
+                      const status = inst?.status ?? "EVIDENCE_NOT_LOCATED";
                       const isOpen = open === s.control_id;
                       return (
                         <div key={s.control_id} className="border-b border-cz-grid last:border-b-0">
@@ -339,17 +387,25 @@ function Controls() {
                             <span className="w-[104px] shrink-0 font-cz-mono text-[11px] text-cz-ink-3">
                               {s.control_id}
                             </span>
-                            <span className="flex-1 text-[12.5px]">{s.requirement}</span>
-                            <span className="hidden font-cz-mono text-[10.5px] text-cz-ink-3 md:inline">
+                            <span className="flex-1 text-[12.5px]">{s.title || s.requirement}</span>
+                            <span className="hidden shrink-0 gap-1 md:flex">
+                              <Badge color={CRITICALITY_COLOR[s.criticality]} label={s.criticality} />
+                              <Badge
+                                color={IRREVERSIBILITY_COLOR[s.irreversibility]}
+                                label={`IRR ${s.irreversibility}`}
+                              />
+                            </span>
+                            <span className="hidden font-cz-mono text-[10.5px] text-cz-ink-3 lg:inline">
                               {s.primary_owner_role} · {s.domain} · tier {s.min_tier}+
                             </span>
                             <span
-                              className="w-[150px] shrink-0 text-right font-cz-mono text-[10.5px]"
+                              className="w-[160px] shrink-0 text-right font-cz-mono text-[10.5px]"
                               style={{ color: STATUS_COLOR[status] }}
                             >
-                              ● {status}
+                              ● {STATUS_LABEL[status]}
                             </span>
                           </button>
+
                           {isOpen && (
                             <div className="border-t border-cz-grid bg-cz-bg/40 px-3.5 py-3">
                               <div className="grid gap-3 md:grid-cols-2">
@@ -369,7 +425,7 @@ function Controls() {
                                         active={status === st}
                                         onClick={() => void update(s.control_id, { status: st })}
                                       >
-                                        {st}
+                                        {STATUS_LABEL[st]}
                                       </Pill>
                                     ))}
                                   </div>

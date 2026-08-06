@@ -47,56 +47,89 @@ export type Database = {
       control_register: {
         Row: {
           active: boolean
+          applicable_delivery_models: string
           continuous: boolean
           control_id: string
           created_at: string
+          criticality: string
+          dependencies: string
           dependency: string
           domain: string
+          downstream_exposure: string
           expected_evidence: string
           family_code: string
           family_name: string
           id: string
+          inherits_forward: boolean
+          irreversibility: string
           min_tier: string
+          objective: string
           primary_owner_role: string
           requirement: string
+          responsible_seat: string
           stage_name: string
           stage_number: number
+          supporting_seats: string
+          title: string
+          trigger_logic: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          applicable_delivery_models?: string
           continuous?: boolean
           control_id: string
           created_at?: string
+          criticality?: string
+          dependencies?: string
           dependency?: string
           domain?: string
+          downstream_exposure?: string
           expected_evidence?: string
           family_code?: string
           family_name?: string
           id?: string
+          inherits_forward?: boolean
+          irreversibility?: string
           min_tier?: string
+          objective?: string
           primary_owner_role?: string
           requirement?: string
+          responsible_seat?: string
           stage_name?: string
           stage_number: number
+          supporting_seats?: string
+          title?: string
+          trigger_logic?: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          applicable_delivery_models?: string
           continuous?: boolean
           control_id?: string
           created_at?: string
+          criticality?: string
+          dependencies?: string
           dependency?: string
           domain?: string
+          downstream_exposure?: string
           expected_evidence?: string
           family_code?: string
           family_name?: string
           id?: string
+          inherits_forward?: boolean
+          irreversibility?: string
           min_tier?: string
+          objective?: string
           primary_owner_role?: string
           requirement?: string
+          responsible_seat?: string
           stage_name?: string
           stage_number?: number
+          supporting_seats?: string
+          title?: string
+          trigger_logic?: string
           updated_at?: string
         }
         Relationships: []
