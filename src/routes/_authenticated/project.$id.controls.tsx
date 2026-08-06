@@ -334,7 +334,7 @@ function Controls() {
                     </div>
                     {specs.map((s) => {
                       const inst = instMap.get(s.control_id);
-                      const status = inst?.status ?? "Evidence Not Located";
+                      const status = inst?.status ?? "EVIDENCE_NOT_LOCATED";
                       const isOpen = open === s.control_id;
                       return (
                         <div key={s.control_id} className="border-b border-cz-grid last:border-b-0">
@@ -346,17 +346,25 @@ function Controls() {
                             <span className="w-[104px] shrink-0 font-cz-mono text-[11px] text-cz-ink-3">
                               {s.control_id}
                             </span>
-                            <span className="flex-1 text-[12.5px]">{s.requirement}</span>
-                            <span className="hidden font-cz-mono text-[10.5px] text-cz-ink-3 md:inline">
+                            <span className="flex-1 text-[12.5px]">{s.title || s.requirement}</span>
+                            <span className="hidden shrink-0 gap-1 md:flex">
+                              <Badge color={CRITICALITY_COLOR[s.criticality]} label={s.criticality} />
+                              <Badge
+                                color={IRREVERSIBILITY_COLOR[s.irreversibility]}
+                                label={`IRR ${s.irreversibility}`}
+                              />
+                            </span>
+                            <span className="hidden font-cz-mono text-[10.5px] text-cz-ink-3 lg:inline">
                               {s.primary_owner_role} · {s.domain} · tier {s.min_tier}+
                             </span>
                             <span
-                              className="w-[150px] shrink-0 text-right font-cz-mono text-[10.5px]"
+                              className="w-[160px] shrink-0 text-right font-cz-mono text-[10.5px]"
                               style={{ color: STATUS_COLOR[status] }}
                             >
-                              ● {status}
+                              ● {STATUS_LABEL[status]}
                             </span>
                           </button>
+
                           {isOpen && (
                             <div className="border-t border-cz-grid bg-cz-bg/40 px-3.5 py-3">
                               <div className="grid gap-3 md:grid-cols-2">
