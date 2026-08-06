@@ -37,7 +37,19 @@ import {
   scoreAspects,
   type AspectDef,
   type ExitCriterion,
+  type GateVerdict,
 } from "@/lib/claimzero/scoring";
+
+const GATE_COLOR: Record<GateVerdict, string> = {
+  READY: "var(--cz-good)",
+  "CONDITIONAL — NOT READY": "var(--cz-warn)",
+  "AT RISK": "var(--cz-critical)",
+};
+const GATE_LABEL: Record<GateVerdict, string> = {
+  READY: "COMPLETE — VERIFIED",
+  "CONDITIONAL — NOT READY": "CONDITIONAL — NOT READY",
+  "AT RISK": "AT RISK",
+};
 
 const api = getRouteApi("/_authenticated/project/$id");
 
@@ -286,15 +298,15 @@ function Controls() {
                               className="font-cz-mono text-[10.5px]"
                               style={{
                                 color: failed
-                                  ? c.blocking_type === "HARD"
+                                  ? c.blocking === "HARD"
                                     ? "var(--cz-critical)"
                                     : "var(--cz-warn)"
                                   : "var(--cz-good)",
                               }}
                             >
-                              {c.blocking_type}
+                              {c.blocking}
                             </span>{" "}
-                            {c.criterion_text}
+                            {c.exit_criterion}
                           </li>
                         );
                       })}
