@@ -81,6 +81,17 @@ function Pill({
   );
 }
 
+function Badge({ color, label }: { color: string; label: string }) {
+  return (
+    <span
+      className="rounded-[3px] border px-1.5 py-[1px] font-cz-mono text-[9.5px] tracking-[0.05em]"
+      style={{ borderColor: color, color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function Controls() {
   const { project } = api.useLoaderData();
   const [register, setRegister] = useState<ControlSpec[]>([]);
