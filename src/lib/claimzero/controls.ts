@@ -409,9 +409,21 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
       const v = (r[i] ?? "").trim();
       if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
       if (h === "stage_number") rec[h] = Number(v);
-      else if (h === "continuous") rec[h] = /^(true|yes|y|1)$/i.test(v);
+      else if (h === "continuous" || h === "inherits_forward") rec[h] = /^(true|yes|y|1)$/i.test(v);
       else if (h === "min_tier") rec[h] = (v || "A").toUpperCase();
-      else rec[h] = v;
+      else if (h === "criticality") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = CRITICALITIES.includes(up as Criticality) ? up : "HIGH";
+      } else if (h === "irreversibility") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = IRREVERSIBILITIES.includes(up as Irreversibility) ? up : "MEDIUM";
+      } else if (h === "applicable_delivery_models") {
+        rec[h] = v
+          .split(",")
+          .map((m) => m.trim().toUpperCase().replace(/[\s-]+/g, "_"))
+          .filter((m) => (DELIVERY_MODELS as readonly string[]).includes(m))
+          .join(",");
+      } else rec[h] = v;
     });
     return rec as Partial<ControlSpec>;
   });
