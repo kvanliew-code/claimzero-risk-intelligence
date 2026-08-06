@@ -18,7 +18,8 @@ import {
   FindingsPanel,
 } from "@/components/cz/demo-surfaces";
 import { ProjectHeaderStrip } from "./project.$id";
-import { DAILY30, aspectsFor, statusOf } from "@/lib/claimzero/data";
+import { DAILY30, statusOf } from "@/lib/claimzero/data";
+import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
 import { registerFor } from "@/lib/claimzero/docs";
 
 const api = getRouteApi("/_authenticated/project/$id");
@@ -50,7 +51,12 @@ function Chip({ color, children }: { color?: string; children: React.ReactNode }
 function Overview() {
   const { project: p } = api.useLoaderData();
   const reg = registerFor(p);
-  const aspects = aspectsFor(p.id);
+  const scoring = useProjectScoring(p);
+  const published = scoring.composite?.index ?? null;
+  const displayIdx = scoring.composite ? scoring.composite.raw : p.idx;
+  const aspects = scoring.scores
+    .filter((a) => a.score !== null)
+    .map((a) => ({ n: a.aspect_id, t: a.aspect_name, s: a.score as number }));
   const [daily, setDaily] = useState(false);
   const isFlagship = p.id === 0;
 
@@ -63,7 +69,14 @@ function Overview() {
           <div>
             <div className="cz-eyebrow">Status</div>
             <div className="my-1">
-              <StatusPill status={statusOf(p.idx)} />
+              <StatusPill status={statusOf(displayIdx)} />
+            </div>
+            <div className="text-[11.5px] text-cz-ink-2">
+              {scoring.loading
+                ? "Scoring against the control register…"
+                : published === null
+                  ? `Index withheld — confidence ${scoring.composite?.confidence ?? 0}%`
+                  : `Index ${published} · confidence ${scoring.composite?.confidence ?? 0}%`}
             </div>
             <div className="text-[11.5px] text-cz-ink-2">
               <TrendTag d={p.delta} /> vs last week — trajectory-weighted
@@ -157,7 +170,7 @@ function Overview() {
               className="mt-2 inline-block font-cz-mono text-[10.5px] uppercase"
               style={{ color: "var(--cz-accent)" }}
             >
-              Open the twelve aspects →
+              Open the fifteen aspects →
             </Link>
           </div>
 
