@@ -19,6 +19,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProjectIdRouteImport } from './routes/_authenticated/project.$id'
 import { Route as AuthenticatedProjectIdIndexRouteImport } from './routes/_authenticated/project.$id.index'
+import { Route as AuthenticatedProjectIdAspectsRouteImport } from './routes/_authenticated/project.$id.aspects'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -70,6 +71,12 @@ const AuthenticatedProjectIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedProjectIdRoute,
   } as any)
+const AuthenticatedProjectIdAspectsRoute =
+  AuthenticatedProjectIdAspectsRouteImport.update({
+    id: '/aspects',
+    path: '/aspects',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
+  '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/project/$id': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesById {
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
+  '/_authenticated/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/_authenticated/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/project/$id'
+    | '/project/$id/aspects'
     | '/project/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/'
+    | '/project/$id/aspects'
     | '/project/$id'
   id:
     | '__root__'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/_authenticated/project/$id'
+    | '/_authenticated/project/$id/aspects'
     | '/_authenticated/project/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -218,15 +231,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectIdIndexRouteImport
       parentRoute: typeof AuthenticatedProjectIdRoute
     }
+    '/_authenticated/project/$id/aspects': {
+      id: '/_authenticated/project/$id/aspects'
+      path: '/aspects'
+      fullPath: '/project/$id/aspects'
+      preLoaderRoute: typeof AuthenticatedProjectIdAspectsRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
   }
 }
 
 interface AuthenticatedProjectIdRouteChildren {
+  AuthenticatedProjectIdAspectsRoute: typeof AuthenticatedProjectIdAspectsRoute
   AuthenticatedProjectIdIndexRoute: typeof AuthenticatedProjectIdIndexRoute
 }
 
 const AuthenticatedProjectIdRouteChildren: AuthenticatedProjectIdRouteChildren =
   {
+    AuthenticatedProjectIdAspectsRoute: AuthenticatedProjectIdAspectsRoute,
     AuthenticatedProjectIdIndexRoute: AuthenticatedProjectIdIndexRoute,
   }
 
