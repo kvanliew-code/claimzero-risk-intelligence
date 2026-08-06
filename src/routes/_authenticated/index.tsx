@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
+import { CzButton } from "@/components/cz/primitives";
+import { SourceDrawer } from "@/components/cz/source-drawer";
+import { DEMO_FINDINGS, DEMO_IDENTITY, DEMO_PROJECT_ID } from "@/lib/claimzero/demo";
 import { disclosureFlags } from "@/lib/claimzero/docs";
 
 
@@ -41,9 +45,15 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
 
 const ALERTS: { project: string; line: string; tag: string; color: string }[] = [
   {
-    project: "1428 Brickell",
-    line: "curtain wall Rev 4 review day 7 of 10; hoist-removal float −12d",
+    project: "Harbor Point Residences",
+    line: "switchgear release date passed 11 days ago — no purchase order, critical path",
     tag: "▲ CRITICAL PATH",
+    color: "var(--cz-critical)",
+  },
+  {
+    project: "Harbor Point Residences",
+    line: "independent delay position 24 days against a CM update holding the date",
+    tag: "▲ SCHEDULE DIVERGENCE",
     color: "var(--cz-critical)",
   },
   {
@@ -72,6 +82,56 @@ const ALERTS: { project: string; line: string; tag: string; color: string }[] = 
   },
 ];
 
+/** 0:00 — the cold open. One finding, its evidence, and what it costs. */
+function ColdOpen() {
+  const [src, setSrc] = useState(false);
+  const f = DEMO_FINDINGS[0]!;
+  return (
+    <div className="px-5 pt-3.5">
+      <div
+        className="rounded-xl border border-cz-rule bg-cz-surface p-4"
+        style={{ borderLeft: "3px solid var(--cz-critical)" }}
+      >
+        <div className="flex flex-wrap items-baseline gap-2.5">
+          <span className="cz-eyebrow" style={{ color: "var(--cz-critical)" }}>
+            ▲ Today&apos;s finding
+          </span>
+          <Link
+            to="/project/$id"
+            params={{ id: String(DEMO_PROJECT_ID) }}
+            className="font-cz-sans text-[13px] font-bold hover:underline"
+          >
+            {DEMO_IDENTITY.name}
+          </Link>
+          <span className="font-cz-mono text-[10.5px] text-cz-ink-3">
+            {f.rule} · {f.control_id} · {DEMO_IDENTITY.stageNote}
+          </span>
+        </div>
+
+        <p className="mt-2 max-w-[62ch] font-cz-sans text-[19px] leading-[1.35] font-bold">
+          {f.headline}
+        </p>
+        <p className="mt-1 text-[14px] text-cz-ink-2">{f.detail}</p>
+        <p className="mt-1.5 font-cz-mono text-[11px] text-cz-ink-3">{f.detected}</p>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <CzButton onClick={() => setSrc(true)}>Open the source →</CzButton>
+          <Link to="/project/$id" params={{ id: String(DEMO_PROJECT_ID) }}>
+            <CzButton>Open {DEMO_IDENTITY.name} →</CzButton>
+          </Link>
+        </div>
+      </div>
+      <SourceDrawer
+        open={src}
+        onClose={() => setSrc(false)}
+        title={`${f.control_id} · ${f.aspect_name}`}
+        source={f.source}
+      />
+    </div>
+  );
+}
+
+
 function Digest() {
   return (
     <div className="min-h-screen">
@@ -84,7 +144,10 @@ function Digest() {
       />
       <SHead title="Daily Digest" note="the morning pass across the whole book — what changed overnight" />
 
+      <ColdOpen />
+
       <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2.5 px-5 py-3.5">
+
         <Kpi
           label="Alerting today"
           value={<span style={{ color: "var(--cz-critical)" }}>▲ 9</span>}
@@ -99,7 +162,7 @@ function Digest() {
       <div className="px-5 pb-4">
         {ALERTS.map((a) => (
           <div
-            key={a.project}
+            key={`${a.project}-${a.tag}`}
             className="flex flex-wrap items-baseline gap-x-2 border-b border-cz-grid py-2 text-[13px]"
           >
             <b>{a.project}</b>

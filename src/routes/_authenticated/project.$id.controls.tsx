@@ -1,6 +1,8 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CzButton } from "@/components/cz/primitives";
+import { SourceDrawer } from "@/components/cz/source-drawer";
+import { findingFor } from "@/lib/claimzero/demo";
 import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -111,6 +113,40 @@ function Badge({ color, label }: { color: string; label: string }) {
     </span>
   );
 }
+
+/** Evidence behind a fired control — the source drawer trigger. */
+function ControlSource({ controlId }: { controlId: string }) {
+  const [open, setOpen] = useState(false);
+  const f = findingFor(controlId);
+  if (!f) return null;
+  return (
+    <div
+      className="mb-3 rounded-[8px] px-3 py-2.5"
+      style={{
+        borderLeft: "3px solid var(--cz-critical)",
+        background: "color-mix(in srgb, var(--cz-critical) 8%, transparent)",
+      }}
+    >
+      <div className="flex flex-wrap items-baseline gap-2">
+        <span className="font-cz-mono text-[10px]" style={{ color: "var(--cz-critical)" }}>
+          {f.rule} FIRED
+        </span>
+        <b className="text-[12.5px]">{f.headline}</b>
+      </div>
+      <div className="mt-0.5 text-[12px] text-cz-ink-2">{f.detail}</div>
+      <div className="mt-1.5">
+        <CzButton onClick={() => setOpen(true)}>Open the source →</CzButton>
+      </div>
+      <SourceDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`${f.control_id} · ${f.aspect_name}`}
+        source={f.source}
+      />
+    </div>
+  );
+}
+
 
 function Controls() {
   const { project } = api.useLoaderData();
@@ -485,6 +521,9 @@ function Controls() {
 
                           {isOpen && (
                             <div className="border-t border-cz-grid bg-cz-bg/40 px-3.5 py-3">
+                              {findingFor(s.control_id) ? (
+                                <ControlSource controlId={s.control_id} />
+                              ) : null}
                               <div className="grid gap-3 md:grid-cols-2">
                                 <div className="text-[12.5px] text-cz-ink-2">
                                   <div className="cz-eyebrow text-[9px]">Expected evidence</div>

@@ -11,6 +11,12 @@ import {
   StatusPill,
   TrendTag,
 } from "@/components/cz/primitives";
+import { EXPOSURE } from "@/lib/claimzero/demo";
+import {
+  DivergencePanel,
+  ExposurePanel,
+  FindingsPanel,
+} from "@/components/cz/demo-surfaces";
 import { ProjectHeaderStrip } from "./project.$id";
 import { DAILY30, aspectsFor, statusOf } from "@/lib/claimzero/data";
 import { registerFor } from "@/lib/claimzero/docs";
@@ -66,13 +72,15 @@ function Overview() {
           <div>
             <div className="cz-eyebrow">Daily interest carry</div>
             <div className="cz-figure text-[17px] font-bold">
-              ${(p.sizeM * 160).toLocaleString()}
+              ${(isFlagship ? EXPOSURE.carryPerDay : p.sizeM * 160).toLocaleString()}
             </div>
             <div className="text-[11.5px] text-cz-ink-2">65% LTC @ 9%, drawn</div>
           </div>
           <div>
             <div className="cz-eyebrow">Priced exposure (open)</div>
-            <div className="cz-figure text-[17px] font-bold">${p.exposure.toFixed(1)}M</div>
+            <div className="cz-figure text-[17px] font-bold">
+              {isFlagship ? `$${EXPOSURE.total.toLocaleString()}` : `$${p.exposure.toFixed(1)}M`}
+            </div>
             <div className="text-[11.5px] text-cz-ink-2">reviewer-approved ranges</div>
           </div>
           <div>
@@ -110,6 +118,16 @@ function Overview() {
             ☰ Daily Watch — 30 items · 4 alerting
           </CzButton>
         </Manifest>
+
+        {isFlagship ? (
+          <div className="mb-2.5 grid grid-cols-1 gap-2.5">
+            <FindingsPanel />
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5">
+              <DivergencePanel />
+              <ExposurePanel />
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5">
           <div className="rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-3">

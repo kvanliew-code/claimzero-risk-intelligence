@@ -191,18 +191,20 @@ export const projects: Project[] = NAMES.map((n, i) => {
   };
 });
 
+// The demo project — synthetic, composite, and fully built out.
 projects[0] = {
   ...(projects[0] as Project),
-  name: "1428 Brickell",
-  city: "Miami, FL",
-  type: "Condo Tower — 70 st / 195 units",
+  name: "Harbor Point Residences",
+  city: "Jersey City, NJ",
+  type: "Mixed-Use Rental — 18 st / 312 units",
   stage: "Construction",
-  sizeM: 500,
-  idx: 71,
-  exposure: 8.4,
-  topRisk: "Curtain wall submittal loop stalling critical path",
-  topAspect: "Design & Shop Drawings",
-  delta: 9,
+  sizeM: 184,
+  idx: 47,
+  trend: [31, 33, 36, 38, 40, 42, 44, 47],
+  exposure: 0.99,
+  topRisk: "Approval Condition 7 expires in 61 days — no extension on file",
+  topAspect: "Entitlement & Development Rights",
+  delta: 5,
 };
 
 export interface AspectFlag {
