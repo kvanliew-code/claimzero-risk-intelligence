@@ -166,31 +166,33 @@ export interface Project {
 
 const rnd = makeRnd(42);
 
+const pick = <T,>(arr: T[], r: number): T => arr[Math.floor(r * arr.length)] as T;
+
 export const projects: Project[] = NAMES.map((n, i) => {
   const size = Math.round((20 + rnd() * 730) / 5) * 5;
   const idx = Math.round(28 + rnd() * 62);
   const trend = Array.from({ length: 8 }, (_, k) =>
     Math.max(5, Math.min(98, idx + (rnd() - 0.55) * 26 - k * 1.5)),
   ).reverse();
-  const rl = RISK_LINES[Math.floor(rnd() * RISK_LINES.length)];
+  const rl = pick(RISK_LINES, rnd());
   return {
     id: i,
     name: n,
-    city: CITIES[Math.floor(rnd() * CITIES.length)],
-    type: TYPES[Math.floor(rnd() * TYPES.length)],
-    stage: i === 0 ? "Construction" : STAGES[Math.floor(rnd() * STAGES.length)],
+    city: pick(CITIES, rnd()),
+    type: pick(TYPES, rnd()),
+    stage: i === 0 ? "Construction" : pick(STAGES, rnd()),
     sizeM: size,
     idx,
     trend,
     exposure: Math.round(size * (0.5 + rnd() * 4)) / 100,
     topRisk: rl[0],
     topAspect: rl[1],
-    delta: Math.round(trend[7] - trend[4]),
+    delta: Math.round((trend[7] as number) - (trend[4] as number)),
   };
 });
 
 projects[0] = {
-  ...projects[0],
+  ...(projects[0] as Project),
   name: "1428 Brickell",
   city: "Miami, FL",
   type: "Condo Tower — 70 st / 195 units",
