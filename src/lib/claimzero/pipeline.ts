@@ -206,7 +206,7 @@ export async function importOpportunitiesCsv(
 ): Promise<OppImportResult> {
   const grid = parse(text);
   if (!grid.length) return { rows: 0, errors: ["Empty file"] };
-  const header = grid[0].map((h) => h.trim().toLowerCase());
+  const header = (grid[0] ?? []).map((h) => h.trim().toLowerCase());
   const idx = (name: string) => header.indexOf(name);
   if (idx("opportunity_id") === -1)
     return { rows: 0, errors: ["Header must include opportunity_id"] };
