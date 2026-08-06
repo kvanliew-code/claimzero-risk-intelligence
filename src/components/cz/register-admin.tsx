@@ -192,6 +192,15 @@ export function ControlRegisterAdmin() {
                       ))}
                     </select>
                   </td>
+                  <td className="px-2 py-1 text-center">
+                    <input
+                      type="checkbox"
+                      className="accent-[var(--cz-accent)]"
+                      checked={r.continuous}
+                      title="Continuous — evaluated in every stage gate from this stage forward"
+                      onChange={(e) => void patch(r.id, { continuous: e.target.checked })}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
