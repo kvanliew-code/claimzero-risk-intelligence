@@ -95,7 +95,7 @@ function ProjectView() {
         }
         actions={
           <>
-            <Link to="/">
+            <Link to="/portfolio">
               <CzButton>← Portfolio</CzButton>
             </Link>
             <CzButton primary onClick={() => setModal({ kind: "weekly" })}>

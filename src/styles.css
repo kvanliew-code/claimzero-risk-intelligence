@@ -222,3 +222,42 @@ body.cz {
   font-size: 14px;
   line-height: 1.5;
 }
+
+@media (max-width: 860px) {
+  .cz-main {
+    margin-left: 0;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body.cz {
+    background: #fff;
+    color: #111;
+  }
+
+  .cz-no-print,
+  header.sticky {
+    display: none !important;
+  }
+
+  .cz-main {
+    margin-left: 0 !important;
+  }
+
+  .cz-print-doc {
+    margin: 0 !important;
+    max-width: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .cz-print-doc * {
+    color: #111 !important;
+  }
+}
