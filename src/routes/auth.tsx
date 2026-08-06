@@ -77,15 +77,28 @@ function AuthPage() {
 
   const finish = () => navigate({ to: "/", replace: true });
 
-  const signIn = async (e: React.FormEvent) => {
+  const signIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Read straight from the DOM: password managers set input.value without
+    // firing React's synthetic change event, so React state can be stale/empty.
+    const fd = new FormData(e.currentTarget);
+    const emailValue = String(fd.get("email") ?? "").trim();
+    const passwordValue = String(fd.get("password") ?? "");
+    if (!emailValue || !passwordValue) {
+      setError("Enter your email and password.");
+      return;
+    }
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: emailValue,
+      password: passwordValue,
+    });
     setBusy(false);
     if (err) setError(err.message);
     else void finish();
   };
+
 
   const demo = async () => {
     setBusy(true);
