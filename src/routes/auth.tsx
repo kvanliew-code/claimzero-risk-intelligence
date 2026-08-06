@@ -144,25 +144,27 @@ function AuthPage() {
             </div>
           </div>
 
-          <form onSubmit={signIn} className="mt-8">
-            <label className="cz-eyebrow block text-[10px]" htmlFor="cz-email">
+          <form onSubmit={signIn} method="post" className="mt-8">
+            <label className="cz-eyebrow block text-[10px]" htmlFor="email">
               Work email
             </label>
             <input
-              id="cz-email"
+              id="email"
+              name="email"
               type="email"
               required
-              autoComplete="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="name@company.com"
             />
-            <label className="cz-eyebrow mt-4 block text-[10px]" htmlFor="cz-pass">
+            <label className="cz-eyebrow mt-4 block text-[10px]" htmlFor="password">
               Password
             </label>
             <input
-              id="cz-pass"
+              id="password"
+              name="password"
               type="password"
               required
               autoComplete="current-password"
@@ -171,6 +173,7 @@ function AuthPage() {
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="••••••••••"
             />
+
             {error ? (
               <div
                 className="mt-3 rounded-[6px] px-2.5 py-2 font-cz-mono text-[11px]"
