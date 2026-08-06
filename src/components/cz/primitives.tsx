@@ -138,7 +138,7 @@ export function Row3({
   a: ReactNode;
   b: ReactNode;
   c: ReactNode;
-  highlight?: boolean;
+  highlight?: boolean | undefined;
 }) {
   return (
     <div
