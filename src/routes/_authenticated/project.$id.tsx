@@ -90,15 +90,22 @@ export function ProjectHeaderStrip() {
         <div
           className="min-w-[260px] flex-1 rounded-[8px] px-3 py-2.5"
           style={{
-            borderLeft: `3px solid ${color}`,
-            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+            borderLeft: `3px solid ${comp ? BAND_COLOR[comp.band] : color}`,
+            background: `color-mix(in srgb, ${comp ? BAND_COLOR[comp.band] : color} 10%, transparent)`,
           }}
         >
-          <div className="cz-eyebrow" style={{ color }}>
-            Risk index confidence: {reg.confidence.toUpperCase()}
+          <div className="cz-eyebrow" style={{ color: comp ? BAND_COLOR[comp.band] : color }}>
+            Risk index confidence: {comp ? `${comp.band} · ${comp.confidence}%` : reg.confidence.toUpperCase()}
           </div>
           <div className="mt-1 text-[12.5px] text-cz-ink-2">
-            {reg.outstanding.length === 0 ? (
+            {comp && comp.index === null ? (
+              <>
+                <b className="text-cz-ink-1">
+                  {comp.outstanding} of {comp.requiredInputs} required inputs outstanding
+                </b>{" "}
+                — no Composite Project Risk Index is published on an incomplete record.{" "}
+              </>
+            ) : reg.outstanding.length === 0 ? (
               <>All required inputs for the {p.stage} stage are on file.</>
             ) : (
               <>
@@ -106,21 +113,22 @@ export function ProjectHeaderStrip() {
                   {reg.outstanding.length} of {reg.requiredCount} required inputs outstanding
                 </b>{" "}
                 — the index is computed on an incomplete record and is not full-confidence.{" "}
-                <Link
-                  to="/project/$id/documents"
-                  params={{ id: String(p.id) }}
-                  search={{ status: "outstanding" }}
-                  className="underline"
-                  style={{ color: "var(--cz-accent)" }}
-                >
-                  See the outstanding list →
-                </Link>
               </>
             )}
+            <Link
+              to="/project/$id/documents"
+              params={{ id: String(p.id) }}
+              search={{ status: "outstanding" }}
+              className="underline"
+              style={{ color: "var(--cz-accent)" }}
+            >
+              See the outstanding list →
+            </Link>
           </div>
         </div>
       </div>
     </div>
+
   );
 }
 
