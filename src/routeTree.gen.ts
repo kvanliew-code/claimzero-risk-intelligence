@@ -20,6 +20,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProjectIdRouteImport } from './routes/_authenticated/project.$id'
 import { Route as AuthenticatedProjectIdIndexRouteImport } from './routes/_authenticated/project.$id.index'
 import { Route as AuthenticatedProjectIdAspectsRouteImport } from './routes/_authenticated/project.$id.aspects'
+import { Route as AuthenticatedProjectIdDocumentsRouteImport } from './routes/_authenticated/project.$id.documents'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -77,6 +78,12 @@ const AuthenticatedProjectIdAspectsRoute =
     path: '/aspects',
     getParentRoute: () => AuthenticatedProjectIdRoute,
   } as any)
+const AuthenticatedProjectIdDocumentsRoute =
+  AuthenticatedProjectIdDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
   '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/project/$id': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesById {
@@ -113,6 +122,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
   '/_authenticated/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/_authenticated/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/_authenticated/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/project/$id'
     | '/project/$id/aspects'
+    | '/project/$id/documents'
     | '/project/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/project/$id/aspects'
+    | '/project/$id/documents'
     | '/project/$id'
   id:
     | '__root__'
@@ -151,6 +163,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/project/$id'
     | '/_authenticated/project/$id/aspects'
+    | '/_authenticated/project/$id/documents'
     | '/_authenticated/project/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -238,17 +251,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectIdAspectsRouteImport
       parentRoute: typeof AuthenticatedProjectIdRoute
     }
+    '/_authenticated/project/$id/documents': {
+      id: '/_authenticated/project/$id/documents'
+      path: '/documents'
+      fullPath: '/project/$id/documents'
+      preLoaderRoute: typeof AuthenticatedProjectIdDocumentsRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
   }
 }
 
 interface AuthenticatedProjectIdRouteChildren {
   AuthenticatedProjectIdAspectsRoute: typeof AuthenticatedProjectIdAspectsRoute
+  AuthenticatedProjectIdDocumentsRoute: typeof AuthenticatedProjectIdDocumentsRoute
   AuthenticatedProjectIdIndexRoute: typeof AuthenticatedProjectIdIndexRoute
 }
 
 const AuthenticatedProjectIdRouteChildren: AuthenticatedProjectIdRouteChildren =
   {
     AuthenticatedProjectIdAspectsRoute: AuthenticatedProjectIdAspectsRoute,
+    AuthenticatedProjectIdDocumentsRoute: AuthenticatedProjectIdDocumentsRoute,
     AuthenticatedProjectIdIndexRoute: AuthenticatedProjectIdIndexRoute,
   }
 
