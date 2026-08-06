@@ -325,7 +325,10 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
     header.forEach((h, i) => {
       const v = (r[i] ?? "").trim();
       if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
-      rec[h] = h === "stage_number" ? Number(v) : v;
+      if (h === "stage_number") rec[h] = Number(v);
+      else if (h === "continuous") rec[h] = /^(true|yes|y|1)$/i.test(v);
+      else if (h === "min_tier") rec[h] = (v || "A").toUpperCase();
+      else rec[h] = v;
     });
     return rec as Partial<ControlSpec>;
   });
