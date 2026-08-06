@@ -94,7 +94,7 @@ function Digest() {
         <Kpi label="Reports due Monday" value="60" sub="all citation-verified" />
       </div>
 
-      <div className="px-5 pb-8">
+      <div className="px-5 pb-4">
         {ALERTS.map((a) => (
           <div
             key={a.project}
@@ -108,6 +108,57 @@ function Digest() {
           </div>
         ))}
       </div>
+
+      <div className="px-5 pb-10">
+        <div className="mb-2 flex flex-wrap items-baseline gap-2.5">
+          <h2 className="font-cz-sans text-[16px] font-bold">Owner disclosure incomplete</h2>
+          <span className="text-[12px] text-cz-ink-3">
+            risk assessment degraded — an owner-owed item is outstanding more than 14 days, or three
+            or more are outstanding at once
+          </span>
+        </div>
+        {disclosureFlags().map(({ project, reg }) => (
+          <div
+            key={project.id}
+            className="mb-2 rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-3"
+            style={{ borderLeft: "3px solid var(--cz-critical)" }}
+          >
+            <div className="flex flex-wrap items-baseline gap-2">
+              <Link
+                to="/project/$id/documents"
+                params={{ id: String(project.id) }}
+                search={{ status: "outstanding" }}
+                className="font-cz-sans text-[13.5px] font-bold hover:underline"
+              >
+                {project.name}
+              </Link>
+              <span
+                className="font-cz-mono text-[10px] tracking-[0.08em]"
+                style={{ color: "var(--cz-critical)" }}
+              >
+                ⚑ OWNER DISCLOSURE INCOMPLETE — RISK ASSESSMENT DEGRADED
+              </span>
+              <span className="ml-auto font-cz-mono text-[10.5px] text-cz-ink-3">
+                confidence {reg.confidence.toLowerCase()} · {reg.completeness}% complete
+              </span>
+            </div>
+            <div className="mt-1.5 text-[12.5px] text-cz-ink-2">
+              {reg.ownerOutstanding.map((d) => (
+                <div key={d.key} className="flex justify-between border-b border-cz-grid py-1">
+                  <span>{d.name}</span>
+                  <span
+                    className="cz-figure ml-2 flex-none"
+                    style={{ color: d.daysOutstanding > 14 ? "var(--cz-critical)" : undefined }}
+                  >
+                    {d.daysOutstanding}d outstanding
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }
