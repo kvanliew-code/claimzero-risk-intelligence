@@ -84,15 +84,16 @@ const STAGE_NUMBER: Record<string, number> = {
 
 export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
 
-/** Tier is a function of program size: A ≥ $250M, B ≥ $80M, otherwise C. */
-export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "A" : p.sizeM >= 80 ? "B" : "C");
+/** Tier is a function of program size: C major ≥ $250M, B institutional ≥ $100M, otherwise A standard. */
+export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "C" : p.sizeM >= 100 ? "B" : "A");
 
-const TIER_RANK: Record<Tier, number> = { C: 1, B: 2, A: 3 };
+const TIER_RANK: Record<Tier, number> = { A: 1, B: 2, C: 3 };
 
 /** A control applies when the project has reached its stage and meets its minimum tier. */
 export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): boolean {
   return spec.active && spec.stage_number <= stageNumber && TIER_RANK[tier] >= TIER_RANK[spec.min_tier];
 }
+
 
 /** Deterministic demo status so a freshly generated project reads as live work. */
 function seededStatus(projectId: number, controlId: string, stageNumber: number, current: number): ControlStatus {
