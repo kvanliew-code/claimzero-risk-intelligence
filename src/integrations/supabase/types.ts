@@ -44,6 +44,60 @@ export type Database = {
         }
         Relationships: []
       }
+      control_register: {
+        Row: {
+          active: boolean
+          control_id: string
+          created_at: string
+          dependency: string
+          domain: string
+          expected_evidence: string
+          family_code: string
+          family_name: string
+          id: string
+          min_tier: string
+          primary_owner_role: string
+          requirement: string
+          stage_name: string
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          control_id: string
+          created_at?: string
+          dependency?: string
+          domain?: string
+          expected_evidence?: string
+          family_code?: string
+          family_name?: string
+          id?: string
+          min_tier?: string
+          primary_owner_role?: string
+          requirement?: string
+          stage_name?: string
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          control_id?: string
+          created_at?: string
+          dependency?: string
+          domain?: string
+          expected_evidence?: string
+          family_code?: string
+          family_name?: string
+          id?: string
+          min_tier?: string
+          primary_owner_role?: string
+          requirement?: string
+          stage_name?: string
+          stage_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       engagements: {
         Row: {
           client_id: string
@@ -91,6 +145,69 @@ export type Database = {
           },
         ]
       }
+      escalation_rules: {
+        Row: {
+          active: boolean
+          condition: Json
+          created_at: string
+          description: string
+          id: string
+          name: string
+          scope: string
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          condition?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          scope?: string
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          condition?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          scope?: string
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lifecycle_stages: {
+        Row: {
+          created_at: string
+          domain_weights: Json
+          exit_criteria: Json
+          stage_name: string
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain_weights?: Json
+          exit_criteria?: Json
+          stage_name: string
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain_weights?: Json
+          exit_criteria?: Json
+          stage_name?: string
+          stage_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -136,6 +253,45 @@ export type Database = {
           project_id?: number
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      project_controls: {
+        Row: {
+          control_id: string
+          created_at: string
+          evidence_ref: string
+          id: string
+          notes: string
+          project_id: number
+          status: string
+          updated_at: string
+          verified_by: string
+          verified_date: string | null
+        }
+        Insert: {
+          control_id: string
+          created_at?: string
+          evidence_ref?: string
+          id?: string
+          notes?: string
+          project_id: number
+          status?: string
+          updated_at?: string
+          verified_by?: string
+          verified_date?: string | null
+        }
+        Update: {
+          control_id?: string
+          created_at?: string
+          evidence_ref?: string
+          id?: string
+          notes?: string
+          project_id?: number
+          status?: string
+          updated_at?: string
+          verified_by?: string
+          verified_date?: string | null
         }
         Relationships: []
       }
