@@ -325,6 +325,102 @@ export type Database = {
         }
         Relationships: []
       }
+      opportunities: {
+        Row: {
+          assessment_fee_usd: number
+          channel_deal: boolean
+          contact_name: string
+          contact_title: string
+          created_at: string
+          email: string
+          expected_close: string | null
+          id: string
+          loss_reason: string
+          monitoring_arr_usd: number
+          next_action: string
+          next_action_date: string | null
+          notes: string
+          opportunity_id: string
+          org_name: string
+          org_type: string
+          out_of_scope: boolean
+          owner: string
+          phone: string
+          probability_pct: number
+          project_name: string
+          project_value_usd: number
+          reviewer_days_required: number
+          segment: string
+          source: string
+          source_detail: string
+          stage: Database["public"]["Enums"]["opportunity_stage"]
+          stage_entered: string | null
+          updated_at: string
+        }
+        Insert: {
+          assessment_fee_usd?: number
+          channel_deal?: boolean
+          contact_name?: string
+          contact_title?: string
+          created_at?: string
+          email?: string
+          expected_close?: string | null
+          id?: string
+          loss_reason?: string
+          monitoring_arr_usd?: number
+          next_action?: string
+          next_action_date?: string | null
+          notes?: string
+          opportunity_id: string
+          org_name: string
+          org_type?: string
+          out_of_scope?: boolean
+          owner?: string
+          phone?: string
+          probability_pct?: number
+          project_name?: string
+          project_value_usd?: number
+          reviewer_days_required?: number
+          segment?: string
+          source?: string
+          source_detail?: string
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          stage_entered?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assessment_fee_usd?: number
+          channel_deal?: boolean
+          contact_name?: string
+          contact_title?: string
+          created_at?: string
+          email?: string
+          expected_close?: string | null
+          id?: string
+          loss_reason?: string
+          monitoring_arr_usd?: number
+          next_action?: string
+          next_action_date?: string | null
+          notes?: string
+          opportunity_id?: string
+          org_name?: string
+          org_type?: string
+          out_of_scope?: boolean
+          owner?: string
+          phone?: string
+          probability_pct?: number
+          project_name?: string
+          project_value_usd?: number
+          reviewer_days_required?: number
+          segment?: string
+          source?: string
+          source_detail?: string
+          stage?: Database["public"]["Enums"]["opportunity_stage"]
+          stage_entered?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -412,6 +508,27 @@ export type Database = {
         }
         Relationships: []
       }
+      reviewer_capacity: {
+        Row: {
+          created_at: string
+          id: string
+          month: string
+          reviewer_days_available: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: string
+          reviewer_days_available?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string
+          reviewer_days_available?: number
+        }
+        Relationships: []
+      }
       stage_exit_criteria: {
         Row: {
           active: boolean
@@ -482,6 +599,17 @@ export type Database = {
     Enums: {
       app_role: "admin" | "executive" | "project_manager" | "reviewer"
       engagement_status: "draft" | "sent" | "signed"
+      opportunity_stage:
+        | "IDENTIFIED"
+        | "CONTACTED"
+        | "MET"
+        | "DEMO"
+        | "PROPOSAL"
+        | "ENGAGED"
+        | "DELIVERED"
+        | "MONITORING"
+        | "LOST"
+        | "DORMANT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -611,6 +739,18 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "executive", "project_manager", "reviewer"],
       engagement_status: ["draft", "sent", "signed"],
+      opportunity_stage: [
+        "IDENTIFIED",
+        "CONTACTED",
+        "MET",
+        "DEMO",
+        "PROPOSAL",
+        "ENGAGED",
+        "DELIVERED",
+        "MONITORING",
+        "LOST",
+        "DORMANT",
+      ],
     },
   },
 } as const
