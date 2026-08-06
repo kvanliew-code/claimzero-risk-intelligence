@@ -254,7 +254,7 @@ function Controls() {
                           <li key={o.control_id}>
                             <span className="font-cz-mono text-[11px]">{o.control_id}</span> —{" "}
                             {o.requirement}{" "}
-                            <span style={{ color: STATUS_COLOR[o.status] }}>({o.status})</span>
+                            <span style={{ color: STATUS_COLOR[o.status] }}>({STATUS_LABEL[o.status]})</span>
                           </li>
                         ))}
                       </ul>
