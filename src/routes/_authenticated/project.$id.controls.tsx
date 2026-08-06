@@ -18,7 +18,6 @@ import {
   fetchEscalationRules,
   fetchRegister,
   fetchStages,
-  stageGate,
   stageNumberFor,
   tierFor,
   weightsFor,
@@ -30,6 +29,15 @@ import {
   type Irreversibility,
   type StageConfig,
 } from "@/lib/claimzero/controls";
+import {
+  BAND_COLOR,
+  evaluateStageGate,
+  fetchAspects,
+  fetchExitCriteria,
+  scoreAspects,
+  type AspectDef,
+  type ExitCriterion,
+} from "@/lib/claimzero/scoring";
 
 const api = getRouteApi("/_authenticated/project/$id");
 
@@ -98,6 +106,8 @@ function Controls() {
   const [stages, setStages] = useState<StageConfig[]>([]);
   const [rules, setRules] = useState<EscalationRule[]>([]);
   const [instances, setInstances] = useState<ControlInstance[]>([]);
+  const [criteria, setCriteria] = useState<ExitCriterion[]>([]);
+  const [aspectDefs, setAspectDefs] = useState<AspectDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
@@ -115,16 +125,20 @@ function Controls() {
     (async () => {
       setLoading(true);
       try {
-        const [reg, stg, esc] = await Promise.all([
+        const [reg, stg, esc, crit, asp] = await Promise.all([
           fetchRegister(),
           fetchStages(),
           fetchEscalationRules(),
+          fetchExitCriteria(),
+          fetchAspects(),
         ]);
         const inst = await ensureInstances(project, reg);
         if (cancelled) return;
         setRegister(reg);
         setStages(stg);
         setRules(esc);
+        setCriteria(crit);
+        setAspectDefs(asp);
         setInstances(inst);
         setError(null);
       } catch (e) {
@@ -150,9 +164,18 @@ function Controls() {
   );
 
   const currentStage = stages.find((s) => s.stage_number === stageNumber);
-  const gate = currentStage
-    ? stageGate(currentStage, register, instMap, stageNumber, tier)
-    : undefined;
+  const aspectScores = useMemo(
+    () =>
+      aspectDefs.length ? scoreAspects(aspectDefs, register, instMap, stageNumber, tier) : [],
+    [aspectDefs, register, instMap, stageNumber, tier],
+  );
+  const gate = useMemo(
+    () =>
+      register.length
+        ? evaluateStageGate(stageNumber, register, instMap, criteria, tier, aspectScores)
+        : undefined,
+    [register, instMap, criteria, stageNumber, tier, aspectScores],
+  );
   const escalations = useMemo(
     () => evaluateEscalations(rules, applicable, instMap, gate?.completeness ?? 0),
     [rules, applicable, instMap, gate?.completeness],
