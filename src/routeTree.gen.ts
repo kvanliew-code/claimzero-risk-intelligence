@@ -20,7 +20,6 @@ import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProjectIdRouteImport } from './routes/_authenticated/project.$id'
-import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as AuthenticatedProjectIdIndexRouteImport } from './routes/_authenticated/project.$id.index'
 import { Route as AuthenticatedProjectIdAspectsRouteImport } from './routes/_authenticated/project.$id.aspects'
 import { Route as AuthenticatedProjectIdDocumentsRouteImport } from './routes/_authenticated/project.$id.documents'
@@ -82,11 +81,6 @@ const AuthenticatedProjectIdRoute = AuthenticatedProjectIdRouteImport.update({
   path: '/project/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
-  id: '/api/public/bootstrap-admin',
-  path: '/api/public/bootstrap-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedProjectIdIndexRoute =
   AuthenticatedProjectIdIndexRouteImport.update({
     id: '/',
@@ -129,7 +123,6 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
-  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
@@ -146,7 +139,6 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
-  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
@@ -166,7 +158,6 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
-  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/_authenticated/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
   '/_authenticated/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
   '/_authenticated/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
@@ -186,7 +177,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/project/$id'
-    | '/api/public/bootstrap-admin'
     | '/project/$id/aspects'
     | '/project/$id/documents'
     | '/project/$id/reports'
@@ -203,7 +193,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/'
-    | '/api/public/bootstrap-admin'
     | '/project/$id/aspects'
     | '/project/$id/documents'
     | '/project/$id/reports'
@@ -222,7 +211,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/_authenticated/project/$id'
-    | '/api/public/bootstrap-admin'
     | '/_authenticated/project/$id/aspects'
     | '/_authenticated/project/$id/documents'
     | '/_authenticated/project/$id/reports'
@@ -233,7 +221,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -314,13 +301,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/project/$id'
       preLoaderRoute: typeof AuthenticatedProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/bootstrap-admin': {
-      id: '/api/public/bootstrap-admin'
-      path: '/api/public/bootstrap-admin'
-      fullPath: '/api/public/bootstrap-admin'
-      preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/project/$id/': {
       id: '/_authenticated/project/$id/'
@@ -412,7 +392,6 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
