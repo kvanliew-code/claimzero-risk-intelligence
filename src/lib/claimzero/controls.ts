@@ -268,21 +268,24 @@ export function stageGate(
         : c.stage_number === stage.stage_number),
   );
 
-  const open = specs
+  // N/A controls are excluded from both numerator and denominator.
+  const scored = specs.filter((c) => instances.get(c.control_id)?.status !== "N/A");
+
+  const open = scored
     .map((c) => ({ spec: c, inst: instances.get(c.control_id) }))
-    .filter((x) => x.inst?.status !== "Complete-Verified")
+    .filter((x) => x.inst?.status !== "COMPLETE_VERIFIED")
     .map((x) => ({
       control_id: x.spec.control_id,
       requirement: x.spec.requirement,
-      status: (x.inst?.status ?? "Evidence Not Located") as ControlStatus,
+      status: (x.inst?.status ?? "EVIDENCE_NOT_LOCATED") as ControlStatus,
     }));
-  const verified = specs.length - open.length;
+  const verified = scored.length - open.length;
   return {
     stage,
-    applicable: specs.length,
+    applicable: scored.length,
     verified,
-    completeness: specs.length ? Math.round((verified / specs.length) * 100) : 0,
-    ready: specs.length > 0 && open.length === 0,
+    completeness: scored.length ? Math.round((verified / scored.length) * 100) : 0,
+    ready: scored.length > 0 && open.length === 0,
     openItems: open,
   };
 }
