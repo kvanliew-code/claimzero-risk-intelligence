@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as QueueRouteImport } from './routes/queue'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProjectIdRouteImport } from './routes/project.$id'
 
@@ -30,6 +31,11 @@ const PortfolioRoute = PortfolioRouteImport.update({
   path: '/portfolio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QueueRoute = QueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/intake': typeof IntakeRoute
   '/portfolio': typeof PortfolioRoute
+  '/queue': typeof QueueRoute
   '/reports': typeof ReportsRoute
   '/project/$id': typeof ProjectIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/intake': typeof IntakeRoute
   '/portfolio': typeof PortfolioRoute
+  '/queue': typeof QueueRoute
   '/reports': typeof ReportsRoute
   '/project/$id': typeof ProjectIdRoute
 }
@@ -60,21 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/intake': typeof IntakeRoute
   '/portfolio': typeof PortfolioRoute
+  '/queue': typeof QueueRoute
   '/reports': typeof ReportsRoute
   '/project/$id': typeof ProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/intake' | '/portfolio' | '/reports' | '/project/$id'
+  fullPaths:
+    '/' | '/intake' | '/portfolio' | '/queue' | '/reports' | '/project/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/intake' | '/portfolio' | '/reports' | '/project/$id'
-  id: '__root__' | '/' | '/intake' | '/portfolio' | '/reports' | '/project/$id'
+  to: '/' | '/intake' | '/portfolio' | '/queue' | '/reports' | '/project/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/intake'
+    | '/portfolio'
+    | '/queue'
+    | '/reports'
+    | '/project/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IntakeRoute: typeof IntakeRoute
   PortfolioRoute: typeof PortfolioRoute
+  QueueRoute: typeof QueueRoute
   ReportsRoute: typeof ReportsRoute
   ProjectIdRoute: typeof ProjectIdRoute
 }
@@ -102,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortfolioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/queue': {
+      id: '/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof QueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports': {
       id: '/reports'
       path: '/reports'
@@ -123,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IntakeRoute: IntakeRoute,
   PortfolioRoute: PortfolioRoute,
+  QueueRoute: QueueRoute,
   ReportsRoute: ReportsRoute,
   ProjectIdRoute: ProjectIdRoute,
 }
