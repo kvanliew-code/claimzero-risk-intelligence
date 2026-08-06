@@ -103,6 +103,8 @@ function Controls() {
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
   const [fOwner, setFOwner] = useState<string>("All");
   const [fDomain, setFDomain] = useState<string>("All");
+  const [fCrit, setFCrit] = useState<Criticality | "All">("All");
+  const [fIrr, setFIrr] = useState<Irreversibility | "All">("All");
   const [open, setOpen] = useState<string | null>(null);
 
   const stageNumber = stageNumberFor(project);
