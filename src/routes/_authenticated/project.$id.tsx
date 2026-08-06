@@ -34,10 +34,40 @@ export function ProjectHeaderStrip() {
   const { project: p } = Route.useLoaderData();
   const reg = registerFor(p);
   const color = CONFIDENCE_COLOR[reg.confidence];
+  const scoring = useProjectScoring(p);
+  const comp = scoring.composite;
   return (
     <div className="px-5 pt-3.5">
       <div className="flex flex-wrap items-center gap-5 rounded-xl border border-cz-rule bg-cz-surface p-4">
-        <Dial value={p.idx} />
+        {comp && comp.index !== null ? (
+          <Dial value={comp.index} />
+        ) : (
+          <div className="flex h-[92px] w-[92px] flex-col items-center justify-center rounded-full border border-dashed border-cz-grid text-center">
+            <span className="font-cz-mono text-[10px] text-cz-ink-3">INDEX</span>
+            <span className="font-cz-mono text-[10px]" style={{ color: "var(--cz-critical)" }}>
+              WITHHELD
+            </span>
+          </div>
+        )}
+        <div>
+          <div className="cz-eyebrow">Composite risk index</div>
+          <div
+            className="cz-figure text-[26px] font-bold"
+            style={{ color: scoreColorFor(comp?.index ?? null) }}
+          >
+            {scoring.loading ? "…" : comp?.index !== null && comp ? comp.index : "—"}
+          </div>
+          <div className="text-[11.5px] text-cz-ink-2">
+            {comp
+              ? `weights derived from control mass at stage ${scoring.stageNumber}${comp.overridden ? " · admin override applied" : ""}`
+              : "computed from verified control evidence"}
+          </div>
+          {comp?.dataQualityFlag && (
+            <div className="mt-1 font-cz-mono text-[10px]" style={{ color: "var(--cz-warn)" }}>
+              ⚑ Below 25 — treated as a data-quality signal, not an achievement.
+            </div>
+          )}
+        </div>
         <div>
           <div className="cz-eyebrow">Information completeness</div>
           <div className="cz-figure text-[26px] font-bold" style={{ color }}>
@@ -53,6 +83,7 @@ export function ProjectHeaderStrip() {
             />
           </div>
         </div>
+
         <div
           className="min-w-[260px] flex-1 rounded-[8px] px-3 py-2.5"
           style={{
