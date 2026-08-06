@@ -508,6 +508,84 @@ export type Database = {
         }
         Relationships: []
       }
+      review_items: {
+        Row: {
+          aspect_id: string
+          aspect_name: string
+          confidence: string
+          control_id: string
+          created_at: string
+          detail: string
+          due_date: string | null
+          evidence_ref: string
+          exposure_usd: number
+          headline: string
+          id: string
+          kind: string
+          project_id: number
+          project_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_note: string
+          severity: string
+          source_excerpt: string
+          status: string
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          aspect_id?: string
+          aspect_name?: string
+          confidence?: string
+          control_id?: string
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          evidence_ref?: string
+          exposure_usd?: number
+          headline?: string
+          id?: string
+          kind?: string
+          project_id: number
+          project_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string
+          severity?: string
+          source_excerpt?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Update: {
+          aspect_id?: string
+          aspect_name?: string
+          confidence?: string
+          control_id?: string
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          evidence_ref?: string
+          exposure_usd?: number
+          headline?: string
+          id?: string
+          kind?: string
+          project_id?: number
+          project_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string
+          severity?: string
+          source_excerpt?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviewer_capacity: {
         Row: {
           created_at: string

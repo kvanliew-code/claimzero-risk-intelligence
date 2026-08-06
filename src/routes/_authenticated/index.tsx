@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { pendingReviewCount } from "@/lib/claimzero/review";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton } from "@/components/cz/primitives";
@@ -133,6 +134,21 @@ function ColdOpen() {
 
 
 function Digest() {
+  const [queue, setQueue] = useState<{ total: number; risks: number; exposures: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    let cancelled = false;
+    void pendingReviewCount()
+      .then((q) => {
+        if (!cancelled) setQueue(q);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen">
       <CzHeader
@@ -155,7 +171,11 @@ function Digest() {
         />
         <Kpi label="Status changes overnight" value="3" sub="2 worsened · 1 improved" />
         <Kpi label="Feeds stale" value="3" sub="flagged on affected reports" />
-        <Kpi label="Reviewer queue" value="14" sub="6 risks · 8 exposure values" />
+        <Kpi
+          label="Reviewer queue"
+          value={queue ? queue.total : "—"}
+          sub={queue ? `${queue.risks} risks · ${queue.exposures} exposure values` : "loading"}
+        />
         <Kpi label="Reports due Monday" value="60" sub="all citation-verified" />
       </div>
 
