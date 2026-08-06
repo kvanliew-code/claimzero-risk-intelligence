@@ -106,6 +106,8 @@ export interface ControlSpec {
   downstream_exposure: string;
   /** Comma-separated delivery models; blank means all. */
   applicable_delivery_models: string;
+  /** Aspect roll-up (A01–A15), derived from family_code by the register. */
+  aspect_id: string | null;
 }
 
 

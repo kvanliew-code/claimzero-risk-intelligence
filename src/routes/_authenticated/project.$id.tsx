@@ -3,6 +3,9 @@ import { CzHeader } from "@/components/cz/header";
 import { CzButton, Dial } from "@/components/cz/primitives";
 import { projects } from "@/lib/claimzero/data";
 import { CONFIDENCE_COLOR, registerFor } from "@/lib/claimzero/docs";
+import { BAND_COLOR, scoreColorFor } from "@/lib/claimzero/scoring";
+import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
+
 
 export const Route = createFileRoute("/_authenticated/project/$id")({
   loader: ({ params }) => {
@@ -34,10 +37,40 @@ export function ProjectHeaderStrip() {
   const { project: p } = Route.useLoaderData();
   const reg = registerFor(p);
   const color = CONFIDENCE_COLOR[reg.confidence];
+  const scoring = useProjectScoring(p);
+  const comp = scoring.composite;
   return (
     <div className="px-5 pt-3.5">
       <div className="flex flex-wrap items-center gap-5 rounded-xl border border-cz-rule bg-cz-surface p-4">
-        <Dial value={p.idx} />
+        {comp && comp.index !== null ? (
+          <Dial value={comp.index} />
+        ) : (
+          <div className="flex h-[92px] w-[92px] flex-col items-center justify-center rounded-full border border-dashed border-cz-grid text-center">
+            <span className="font-cz-mono text-[10px] text-cz-ink-3">INDEX</span>
+            <span className="font-cz-mono text-[10px]" style={{ color: "var(--cz-critical)" }}>
+              WITHHELD
+            </span>
+          </div>
+        )}
+        <div>
+          <div className="cz-eyebrow">Composite risk index</div>
+          <div
+            className="cz-figure text-[26px] font-bold"
+            style={{ color: scoreColorFor(comp?.index ?? null) }}
+          >
+            {scoring.loading ? "…" : comp?.index !== null && comp ? comp.index : "—"}
+          </div>
+          <div className="text-[11.5px] text-cz-ink-2">
+            {comp
+              ? `weights derived from control mass at stage ${scoring.stageNumber}${comp.overridden ? " · admin override applied" : ""}`
+              : "computed from verified control evidence"}
+          </div>
+          {comp?.dataQualityFlag && (
+            <div className="mt-1 font-cz-mono text-[10px]" style={{ color: "var(--cz-warn)" }}>
+              ⚑ Below 25 — treated as a data-quality signal, not an achievement.
+            </div>
+          )}
+        </div>
         <div>
           <div className="cz-eyebrow">Information completeness</div>
           <div className="cz-figure text-[26px] font-bold" style={{ color }}>
@@ -53,18 +86,26 @@ export function ProjectHeaderStrip() {
             />
           </div>
         </div>
+
         <div
           className="min-w-[260px] flex-1 rounded-[8px] px-3 py-2.5"
           style={{
-            borderLeft: `3px solid ${color}`,
-            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+            borderLeft: `3px solid ${comp ? BAND_COLOR[comp.band] : color}`,
+            background: `color-mix(in srgb, ${comp ? BAND_COLOR[comp.band] : color} 10%, transparent)`,
           }}
         >
-          <div className="cz-eyebrow" style={{ color }}>
-            Risk index confidence: {reg.confidence.toUpperCase()}
+          <div className="cz-eyebrow" style={{ color: comp ? BAND_COLOR[comp.band] : color }}>
+            Risk index confidence: {comp ? `${comp.band} · ${comp.confidence}%` : reg.confidence.toUpperCase()}
           </div>
           <div className="mt-1 text-[12.5px] text-cz-ink-2">
-            {reg.outstanding.length === 0 ? (
+            {comp && comp.index === null ? (
+              <>
+                <b className="text-cz-ink-1">
+                  {comp.outstanding} of {comp.requiredInputs} required inputs outstanding
+                </b>{" "}
+                — no Composite Project Risk Index is published on an incomplete record.{" "}
+              </>
+            ) : reg.outstanding.length === 0 ? (
               <>All required inputs for the {p.stage} stage are on file.</>
             ) : (
               <>
@@ -72,21 +113,22 @@ export function ProjectHeaderStrip() {
                   {reg.outstanding.length} of {reg.requiredCount} required inputs outstanding
                 </b>{" "}
                 — the index is computed on an incomplete record and is not full-confidence.{" "}
-                <Link
-                  to="/project/$id/documents"
-                  params={{ id: String(p.id) }}
-                  search={{ status: "outstanding" }}
-                  className="underline"
-                  style={{ color: "var(--cz-accent)" }}
-                >
-                  See the outstanding list →
-                </Link>
               </>
             )}
+            <Link
+              to="/project/$id/documents"
+              params={{ id: String(p.id) }}
+              search={{ status: "outstanding" }}
+              className="underline"
+              style={{ color: "var(--cz-accent)" }}
+            >
+              See the outstanding list →
+            </Link>
           </div>
         </div>
       </div>
     </div>
+
   );
 }
 

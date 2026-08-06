@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      aspect_weight_overrides: {
+        Row: {
+          aspect_id: string
+          created_at: string
+          id: string
+          stage_number: number
+          updated_at: string
+          version: number
+          weight: number
+        }
+        Insert: {
+          aspect_id: string
+          created_at?: string
+          id?: string
+          stage_number: number
+          updated_at?: string
+          version?: number
+          weight: number
+        }
+        Update: {
+          aspect_id?: string
+          created_at?: string
+          id?: string
+          stage_number?: number
+          updated_at?: string
+          version?: number
+          weight?: number
+        }
+        Relationships: []
+      }
+      aspects: {
+        Row: {
+          aspect_id: string
+          aspect_name: string
+          created_at: string
+          family_codes: string
+          owner_question: string
+          updated_at: string
+        }
+        Insert: {
+          aspect_id: string
+          aspect_name: string
+          created_at?: string
+          family_codes?: string
+          owner_question?: string
+          updated_at?: string
+        }
+        Update: {
+          aspect_id?: string
+          aspect_name?: string
+          created_at?: string
+          family_codes?: string
+          owner_question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           company: string
@@ -48,6 +105,7 @@ export type Database = {
         Row: {
           active: boolean
           applicable_delivery_models: string
+          aspect_id: string | null
           continuous: boolean
           control_id: string
           created_at: string
@@ -77,6 +135,7 @@ export type Database = {
         Insert: {
           active?: boolean
           applicable_delivery_models?: string
+          aspect_id?: string | null
           continuous?: boolean
           control_id: string
           created_at?: string
@@ -106,6 +165,7 @@ export type Database = {
         Update: {
           active?: boolean
           applicable_delivery_models?: string
+          aspect_id?: string | null
           continuous?: boolean
           control_id?: string
           created_at?: string
@@ -183,36 +243,57 @@ export type Database = {
       }
       escalation_rules: {
         Row: {
+          action: string
           active: boolean
+          aspect_id: string | null
           condition: Json
+          conditions: string
           created_at: string
           description: string
+          false_positive_checks: string
           id: string
           name: string
+          rule_id: string | null
           scope: string
           severity: string
+          severity_floor: string
+          stages: number[]
           updated_at: string
         }
         Insert: {
+          action?: string
           active?: boolean
+          aspect_id?: string | null
           condition?: Json
+          conditions?: string
           created_at?: string
           description?: string
+          false_positive_checks?: string
           id?: string
           name: string
+          rule_id?: string | null
           scope?: string
           severity?: string
+          severity_floor?: string
+          stages?: number[]
           updated_at?: string
         }
         Update: {
+          action?: string
           active?: boolean
+          aspect_id?: string | null
           condition?: Json
+          conditions?: string
           created_at?: string
           description?: string
+          false_positive_checks?: string
           id?: string
           name?: string
+          rule_id?: string | null
           scope?: string
           severity?: string
+          severity_floor?: string
+          stages?: number[]
           updated_at?: string
         }
         Relationships: []
@@ -328,6 +409,48 @@ export type Database = {
           updated_at?: string
           verified_by?: string
           verified_date?: string | null
+        }
+        Relationships: []
+      }
+      stage_exit_criteria: {
+        Row: {
+          active: boolean
+          blocking: string
+          created_at: string
+          criterion_id: string
+          evidence_required: string
+          exit_criterion: string
+          id: string
+          linked_families: string
+          stage_name: string
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blocking?: string
+          created_at?: string
+          criterion_id: string
+          evidence_required?: string
+          exit_criterion: string
+          id?: string
+          linked_families?: string
+          stage_name?: string
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blocking?: string
+          created_at?: string
+          criterion_id?: string
+          evidence_required?: string
+          exit_criterion?: string
+          id?: string
+          linked_families?: string
+          stage_name?: string
+          stage_number?: number
+          updated_at?: string
         }
         Relationships: []
       }

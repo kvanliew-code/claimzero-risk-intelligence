@@ -18,7 +18,6 @@ import {
   fetchEscalationRules,
   fetchRegister,
   fetchStages,
-  stageGate,
   stageNumberFor,
   tierFor,
   weightsFor,
@@ -30,6 +29,27 @@ import {
   type Irreversibility,
   type StageConfig,
 } from "@/lib/claimzero/controls";
+import {
+  BAND_COLOR,
+  evaluateStageGate,
+  fetchAspects,
+  fetchExitCriteria,
+  scoreAspects,
+  type AspectDef,
+  type ExitCriterion,
+  type GateVerdict,
+} from "@/lib/claimzero/scoring";
+
+const GATE_COLOR: Record<GateVerdict, string> = {
+  READY: "var(--cz-good)",
+  "CONDITIONAL — NOT READY": "var(--cz-warn)",
+  "AT RISK": "var(--cz-critical)",
+};
+const GATE_LABEL: Record<GateVerdict, string> = {
+  READY: "COMPLETE — VERIFIED",
+  "CONDITIONAL — NOT READY": "CONDITIONAL — NOT READY",
+  "AT RISK": "AT RISK",
+};
 
 const api = getRouteApi("/_authenticated/project/$id");
 
@@ -98,6 +118,8 @@ function Controls() {
   const [stages, setStages] = useState<StageConfig[]>([]);
   const [rules, setRules] = useState<EscalationRule[]>([]);
   const [instances, setInstances] = useState<ControlInstance[]>([]);
+  const [criteria, setCriteria] = useState<ExitCriterion[]>([]);
+  const [aspectDefs, setAspectDefs] = useState<AspectDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
@@ -115,16 +137,20 @@ function Controls() {
     (async () => {
       setLoading(true);
       try {
-        const [reg, stg, esc] = await Promise.all([
+        const [reg, stg, esc, crit, asp] = await Promise.all([
           fetchRegister(),
           fetchStages(),
           fetchEscalationRules(),
+          fetchExitCriteria(),
+          fetchAspects(),
         ]);
         const inst = await ensureInstances(project, reg);
         if (cancelled) return;
         setRegister(reg);
         setStages(stg);
         setRules(esc);
+        setCriteria(crit);
+        setAspectDefs(asp);
         setInstances(inst);
         setError(null);
       } catch (e) {
@@ -150,9 +176,18 @@ function Controls() {
   );
 
   const currentStage = stages.find((s) => s.stage_number === stageNumber);
-  const gate = currentStage
-    ? stageGate(currentStage, register, instMap, stageNumber, tier)
-    : undefined;
+  const aspectScores = useMemo(
+    () =>
+      aspectDefs.length ? scoreAspects(aspectDefs, register, instMap, stageNumber, tier) : [],
+    [aspectDefs, register, instMap, stageNumber, tier],
+  );
+  const gate = useMemo(
+    () =>
+      register.length
+        ? evaluateStageGate(stageNumber, register, instMap, criteria, tier, aspectScores)
+        : undefined,
+    [register, instMap, criteria, stageNumber, tier, aspectScores],
+  );
   const escalations = useMemo(
     () => evaluateEscalations(rules, applicable, instMap, gate?.completeness ?? 0),
     [rules, applicable, instMap, gate?.completeness],
@@ -221,48 +256,90 @@ function Controls() {
               <div
                 className="mt-3.5 rounded-xl border p-4"
                 style={{
-                  borderColor: gate.ready ? "var(--cz-good)" : "var(--cz-warn)",
-                  background: `color-mix(in srgb, ${gate.ready ? "var(--cz-good)" : "var(--cz-warn)"} 8%, transparent)`,
+                  borderColor: GATE_COLOR[gate.verdict],
+                  background: `color-mix(in srgb, ${GATE_COLOR[gate.verdict]} 8%, transparent)`,
                 }}
               >
                 <div className="flex flex-wrap items-baseline gap-3">
-                  <div
-                    className="cz-eyebrow"
-                    style={{ color: gate.ready ? "var(--cz-good)" : "var(--cz-warn)" }}
-                  >
-                    Stage gate: {gate.ready ? "COMPLETE-VERIFIED" : "CONDITIONAL — NOT READY"}
+                  <div className="cz-eyebrow" style={{ color: GATE_COLOR[gate.verdict] }}>
+                    Stage gate: {GATE_LABEL[gate.verdict]}
                   </div>
                   <div className="cz-figure text-[22px] font-bold">{gate.completeness}%</div>
                   <div className="font-cz-mono text-[10.5px] text-cz-ink-3">
-                    {gate.verified} of {gate.applicable} stage controls Complete-Verified
+                    {gate.verified} of {gate.applicable} stage controls Complete — Verified · N/A
+                    excluded
+                  </div>
+                  <div className="font-cz-mono text-[10.5px]" style={{ color: BAND_COLOR[gate.confidence >= 80 ? "FULL" : gate.confidence >= 60 ? "LIMITED" : "INSUFFICIENT"] }}>
+                    CONFIDENCE {gate.confidence}%
                   </div>
                 </div>
+
+                {gate.reasons.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[12.5px] text-cz-ink-1">
+                    {gate.reasons.map((r) => (
+                      <li key={r}>⏸ {r}</li>
+                    ))}
+                  </ul>
+                )}
+
                 <div className="mt-2 grid gap-3 md:grid-cols-2">
                   <div>
-                    <div className="cz-eyebrow text-[9px]">Exit criteria</div>
+                    <div className="cz-eyebrow text-[9px]">
+                      Exit criteria — {gate.hardCriteria.length} hard / {gate.softCriteria.length} soft
+                    </div>
                     <ul className="mt-1 space-y-1 text-[12.5px] text-cz-ink-2">
-                      {gate.stage.exit_criteria.map((c) => (
-                        <li key={c}>· {c}</li>
-                      ))}
+                      {[...gate.hardCriteria, ...gate.softCriteria].map((c) => {
+                        const failed = gate.unsatisfiedCriteria.find(
+                          (u) => u.criterion.criterion_id === c.criterion_id,
+                        );
+                        return (
+                          <li key={c.criterion_id}>
+                            <span
+                              className="font-cz-mono text-[10.5px]"
+                              style={{
+                                color: failed
+                                  ? c.blocking === "HARD"
+                                    ? "var(--cz-critical)"
+                                    : "var(--cz-warn)"
+                                  : "var(--cz-good)",
+                              }}
+                            >
+                              {c.blocking}
+                            </span>{" "}
+                            {c.exit_criterion}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
-                  {gate.openItems.length > 0 && (
+                  {gate.criticalOpen.length > 0 && (
                     <div>
-                      <div className="cz-eyebrow text-[9px]">Open items</div>
+                      <div className="cz-eyebrow text-[9px]">
+                        Open critical items ({gate.criticalOpen.length})
+                      </div>
                       <ul className="mt-1 space-y-1 text-[12.5px] text-cz-ink-2">
-                        {gate.openItems.map((o) => (
+                        {gate.criticalOpen.slice(0, 12).map((o) => (
                           <li key={o.control_id}>
                             <span className="font-cz-mono text-[11px]">{o.control_id}</span> —{" "}
                             {o.requirement}{" "}
-                            <span style={{ color: STATUS_COLOR[o.status] }}>({STATUS_LABEL[o.status]})</span>
+                            <span style={{ color: STATUS_COLOR[o.status] }}>
+                              ({STATUS_LABEL[o.status]})
+                            </span>
                           </li>
                         ))}
                       </ul>
+                      {gate.criticalIrreversibleOpen.length > 0 && (
+                        <div className="mt-1.5 font-cz-mono text-[10.5px]" style={{ color: "var(--cz-critical)" }}>
+                          {gate.criticalIrreversibleOpen.length} of these are irreversible once the
+                          stage closes.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             )}
+
 
             {/* weights + escalations */}
             <div className="mt-3 grid gap-3 md:grid-cols-2">
