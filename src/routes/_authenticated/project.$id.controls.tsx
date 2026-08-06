@@ -244,48 +244,90 @@ function Controls() {
               <div
                 className="mt-3.5 rounded-xl border p-4"
                 style={{
-                  borderColor: gate.ready ? "var(--cz-good)" : "var(--cz-warn)",
-                  background: `color-mix(in srgb, ${gate.ready ? "var(--cz-good)" : "var(--cz-warn)"} 8%, transparent)`,
+                  borderColor: GATE_COLOR[gate.verdict],
+                  background: `color-mix(in srgb, ${GATE_COLOR[gate.verdict]} 8%, transparent)`,
                 }}
               >
                 <div className="flex flex-wrap items-baseline gap-3">
-                  <div
-                    className="cz-eyebrow"
-                    style={{ color: gate.ready ? "var(--cz-good)" : "var(--cz-warn)" }}
-                  >
-                    Stage gate: {gate.ready ? "COMPLETE-VERIFIED" : "CONDITIONAL — NOT READY"}
+                  <div className="cz-eyebrow" style={{ color: GATE_COLOR[gate.verdict] }}>
+                    Stage gate: {GATE_LABEL[gate.verdict]}
                   </div>
                   <div className="cz-figure text-[22px] font-bold">{gate.completeness}%</div>
                   <div className="font-cz-mono text-[10.5px] text-cz-ink-3">
-                    {gate.verified} of {gate.applicable} stage controls Complete-Verified
+                    {gate.verified} of {gate.applicable} stage controls Complete — Verified · N/A
+                    excluded
+                  </div>
+                  <div className="font-cz-mono text-[10.5px]" style={{ color: BAND_COLOR[gate.confidence >= 80 ? "FULL" : gate.confidence >= 60 ? "LIMITED" : "INSUFFICIENT"] }}>
+                    CONFIDENCE {gate.confidence}%
                   </div>
                 </div>
+
+                {gate.reasons.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[12.5px] text-cz-ink-1">
+                    {gate.reasons.map((r) => (
+                      <li key={r}>⏸ {r}</li>
+                    ))}
+                  </ul>
+                )}
+
                 <div className="mt-2 grid gap-3 md:grid-cols-2">
                   <div>
-                    <div className="cz-eyebrow text-[9px]">Exit criteria</div>
+                    <div className="cz-eyebrow text-[9px]">
+                      Exit criteria — {gate.hardCriteria.length} hard / {gate.softCriteria.length} soft
+                    </div>
                     <ul className="mt-1 space-y-1 text-[12.5px] text-cz-ink-2">
-                      {gate.stage.exit_criteria.map((c) => (
-                        <li key={c}>· {c}</li>
-                      ))}
+                      {[...gate.hardCriteria, ...gate.softCriteria].map((c) => {
+                        const failed = gate.unsatisfiedCriteria.find(
+                          (u) => u.criterion.criterion_id === c.criterion_id,
+                        );
+                        return (
+                          <li key={c.criterion_id}>
+                            <span
+                              className="font-cz-mono text-[10.5px]"
+                              style={{
+                                color: failed
+                                  ? c.blocking_type === "HARD"
+                                    ? "var(--cz-critical)"
+                                    : "var(--cz-warn)"
+                                  : "var(--cz-good)",
+                              }}
+                            >
+                              {c.blocking_type}
+                            </span>{" "}
+                            {c.criterion_text}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
-                  {gate.openItems.length > 0 && (
+                  {gate.criticalOpen.length > 0 && (
                     <div>
-                      <div className="cz-eyebrow text-[9px]">Open items</div>
+                      <div className="cz-eyebrow text-[9px]">
+                        Open critical items ({gate.criticalOpen.length})
+                      </div>
                       <ul className="mt-1 space-y-1 text-[12.5px] text-cz-ink-2">
-                        {gate.openItems.map((o) => (
+                        {gate.criticalOpen.slice(0, 12).map((o) => (
                           <li key={o.control_id}>
                             <span className="font-cz-mono text-[11px]">{o.control_id}</span> —{" "}
                             {o.requirement}{" "}
-                            <span style={{ color: STATUS_COLOR[o.status] }}>({STATUS_LABEL[o.status]})</span>
+                            <span style={{ color: STATUS_COLOR[o.status] }}>
+                              ({STATUS_LABEL[o.status]})
+                            </span>
                           </li>
                         ))}
                       </ul>
+                      {gate.criticalIrreversibleOpen.length > 0 && (
+                        <div className="mt-1.5 font-cz-mono text-[10.5px]" style={{ color: "var(--cz-critical)" }}>
+                          {gate.criticalIrreversibleOpen.length} of these are irreversible once the
+                          stage closes.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             )}
+
 
             {/* weights + escalations */}
             <div className="mt-3 grid gap-3 md:grid-cols-2">
