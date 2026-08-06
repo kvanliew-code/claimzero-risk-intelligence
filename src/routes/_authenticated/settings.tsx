@@ -7,6 +7,60 @@ import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { projects } from "@/lib/claimzero/data";
 import { ControlRegisterAdmin } from "@/components/cz/register-admin";
+import {
+  fetchReviewerDaysPerMonth,
+  saveReviewerDaysPerMonth,
+} from "@/lib/claimzero/pipeline";
+
+function ReviewerCapacitySetting() {
+  const [days, setDays] = useState(20);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    void fetchReviewerDaysPerMonth()
+      .then(setDays)
+      .catch(() => setState("error"));
+  }, []);
+
+  const save = async () => {
+    setState("saving");
+    try {
+      await saveReviewerDaysPerMonth(days);
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-md border border-cz-rule bg-cz-surface px-3.5 py-3">
+      <div className="text-[13px] font-semibold">Reviewer capacity</div>
+      <div className="mb-2.5 font-cz-mono text-[11px] text-cz-ink-3">
+        Reviewer-days available per month. Every forecast month is measured against this figure;
+        months that exceed it are marked DELIVERY CAPACITY EXCEEDED on the Pipeline forecast.
+      </div>
+      <div className="flex items-center gap-2">
+        <label htmlFor="reviewer-days" className="cz-eyebrow text-[9px] tracking-[0.18em]">
+          Days / month
+        </label>
+        <input
+          id="reviewer-days"
+          type="number"
+          min={0}
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className="w-24 rounded-[5px] border border-cz-grid bg-cz-bg px-2.5 py-1.5 text-[13px] text-cz-ink-1 outline-none focus:border-cz-accent"
+        />
+        <CzButton primary onClick={() => void save()} disabled={state === "saving"}>
+          Save
+        </CzButton>
+        <span className="font-cz-mono text-[10.5px] text-cz-ink-3">
+          {state === "saved" ? "Saved" : state === "error" ? "Admins only" : ""}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -156,6 +210,7 @@ function Settings() {
 
         {role === "admin" ? (
           <>
+            <ReviewerCapacitySetting />
             <Assignments />
             <ControlRegisterAdmin />
           </>

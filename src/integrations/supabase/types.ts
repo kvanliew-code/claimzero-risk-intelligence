@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       aspect_weight_overrides: {
         Row: {
           aspect_id: string
@@ -329,13 +350,17 @@ export type Database = {
         Row: {
           assessment_fee_usd: number
           channel_deal: boolean
+          client_id: string | null
           contact_name: string
           contact_title: string
           created_at: string
           email: string
+          engagement_id: string | null
+          entity_tag: Database["public"]["Enums"]["entity_tag"]
           expected_close: string | null
           id: string
           loss_reason: string
+          loss_reason_code: string | null
           monitoring_arr_usd: number
           next_action: string
           next_action_date: string | null
@@ -347,8 +372,10 @@ export type Database = {
           owner: string
           phone: string
           probability_pct: number
+          project_id: number | null
           project_name: string
           project_value_usd: number
+          referred_by_contact_id: string | null
           reviewer_days_required: number
           segment: string
           source: string
@@ -360,13 +387,17 @@ export type Database = {
         Insert: {
           assessment_fee_usd?: number
           channel_deal?: boolean
+          client_id?: string | null
           contact_name?: string
           contact_title?: string
           created_at?: string
           email?: string
+          engagement_id?: string | null
+          entity_tag?: Database["public"]["Enums"]["entity_tag"]
           expected_close?: string | null
           id?: string
           loss_reason?: string
+          loss_reason_code?: string | null
           monitoring_arr_usd?: number
           next_action?: string
           next_action_date?: string | null
@@ -378,8 +409,10 @@ export type Database = {
           owner?: string
           phone?: string
           probability_pct?: number
+          project_id?: number | null
           project_name?: string
           project_value_usd?: number
+          referred_by_contact_id?: string | null
           reviewer_days_required?: number
           segment?: string
           source?: string
@@ -391,13 +424,17 @@ export type Database = {
         Update: {
           assessment_fee_usd?: number
           channel_deal?: boolean
+          client_id?: string | null
           contact_name?: string
           contact_title?: string
           created_at?: string
           email?: string
+          engagement_id?: string | null
+          entity_tag?: Database["public"]["Enums"]["entity_tag"]
           expected_close?: string | null
           id?: string
           loss_reason?: string
+          loss_reason_code?: string | null
           monitoring_arr_usd?: number
           next_action?: string
           next_action_date?: string | null
@@ -409,8 +446,10 @@ export type Database = {
           owner?: string
           phone?: string
           probability_pct?: number
+          project_id?: number | null
           project_name?: string
           project_value_usd?: number
+          referred_by_contact_id?: string | null
           reviewer_days_required?: number
           segment?: string
           source?: string
@@ -419,7 +458,29 @@ export type Database = {
           stage_entered?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_referred_by_contact_id_fkey"
+            columns: ["referred_by_contact_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -677,6 +738,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "executive" | "project_manager" | "reviewer"
       engagement_status: "draft" | "sent" | "signed"
+      entity_tag: "CLAIMZERO" | "RESOLUTE"
       opportunity_stage:
         | "IDENTIFIED"
         | "CONTACTED"
@@ -817,6 +879,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "executive", "project_manager", "reviewer"],
       engagement_status: ["draft", "sent", "signed"],
+      entity_tag: ["CLAIMZERO", "RESOLUTE"],
       opportunity_stage: [
         "IDENTIFIED",
         "CONTACTED",

@@ -20,10 +20,15 @@ import {
   isRevenueDeal,
   totals,
   usd,
+  isOverdue,
+  importOpportunitiesCsv,
+  fetchReviewerDaysPerMonth,
+  OPPORTUNITY_CSV_COLUMNS,
   type CapacityRow,
   type OppStage,
   type Opportunity,
 } from "@/lib/claimzero/pipeline";
+import { parseCsv } from "@/lib/claimzero/controls";
 
 export const Route = createFileRoute("/_authenticated/pipeline")({
   head: () => ({
@@ -94,12 +99,22 @@ function Pipeline() {
   const [stageDraft, setStageDraft] = useState<OppStage>("IDENTIFIED");
   const [lossDraft, setLossDraft] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [daysPerMonth, setDaysPerMonth] = useState(20);
+  const [fSegment, setFSegment] = useState("");
+  const [fSource, setFSource] = useState("");
+  const [fOwner, setFOwner] = useState("");
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
   const load = async () => {
     try {
-      const [o, c] = await Promise.all([fetchOpportunities(), fetchCapacity()]);
+      const [o, c, d] = await Promise.all([
+        fetchOpportunities(),
+        fetchCapacity(),
+        fetchReviewerDaysPerMonth(),
+      ]);
       setRows(o);
       setCap(c);
+      setDaysPerMonth(d);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load the pipeline");
@@ -110,6 +125,42 @@ function Pipeline() {
   useEffect(() => {
     void load();
   }, []);
+
+  const segments = useMemo(
+    () => [...new Set(rows.map((o) => o.segment).filter(Boolean))].sort(),
+    [rows],
+  );
+  const sources = useMemo(
+    () => [...new Set(rows.map((o) => o.source).filter(Boolean))].sort(),
+    [rows],
+  );
+  const owners = useMemo(
+    () => [...new Set(rows.map((o) => o.owner).filter(Boolean))].sort(),
+    [rows],
+  );
+  const filtered = useMemo(
+    () =>
+      rows.filter(
+        (o) =>
+          (!fSegment || o.segment === fSegment) &&
+          (!fSource || o.source === fSource) &&
+          (!fOwner || o.owner === fOwner),
+      ),
+    [rows, fSegment, fSource, fOwner],
+  );
+
+  const onImport = async (file: File) => {
+    setImportMsg("Importing…");
+    try {
+      const res = await importOpportunitiesCsv(await file.text(), parseCsv);
+      setImportMsg(
+        `${res.rows} opportunities upserted${res.errors.length ? ` · ${res.errors.length} rejected` : ""}`,
+      );
+      await load();
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : "Import failed");
+    }
+  };
 
   const revenueDeals = useMemo(() => rows.filter(isRevenueDeal), [rows]);
   const acquisition = useMemo(
@@ -127,7 +178,7 @@ function Pipeline() {
   const acq = totals(acquisition);
   const exp = totals(expansion);
   const conv = expansionConversion(revenueDeals);
-  const months = useMemo(() => forecast(rows, cap), [rows, cap]);
+  const months = useMemo(() => forecast(rows, cap, daysPerMonth), [rows, cap, daysPerMonth]);
   const openDays = revenueDeals.filter(isOpen).reduce((a, o) => a + o.reviewer_days_required, 0);
   const lost = rows.filter((o) => o.stage === "LOST");
   const channel = rows.filter((o) => o.channel_deal);
@@ -136,14 +187,14 @@ function Pipeline() {
 
   const lossTally = useMemo(() => {
     const m = new Map<string, number>();
-    for (const o of lost) m.set(o.loss_reason, (m.get(o.loss_reason) ?? 0) + 1);
+    for (const o of lost) m.set(o.loss_reason_code || o.loss_reason || "UNCODED", (m.get(o.loss_reason_code || o.loss_reason || "UNCODED") ?? 0) + 1);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [lost]);
 
   const openDetail = (o: Opportunity) => {
     setOpen(o);
     setStageDraft(o.stage);
-    setLossDraft(o.loss_reason);
+    setLossDraft(o.loss_reason_code ?? o.loss_reason ?? "");
   };
 
   const saveStage = async () => {
@@ -156,6 +207,7 @@ function Pipeline() {
         stage: stageDraft,
         stage_entered: new Date().toISOString().slice(0, 10),
         loss_reason: stageDraft === "LOST" ? lossDraft : "",
+        loss_reason_code: stageDraft === "LOST" ? lossDraft : null,
       })
       .eq("id", open.id);
     setSaving(false);
@@ -167,7 +219,7 @@ function Pipeline() {
     await load();
   };
 
-  const byStage = (s: OppStage) => rows.filter((o) => o.stage === s);
+  const byStage = (s: OppStage) => filtered.filter((o) => o.stage === s);
 
   return (
     <div className="min-h-screen">
@@ -192,6 +244,66 @@ function Pipeline() {
             {error}
           </div>
         ) : null}
+
+        {/* Filters + import */}
+        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-2.5">
+          <span className="cz-eyebrow text-[9px] tracking-[0.18em]">Filter</span>
+          {(
+            [
+              ["Segment", fSegment, setFSegment, segments],
+              ["Source", fSource, setFSource, sources],
+              ["Owner", fOwner, setFOwner, owners],
+            ] as const
+          ).map(([label, value, set, opts]) => (
+            <select
+              key={label}
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              className="rounded-[5px] border border-cz-grid bg-cz-bg px-2 py-1 text-[12px] text-cz-ink-1 outline-none focus:border-cz-accent"
+            >
+              <option value="">All {label.toLowerCase()}s</option>
+              {opts.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          ))}
+          <span className="font-cz-mono text-[10.5px] text-cz-ink-3">
+            {filtered.length} of {rows.length}
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {importMsg ? (
+              <span className="font-cz-mono text-[10.5px] text-cz-ink-3">{importMsg}</span>
+            ) : null}
+            <CzButton
+              onClick={() => {
+                const csv = OPPORTUNITY_CSV_COLUMNS.join(",") + "\n";
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "claimzero_opportunities_template.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              ↓ CSV template
+            </CzButton>
+            <label className="cursor-pointer rounded-[6px] border border-cz-grid px-2.5 py-1.5 text-[12px] text-cz-ink-2 hover:border-cz-accent">
+              ↑ Import opportunities
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onImport(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
 
         {/* KPI strip — the two funnels never summed into one number */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -262,8 +374,28 @@ function Pipeline() {
                     : 0;
                   const tint = m.over ? "var(--cz-critical)" : "var(--cz-good)";
                   return (
-                    <tr key={m.month}>
-                      <td className="border-b border-cz-grid px-3 py-1.5 font-bold">{m.label}</td>
+                    <tr
+                      key={m.month}
+                      style={
+                        m.over
+                          ? {
+                              background:
+                                "color-mix(in srgb, var(--cz-critical) 12%, transparent)",
+                            }
+                          : undefined
+                      }
+                    >
+                      <td className="border-b border-cz-grid px-3 py-1.5 font-bold">
+                        {m.label}
+                        {m.over ? (
+                          <div
+                            className="font-cz-mono text-[9.5px] font-bold"
+                            style={{ color: "var(--cz-critical)" }}
+                          >
+                            DELIVERY CAPACITY EXCEEDED
+                          </div>
+                        ) : null}
+                      </td>
                       <td className="cz-figure border-b border-cz-grid px-3 py-1.5">{m.deals}</td>
                       <td className="cz-figure border-b border-cz-grid px-3 py-1.5">
                         {usd(Math.round(m.weightedAssessment))}
@@ -360,11 +492,37 @@ function Pipeline() {
                         type="button"
                         onClick={() => openDetail(o)}
                         className="rounded-[5px] border border-cz-grid bg-cz-surface px-1.5 py-1 text-left text-[11px] hover:border-cz-accent"
+                        style={
+                          isOverdue(o)
+                            ? { borderColor: "var(--cz-critical)" }
+                            : undefined
+                        }
                       >
                         <div className="font-bold">{o.org_name}</div>
+                        <div className="text-[10px] text-cz-ink-2">{o.project_name || "—"}</div>
                         <div className="font-cz-mono text-[9.5px] text-cz-ink-3">
-                          {o.probability_pct}% · {o.reviewer_days_required}d ·{" "}
-                          {daysInStage(o)} in stage
+                          {daysInStage(o)}d in stage · {o.probability_pct}% ·{" "}
+                          {o.reviewer_days_required}rd
+                        </div>
+                        <div className="mt-0.5 grid grid-cols-2 gap-1 font-cz-mono text-[9.5px]">
+                          <span title="Assessment fee">FEE {usd(o.assessment_fee_usd)}</span>
+                          <span title="Monitoring ARR" style={{ color: "var(--cz-good)" }}>
+                            ARR {usd(o.monitoring_arr_usd)}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 border-t border-cz-grid pt-0.5 text-[9.5px] text-cz-ink-3">
+                          {o.next_action || "No next action"}
+                          {o.next_action_date ? (
+                            <span
+                              className="ml-1 font-cz-mono"
+                              style={
+                                isOverdue(o) ? { color: "var(--cz-critical)" } : undefined
+                              }
+                            >
+                              {isOverdue(o) ? "⚑ " : ""}
+                              {o.next_action_date}
+                            </span>
+                          ) : null}
                         </div>
                       </button>
                     ))}
@@ -394,7 +552,7 @@ function Pipeline() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((o) => (
+              {filtered.map((o) => (
                 <tr
                   key={o.id}
                   className="cursor-pointer hover:bg-white/5"
@@ -459,7 +617,7 @@ function Pipeline() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-3 py-4 text-center text-cz-ink-3">
                     {loading ? "Loading…" : "No opportunities yet."}

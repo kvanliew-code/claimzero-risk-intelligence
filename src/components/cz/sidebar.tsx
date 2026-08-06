@@ -18,6 +18,7 @@ const PORTFOLIO_GROUPS: Group[] = [
   {
     label: "Pipeline",
     items: [
+      { to: "/pipeline", icon: "⤢", label: "Pipeline" },
       { to: "/clients", icon: "◇", label: "Clients" },
       { to: "/engagements", icon: "✎", label: "Engagements" },
       { to: "/intake", icon: "＋", label: "New Project Intake" },
