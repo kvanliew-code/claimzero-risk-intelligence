@@ -308,7 +308,7 @@ function Controls() {
               </Pill>
               {CONTROL_STATUSES.map((s) => (
                 <Pill key={s} active={fStatus === s} onClick={() => setFStatus(s)}>
-                  {s}
+                  {STATUS_LABEL[s]}
                 </Pill>
               ))}
             </div>
@@ -329,6 +329,27 @@ function Controls() {
                 </Pill>
               ))}
             </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="cz-eyebrow mr-1 text-[9px]">Criticality</span>
+              <Pill active={fCrit === "All"} onClick={() => setFCrit("All")}>
+                all
+              </Pill>
+              {CRITICALITIES.map((c) => (
+                <Pill key={c} active={fCrit === c} onClick={() => setFCrit(c)}>
+                  {c}
+                </Pill>
+              ))}
+              <span className="cz-eyebrow mr-1 ml-3 text-[9px]">Irreversibility</span>
+              <Pill active={fIrr === "All"} onClick={() => setFIrr("All")}>
+                all
+              </Pill>
+              {IRREVERSIBILITIES.map((i) => (
+                <Pill key={i} active={fIrr === i} onClick={() => setFIrr(i)}>
+                  {i}
+                </Pill>
+              ))}
+            </div>
+
 
             {/* families */}
             <div className="mt-3.5 space-y-3">
