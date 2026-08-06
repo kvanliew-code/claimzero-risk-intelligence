@@ -1,6 +1,8 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CzButton, Gate, Modal, ReportH, ReportShell, Row3 } from "@/components/cz/primitives";
+import { SourceBody } from "@/components/cz/source-drawer";
+import { DEMO_FINDINGS, isDemoProject } from "@/lib/claimzero/demo";
 import { ProjectHeaderStrip } from "./project.$id";
 import { STATUS_COLOR, STATUS_LABEL, type ControlStatus } from "@/lib/claimzero/controls";
 import { BAND_COLOR, scoreColorFor, weightOf, type AspectScore } from "@/lib/claimzero/scoring";
@@ -164,6 +166,28 @@ function Aspects() {
             <div className="mt-0.5 mb-3.5 font-cz-mono text-[11px] text-cz-ink-3">
               {p.name} · stage {s.stageNumber} · tier {s.tier} · computed from the control register
             </div>
+            {DEMO_FINDINGS.filter(
+              (f) => isDemoProject(p.id) && f.aspect_id === open.aspect_id,
+            ).map((f) => (
+              <div
+                key={f.id}
+                className="mb-3.5 rounded-[8px] px-3 py-2.5"
+                style={{
+                  borderLeft: "3px solid var(--cz-critical)",
+                  background: "color-mix(in srgb, var(--cz-critical) 8%, transparent)",
+                }}
+              >
+                <div className="font-cz-mono text-[10px]" style={{ color: "var(--cz-critical)" }}>
+                  {f.rule} FIRED · {f.control_id} · {f.criticality} · irreversibility{" "}
+                  {f.irreversibility} · status {f.status}
+                </div>
+                <b className="mt-1 block text-[13px]">{f.headline}</b>
+                <div className="text-[12.5px] text-cz-ink-2">{f.detail}</div>
+                <div className="mt-2.5">
+                  <SourceBody title={`${f.control_id} · source evidence`} source={f.source} />
+                </div>
+              </div>
+            ))}
             <ReportShell>
               <ReportH>How the number was produced</ReportH>
               <Row3
