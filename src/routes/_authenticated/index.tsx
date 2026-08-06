@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { pendingReviewCount } from "@/lib/claimzero/review";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton } from "@/components/cz/primitives";
