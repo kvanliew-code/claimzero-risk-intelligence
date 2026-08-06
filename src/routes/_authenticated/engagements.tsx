@@ -25,7 +25,9 @@ export const Route = createFileRoute("/_authenticated/engagements")({
   component: Engagements,
 });
 
-type Status = "Draft" | "Sent" | "Signed";
+type Status = "draft" | "sent" | "signed";
+
+const STATUS_LABEL: Record<Status, string> = { draft: "Draft", sent: "Sent", signed: "Signed" };
 
 interface Engagement {
   id: string;
@@ -50,9 +52,9 @@ const DEFAULT_SCOPE =
   "Independent development risk intelligence: the twelve-aspect scoring model, the daily watch telemetry layer, a reviewed Weekly Top 10 issued Monday, an end-of-month executive report, and a maintained document register sufficient to produce the record if a claim arises.";
 
 const STATUS_COLOR: Record<Status, string> = {
-  Draft: "var(--cz-ink-3)",
-  Sent: "var(--cz-warn)",
-  Signed: "var(--cz-good)",
+  draft: "var(--cz-ink-3)",
+  sent: "var(--cz-warn)",
+  signed: "var(--cz-good)",
 };
 
 function Engagements() {
@@ -88,7 +90,7 @@ function Engagements() {
       scope: DEFAULT_SCOPE,
       fee_tier: feeTier(form.size_m),
       term: "24 months, terminable by either party on 60 days' written notice",
-      status: "Draft",
+      status: "draft",
     });
     setCreating(false);
     setForm({ client_id: "", project_name: "", size_m: 120 });
@@ -98,7 +100,7 @@ function Engagements() {
   const advance = async (e: Engagement, status: Status) => {
     await supabase
       .from("engagements")
-      .update({ status, signed_at: status === "Signed" ? new Date().toISOString() : null })
+      .update({ status, signed_at: status === "signed" ? new Date().toISOString() : null })
       .eq("id", e.id);
     setLetter(null);
     await load();
@@ -156,13 +158,13 @@ function Engagements() {
                         className="h-2 w-2 rounded-full"
                         style={{ background: STATUS_COLOR[e.status] }}
                       />
-                      {e.status}
+                      {STATUS_LABEL[e.status]}
                     </span>
                   </td>
                   <td className="border-b border-cz-grid px-3 py-1.5 text-right">
                     <div className="flex justify-end gap-1.5">
                       <CzButton onClick={() => setLetter(e)}>Engagement letter →</CzButton>
-                      {e.status === "Signed" ? (
+                      {e.status === "signed" ? (
                         <Link to="/intake">
                           <CzButton primary>Open intake →</CzButton>
                         </Link>
@@ -243,7 +245,7 @@ function Engagements() {
               Engagement Letter — {letter.project_name}
             </h2>
             <div className="mt-0.5 mb-3.5 font-cz-mono text-[11px] text-cz-ink-3">
-              {companyOf(letter.client_id)} · status {letter.status}
+              {companyOf(letter.client_id)} · status {STATUS_LABEL[letter.status]}
             </div>
             <ReportShell>
               <ReportH>Scope of services</ReportH>
@@ -275,13 +277,13 @@ function Engagements() {
             <div className="mt-3.5 flex justify-end gap-2">
               <CzButton onClick={() => setLetter(null)}>Close</CzButton>
               <CzButton onClick={() => window.print()}>⎙ Print</CzButton>
-              {letter.status === "Draft" ? (
-                <CzButton primary onClick={() => void advance(letter, "Sent")}>
+              {letter.status === "draft" ? (
+                <CzButton primary onClick={() => void advance(letter, "sent")}>
                   Mark sent →
                 </CzButton>
               ) : null}
-              {letter.status === "Sent" ? (
-                <CzButton primary onClick={() => void advance(letter, "Signed")}>
+              {letter.status === "sent" ? (
+                <CzButton primary onClick={() => void advance(letter, "signed")}>
                   Mark signed ✓
                 </CzButton>
               ) : null}

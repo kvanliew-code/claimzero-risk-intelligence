@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedEngagementsRouteImport } from './routes/_authenticated/engagements'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
@@ -44,6 +45,12 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEngagementsRoute =
+  AuthenticatedEngagementsRouteImport.update({
+    id: '/engagements',
+    path: '/engagements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/engagements': typeof AuthenticatedEngagementsRoute
   '/intake': typeof AuthenticatedIntakeRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/queue': typeof AuthenticatedQueueRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clients': typeof AuthenticatedClientsRoute
+  '/engagements': typeof AuthenticatedEngagementsRoute
   '/intake': typeof AuthenticatedIntakeRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/queue': typeof AuthenticatedQueueRoute
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/engagements': typeof AuthenticatedEngagementsRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/clients'
+    | '/engagements'
     | '/intake'
     | '/portfolio'
     | '/queue'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/clients'
+    | '/engagements'
     | '/intake'
     | '/portfolio'
     | '/queue'
@@ -191,6 +203,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/clients'
+    | '/_authenticated/engagements'
     | '/_authenticated/intake'
     | '/_authenticated/portfolio'
     | '/_authenticated/queue'
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/engagements': {
+      id: '/_authenticated/engagements'
+      path: '/engagements'
+      fullPath: '/engagements'
+      preLoaderRoute: typeof AuthenticatedEngagementsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/intake': {
@@ -344,6 +364,7 @@ const AuthenticatedProjectIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedEngagementsRoute: typeof AuthenticatedEngagementsRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
@@ -355,6 +376,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedEngagementsRoute: AuthenticatedEngagementsRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
