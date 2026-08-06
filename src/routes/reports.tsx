@@ -22,7 +22,7 @@ export const Route = createFileRoute("/reports")({
       },
     ],
   }),
-  component: Reports;
+  component: Reports,
 });
 
 const TODAY = "August 6, 2026";
