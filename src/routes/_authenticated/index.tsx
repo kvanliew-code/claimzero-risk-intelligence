@@ -134,6 +134,21 @@ function ColdOpen() {
 
 
 function Digest() {
+  const [queue, setQueue] = useState<{ total: number; risks: number; exposures: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    let cancelled = false;
+    void pendingReviewCount()
+      .then((q) => {
+        if (!cancelled) setQueue(q);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen">
       <CzHeader
