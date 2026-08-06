@@ -4,6 +4,7 @@ import { CzHeader } from "@/components/cz/header";
 import { Sparkline, StatusPill, TrendTag, scoreColor } from "@/components/cz/primitives";
 import { STAGE_OPTIONS, statusOf } from "@/lib/claimzero/data";
 import { visibleProjects } from "@/lib/claimzero/access";
+import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/portfolio")({
@@ -43,6 +44,13 @@ function Portfolio() {
     () => visibleProjects(role, assignedProjectIds),
     [role, assignedProjectIds],
   );
+  const scoring = usePortfolioScoring(scope);
+  const indexOf = (id: number, fallback: number) => {
+    const r = scoring.byId.get(id);
+    return r ? r.raw : fallback;
+  };
+  const publishedIndexOf = (id: number) => scoring.byId.get(id)?.index ?? null;
+  const confidenceOf = (id: number) => scoring.byId.get(id)?.composite.confidence ?? null;
   const [stage, setStage] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("risk");
@@ -52,7 +60,7 @@ function Portfolio() {
     const out = scope.filter(
       (p) =>
         (!stage || p.stage === stage) &&
-        (!status || statusOf(p.idx) === status) &&
+        (!status || statusOf(indexOf(p.id, p.idx)) === status) &&
         (!q || p.name.toLowerCase().includes(q.toLowerCase())),
     );
     out.sort((a, b) =>
@@ -60,13 +68,14 @@ function Portfolio() {
         ? a.name.localeCompare(b.name)
         : sort === "exposure"
           ? b.exposure - a.exposure
-          : b.idx - a.idx,
+          : indexOf(b.id, b.idx) - indexOf(a.id, a.idx),
     );
     return out;
-  }, [scope, stage, status, sort, q]);
+  }, [scope, stage, status, sort, q, scoring.byId]);
 
-  const reds = list.filter((p) => statusOf(p.idx) === "Critical").length;
-  const ser = list.filter((p) => statusOf(p.idx) === "Serious").length;
+  const reds = list.filter((p) => statusOf(indexOf(p.id, p.idx)) === "Critical").length;
+  const ser = list.filter((p) => statusOf(indexOf(p.id, p.idx)) === "Serious").length;
+  const withheld = list.filter((p) => publishedIndexOf(p.id) === null && !scoring.loading).length;
   const exp = list.reduce((a, p) => a + p.exposure, 0);
   const vol = list.reduce((a, p) => a + p.sizeM, 0);
 
@@ -98,7 +107,7 @@ function Portfolio() {
         <Kpi
           label="Critical projects"
           value={<span style={{ color: "var(--cz-critical)" }}>▲ {reds}</span>}
-          sub={`${ser} serious · reviewer queue: 14`}
+          sub={`${ser} serious · ${withheld} index withheld below 60% confidence`}
         />
         <Kpi
           label="Weekly reports due Mon"
@@ -165,7 +174,10 @@ function Portfolio() {
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(252px,1fr))] gap-2.5 px-5 pb-8">
         {list.map((p) => {
-          const st = statusOf(p.idx);
+          const raw = indexOf(p.id, p.idx);
+          const published = publishedIndexOf(p.id);
+          const conf = confidenceOf(p.id);
+          const st = statusOf(raw);
           return (
             <button
               key={p.id}
@@ -181,11 +193,16 @@ function Portfolio() {
               <div className="flex items-center gap-2.5">
                 <div
                   className="cz-figure min-w-[44px] text-[26px] font-bold"
-                  style={{ color: scoreColor(p.idx) }}
+                  style={{ color: scoreColor(raw) }}
                 >
-                  {p.idx}
+                  {scoring.loading ? "…" : published === null ? "—" : published}
                 </div>
                 <Sparkline data={p.trend} />
+                {published === null && !scoring.loading ? (
+                  <span className="font-cz-mono text-[9.5px] text-cz-ink-3">
+                    conf {conf ?? 0}% · withheld
+                  </span>
+                ) : null}
                 <div className="ml-auto text-right">
                   <StatusPill status={st} />
                   <div className="mt-1 font-cz-mono text-[10.5px] text-cz-ink-2">
