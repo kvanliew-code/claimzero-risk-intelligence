@@ -38,6 +38,8 @@ export interface ControlSpec {
   dependency: string;
   min_tier: Tier;
   domain: Domain;
+  /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
+  continuous: boolean;
   active: boolean;
 }
 
