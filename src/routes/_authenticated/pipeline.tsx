@@ -245,6 +245,66 @@ function Pipeline() {
           </div>
         ) : null}
 
+        {/* Filters + import */}
+        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-2.5">
+          <span className="cz-eyebrow text-[9px] tracking-[0.18em]">Filter</span>
+          {(
+            [
+              ["Segment", fSegment, setFSegment, segments],
+              ["Source", fSource, setFSource, sources],
+              ["Owner", fOwner, setFOwner, owners],
+            ] as const
+          ).map(([label, value, set, opts]) => (
+            <select
+              key={label}
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              className="rounded-[5px] border border-cz-grid bg-cz-bg px-2 py-1 text-[12px] text-cz-ink-1 outline-none focus:border-cz-accent"
+            >
+              <option value="">All {label.toLowerCase()}s</option>
+              {opts.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          ))}
+          <span className="font-cz-mono text-[10.5px] text-cz-ink-3">
+            {filtered.length} of {rows.length}
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {importMsg ? (
+              <span className="font-cz-mono text-[10.5px] text-cz-ink-3">{importMsg}</span>
+            ) : null}
+            <CzButton
+              onClick={() => {
+                const csv = OPPORTUNITY_CSV_COLUMNS.join(",") + "\n";
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "claimzero_opportunities_template.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              ↓ CSV template
+            </CzButton>
+            <label className="cursor-pointer rounded-[6px] border border-cz-grid px-2.5 py-1.5 text-[12px] text-cz-ink-2 hover:border-cz-accent">
+              ↑ Import opportunities
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onImport(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
         {/* KPI strip — the two funnels never summed into one number */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Kpi
@@ -314,8 +374,28 @@ function Pipeline() {
                     : 0;
                   const tint = m.over ? "var(--cz-critical)" : "var(--cz-good)";
                   return (
-                    <tr key={m.month}>
-                      <td className="border-b border-cz-grid px-3 py-1.5 font-bold">{m.label}</td>
+                    <tr
+                      key={m.month}
+                      style={
+                        m.over
+                          ? {
+                              background:
+                                "color-mix(in srgb, var(--cz-critical) 12%, transparent)",
+                            }
+                          : undefined
+                      }
+                    >
+                      <td className="border-b border-cz-grid px-3 py-1.5 font-bold">
+                        {m.label}
+                        {m.over ? (
+                          <div
+                            className="font-cz-mono text-[9.5px] font-bold"
+                            style={{ color: "var(--cz-critical)" }}
+                          >
+                            DELIVERY CAPACITY EXCEEDED
+                          </div>
+                        ) : null}
+                      </td>
                       <td className="cz-figure border-b border-cz-grid px-3 py-1.5">{m.deals}</td>
                       <td className="cz-figure border-b border-cz-grid px-3 py-1.5">
                         {usd(Math.round(m.weightedAssessment))}
@@ -412,11 +492,37 @@ function Pipeline() {
                         type="button"
                         onClick={() => openDetail(o)}
                         className="rounded-[5px] border border-cz-grid bg-cz-surface px-1.5 py-1 text-left text-[11px] hover:border-cz-accent"
+                        style={
+                          isOverdue(o)
+                            ? { borderColor: "var(--cz-critical)" }
+                            : undefined
+                        }
                       >
                         <div className="font-bold">{o.org_name}</div>
+                        <div className="text-[10px] text-cz-ink-2">{o.project_name || "—"}</div>
                         <div className="font-cz-mono text-[9.5px] text-cz-ink-3">
-                          {o.probability_pct}% · {o.reviewer_days_required}d ·{" "}
-                          {daysInStage(o)} in stage
+                          {daysInStage(o)}d in stage · {o.probability_pct}% ·{" "}
+                          {o.reviewer_days_required}rd
+                        </div>
+                        <div className="mt-0.5 grid grid-cols-2 gap-1 font-cz-mono text-[9.5px]">
+                          <span title="Assessment fee">FEE {usd(o.assessment_fee_usd)}</span>
+                          <span title="Monitoring ARR" style={{ color: "var(--cz-good)" }}>
+                            ARR {usd(o.monitoring_arr_usd)}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 border-t border-cz-grid pt-0.5 text-[9.5px] text-cz-ink-3">
+                          {o.next_action || "No next action"}
+                          {o.next_action_date ? (
+                            <span
+                              className="ml-1 font-cz-mono"
+                              style={
+                                isOverdue(o) ? { color: "var(--cz-critical)" } : undefined
+                              }
+                            >
+                              {isOverdue(o) ? "⚑ " : ""}
+                              {o.next_action_date}
+                            </span>
+                          ) : null}
                         </div>
                       </button>
                     ))}
