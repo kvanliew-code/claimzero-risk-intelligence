@@ -153,7 +153,7 @@ function AuthPage() {
           <Motif />
         </div>
 
-        <div className="w-full max-w-[380px]">
+        <div className="relative w-full max-w-[380px]">
           <div className="leading-none">
             <div className="font-cz-sans text-[30px] font-extrabold tracking-[0.4px]">
               Claim<span style={{ color: "var(--cz-accent)" }}>Zero</span>
