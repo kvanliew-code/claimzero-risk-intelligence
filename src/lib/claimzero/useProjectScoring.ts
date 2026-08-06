@@ -1,0 +1,122 @@
+// Loads the register, the project's control instances and the aspect library,
+// then runs the ClaimZero Scoring Specification v1.0 over them. Every screen
+// that shows a number reads it from here — nothing is hand-entered.
+
+import { useEffect, useState } from "react";
+import {
+  ensureInstances,
+  fetchRegister,
+  stageNumberFor,
+  tierFor,
+  type ControlInstance,
+  type ControlSpec,
+} from "./controls";
+import {
+  composite,
+  evaluateStageGate,
+  fetchAspects,
+  fetchExitCriteria,
+  fetchWeightOverrides,
+  scoreAspects,
+  type AspectDef,
+  type AspectScore,
+  type Composite,
+  type ExitCriterion,
+  type SpecStageGate,
+} from "./scoring";
+import type { Project } from "./data";
+
+export interface ProjectScoring {
+  loading: boolean;
+  error: string | null;
+  register: ControlSpec[];
+  instances: ControlInstance[];
+  instanceMap: Map<string, ControlInstance>;
+  aspects: AspectDef[];
+  scores: AspectScore[];
+  composite: Composite | null;
+  gate: SpecStageGate | null;
+  exitCriteria: ExitCriterion[];
+  stageNumber: number;
+  tier: "A" | "B" | "C";
+}
+
+export function useProjectScoring(project: Project): ProjectScoring {
+  const [state, setState] = useState<{
+    loading: boolean;
+    error: string | null;
+    register: ControlSpec[];
+    instances: ControlInstance[];
+    aspects: AspectDef[];
+    exitCriteria: ExitCriterion[];
+    overrides: Record<string, number>;
+  }>({
+    loading: true,
+    error: null,
+    register: [],
+    instances: [],
+    aspects: [],
+    exitCriteria: [],
+    overrides: {},
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [register, aspects, exitCriteria, overrides] = await Promise.all([
+          fetchRegister(),
+          fetchAspects(),
+          fetchExitCriteria(),
+          fetchWeightOverrides(),
+        ]);
+        const instances = await ensureInstances(project, register);
+        if (cancelled) return;
+        setState({ loading: false, error: null, register, instances, aspects, exitCriteria, overrides });
+      } catch (e) {
+        if (!cancelled)
+          setState((s) => ({
+            ...s,
+            loading: false,
+            error: e instanceof Error ? e.message : "Unable to score this project",
+          }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [project]);
+
+  const stageNumber = stageNumberFor(project);
+  const tier = tierFor(project);
+  const instanceMap = new Map(state.instances.map((i) => [i.control_id, i]));
+  const scores = state.aspects.length
+    ? scoreAspects(state.aspects, state.register, instanceMap, stageNumber, tier)
+    : [];
+  const comp = scores.length ? composite(scores, stageNumber, state.overrides) : null;
+  const gate = state.register.length
+    ? evaluateStageGate(
+        stageNumber,
+        state.register,
+        instanceMap,
+        state.exitCriteria,
+        tier,
+        scores,
+      )
+    : null;
+
+  return {
+    loading: state.loading,
+    error: state.error,
+    register: state.register,
+    instances: state.instances,
+    instanceMap,
+    aspects: state.aspects,
+    scores,
+    composite: comp,
+    gate,
+    exitCriteria: state.exitCriteria,
+    stageNumber,
+    tier,
+  };
+}
