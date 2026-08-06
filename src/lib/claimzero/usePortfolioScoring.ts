@@ -30,6 +30,7 @@ export interface ProjectRollup {
   stageNumber: number;
   tier: "A" | "B" | "C";
   scores: AspectScore[];
+  instances: Map<string, ControlInstance>;
   composite: Composite;
   /** The published index, or null when confidence is below 60 (§6). */
   index: number | null;
@@ -156,6 +157,7 @@ export function usePortfolioScoring(projects: Project[]): PortfolioScoring {
         stageNumber,
         tier,
         scores,
+        instances,
         composite: comp,
         index: comp.index,
         raw: comp.raw,
