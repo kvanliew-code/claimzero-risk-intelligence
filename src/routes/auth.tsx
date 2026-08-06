@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CzButton } from "@/components/cz/primitives";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — ClaimZero Development Risk Intelligence" },
