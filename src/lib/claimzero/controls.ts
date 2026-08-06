@@ -38,6 +38,8 @@ export interface ControlSpec {
   dependency: string;
   min_tier: Tier;
   domain: Domain;
+  /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
+  continuous: boolean;
   active: boolean;
 }
 
@@ -82,15 +84,16 @@ const STAGE_NUMBER: Record<string, number> = {
 
 export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
 
-/** Tier is a function of program size: A ≥ $250M, B ≥ $80M, otherwise C. */
-export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "A" : p.sizeM >= 80 ? "B" : "C");
+/** Tier is a function of program size: C major ≥ $250M, B institutional ≥ $100M, otherwise A standard. */
+export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "C" : p.sizeM >= 100 ? "B" : "A");
 
-const TIER_RANK: Record<Tier, number> = { C: 1, B: 2, A: 3 };
+const TIER_RANK: Record<Tier, number> = { A: 1, B: 2, C: 3 };
 
 /** A control applies when the project has reached its stage and meets its minimum tier. */
 export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): boolean {
   return spec.active && spec.stage_number <= stageNumber && TIER_RANK[tier] >= TIER_RANK[spec.min_tier];
 }
+
 
 /** Deterministic demo status so a freshly generated project reads as live work. */
 function seededStatus(projectId: number, controlId: string, stageNumber: number, current: number): ControlStatus {
@@ -190,8 +193,13 @@ export function stageGate(
   tier: Tier,
 ): StageGate {
   const specs = register.filter(
-    (c) => c.stage_number === stage.stage_number && appliesTo(c, stageNumber, tier),
+    (c) =>
+      appliesTo(c, stageNumber, tier) &&
+      (c.continuous
+        ? c.stage_number <= stage.stage_number
+        : c.stage_number === stage.stage_number),
   );
+
   const open = specs
     .map((c) => ({ spec: c, inst: instances.get(c.control_id) }))
     .filter((x) => x.inst?.status !== "Complete-Verified")
@@ -271,6 +279,7 @@ export const REGISTER_CSV_COLUMNS = [
   "dependency",
   "min_tier",
   "domain",
+  "continuous",
 ] as const;
 
 /** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
@@ -316,7 +325,10 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
     header.forEach((h, i) => {
       const v = (r[i] ?? "").trim();
       if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
-      rec[h] = h === "stage_number" ? Number(v) : v;
+      if (h === "stage_number") rec[h] = Number(v);
+      else if (h === "continuous") rec[h] = /^(true|yes|y|1)$/i.test(v);
+      else if (h === "min_tier") rec[h] = (v || "A").toUpperCase();
+      else rec[h] = v;
     });
     return rec as Partial<ControlSpec>;
   });
