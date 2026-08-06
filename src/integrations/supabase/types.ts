@@ -195,6 +195,7 @@ export type Database = {
           dependency: string
           domain: string
           downstream_exposure: string
+          evidence_class: string
           expected_evidence: string
           family_code: string
           family_name: string
@@ -212,6 +213,7 @@ export type Database = {
           title: string
           trigger_logic: string
           updated_at: string
+          verification_method: string
         }
         Insert: {
           active?: boolean
@@ -225,6 +227,7 @@ export type Database = {
           dependency?: string
           domain?: string
           downstream_exposure?: string
+          evidence_class?: string
           expected_evidence?: string
           family_code?: string
           family_name?: string
@@ -242,6 +245,7 @@ export type Database = {
           title?: string
           trigger_logic?: string
           updated_at?: string
+          verification_method?: string
         }
         Update: {
           active?: boolean
@@ -255,6 +259,7 @@ export type Database = {
           dependency?: string
           domain?: string
           downstream_exposure?: string
+          evidence_class?: string
           expected_evidence?: string
           family_code?: string
           family_name?: string
@@ -272,6 +277,7 @@ export type Database = {
           title?: string
           trigger_logic?: string
           updated_at?: string
+          verification_method?: string
         }
         Relationships: []
       }
