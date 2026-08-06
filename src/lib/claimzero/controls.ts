@@ -165,7 +165,7 @@ export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): b
 
 
 /** Deterministic demo status so a freshly generated project reads as live work. */
-function seededStatus(projectId: number, controlId: string, stageNumber: number, current: number): ControlStatus {
+export function seededStatus(projectId: number, controlId: string, stageNumber: number, current: number): ControlStatus {
   if (isDemoProject(projectId)) return demoStatus(controlId, stageNumber, current);
   let h = projectId * 2654435761;
   for (const ch of controlId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
