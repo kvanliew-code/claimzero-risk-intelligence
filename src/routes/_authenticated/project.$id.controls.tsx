@@ -163,6 +163,8 @@ function Controls() {
     if (fStatus !== "All" && st !== fStatus) return false;
     if (fOwner !== "All" && c.primary_owner_role !== fOwner) return false;
     if (fDomain !== "All" && c.domain !== fDomain) return false;
+    if (fCrit !== "All" && c.criticality !== fCrit) return false;
+    if (fIrr !== "All" && c.irreversibility !== fIrr) return false;
     return true;
   });
 
