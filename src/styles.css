@@ -142,3 +142,83 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---------------- ClaimZero — editorial-terminal design standard (§8B) ---------------- */
+/* Dark-first. One accent only: burnt orange. Status never by color alone. */
+
+:root,
+:root[data-theme="dark"] {
+  --cz-page: #0e1621;
+  --cz-surface: #161f2b;
+  --cz-header: #131c28;
+  --cz-ink-1: #f2efe9;
+  --cz-ink-2: #b9c2cd;
+  --cz-ink-3: #7d8896;
+  --cz-grid: #24303f;
+  --cz-rule: rgba(255, 255, 255, 0.08);
+  --cz-accent: #e0824a;
+  --cz-accent-solid: #c9622f;
+  --cz-good: #0ca30c;
+  --cz-warn: #fab219;
+  --cz-serious: #ec835a;
+  --cz-critical: #d03b3b;
+  --cz-warn-ink: #fab219;
+  --cz-sans: "Poppins", ui-rounded, system-ui, sans-serif;
+  --cz-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --cz-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+:root[data-theme="light"] {
+  --cz-page: #f7f3ec;
+  --cz-surface: #fffdf8;
+  --cz-header: #fffdf8;
+  --cz-ink-1: #15202e;
+  --cz-ink-2: #465364;
+  --cz-ink-3: #7b8697;
+  --cz-grid: #e3dccf;
+  --cz-rule: rgba(21, 32, 46, 0.12);
+  --cz-accent: #c9622f;
+  --cz-accent-solid: #c9622f;
+  --cz-warn-ink: #8a6100;
+}
+
+@theme inline {
+  --color-cz-page: var(--cz-page);
+  --color-cz-surface: var(--cz-surface);
+  --color-cz-header: var(--cz-header);
+  --color-cz-ink-1: var(--cz-ink-1);
+  --color-cz-ink-2: var(--cz-ink-2);
+  --color-cz-ink-3: var(--cz-ink-3);
+  --color-cz-grid: var(--cz-grid);
+  --color-cz-rule: var(--cz-rule);
+  --color-cz-accent: var(--cz-accent);
+  --color-cz-good: var(--cz-good);
+  --color-cz-warn: var(--cz-warn);
+  --color-cz-serious: var(--cz-serious);
+  --color-cz-critical: var(--cz-critical);
+  --font-cz-sans: var(--cz-sans);
+  --font-cz-serif: var(--cz-serif);
+  --font-cz-mono: var(--cz-mono);
+}
+
+@utility cz-eyebrow {
+  font-family: var(--cz-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 10.5px;
+  color: var(--cz-ink-3);
+}
+
+@utility cz-figure {
+  font-family: var(--cz-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+body.cz {
+  background: var(--cz-page);
+  color: var(--cz-ink-1);
+  font-family: var(--cz-serif);
+  font-size: 14px;
+  line-height: 1.5;
+}
