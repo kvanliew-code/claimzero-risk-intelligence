@@ -25,7 +25,7 @@ import {
   type Aspect,
 } from "@/lib/claimzero/data";
 
-export const Route = createFileRoute("/project/$id")({
+export const Route = createFileRoute("/_authenticated/project/$id")({
   loader: ({ params }) => {
     const project = projects[Number(params.id)];
     if (!project) throw notFound();

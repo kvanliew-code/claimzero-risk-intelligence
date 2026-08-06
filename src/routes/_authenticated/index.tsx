@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Daily Digest — ClaimZero Command Center" },

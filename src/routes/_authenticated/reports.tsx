@@ -5,7 +5,7 @@ import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
 import { ASPECTS, statusOf } from "@/lib/claimzero/data";
 
-export const Route = createFileRoute("/reports")({
+export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
       { title: "Reports — ClaimZero Weekly & Monthly Intelligence" },

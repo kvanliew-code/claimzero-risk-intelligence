@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 
-export const Route = createFileRoute("/intake")({
+export const Route = createFileRoute("/_authenticated/intake")({
   head: () => ({
     meta: [
       { title: "New Project / Intake — ClaimZero" },

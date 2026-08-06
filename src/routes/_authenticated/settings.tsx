@@ -3,7 +3,7 @@ import { CzHeader, useTheme } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton } from "@/components/cz/primitives";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — ClaimZero" },

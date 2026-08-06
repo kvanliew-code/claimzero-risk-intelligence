@@ -4,7 +4,7 @@ import { CzHeader } from "@/components/cz/header";
 import { Sparkline, StatusPill, TrendTag, scoreColor } from "@/components/cz/primitives";
 import { STAGE_OPTIONS, projects, statusOf } from "@/lib/claimzero/data";
 
-export const Route = createFileRoute("/portfolio")({
+export const Route = createFileRoute("/_authenticated/portfolio")({
   head: () => ({
     meta: [
       { title: "ClaimZero — Portfolio Command Center" },

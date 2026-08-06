@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 
-export const Route = createFileRoute("/queue")({
+export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({
     meta: [
       { title: "Reviewer Queue — ClaimZero" },
