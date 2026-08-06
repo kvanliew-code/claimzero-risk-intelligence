@@ -47,6 +47,7 @@ export type Database = {
       control_register: {
         Row: {
           active: boolean
+          continuous: boolean
           control_id: string
           created_at: string
           dependency: string
@@ -64,6 +65,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          continuous?: boolean
           control_id: string
           created_at?: string
           dependency?: string
@@ -81,6 +83,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          continuous?: boolean
           control_id?: string
           created_at?: string
           dependency?: string
