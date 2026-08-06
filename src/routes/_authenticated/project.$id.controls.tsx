@@ -2,6 +2,8 @@ import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CzButton } from "@/components/cz/primitives";
 import { SourceDrawer } from "@/components/cz/source-drawer";
+import { EvidencePanel } from "@/components/cz/evidence-panel";
+import { fetchEvidence, type ControlEvidence } from "@/lib/claimzero/evidence";
 import { findingFor } from "@/lib/claimzero/demo";
 import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
