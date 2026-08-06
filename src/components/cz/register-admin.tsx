@@ -137,6 +137,7 @@ export function ControlRegisterAdmin() {
                 <th className="px-2 py-1.5">Owner</th>
                 <th className="px-2 py-1.5">Tier</th>
                 <th className="px-2 py-1.5">Domain</th>
+                <th className="px-2 py-1.5">Cont.</th>
               </tr>
             </thead>
             <tbody>
