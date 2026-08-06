@@ -3,6 +3,9 @@ import { CzHeader } from "@/components/cz/header";
 import { CzButton, Dial } from "@/components/cz/primitives";
 import { projects } from "@/lib/claimzero/data";
 import { CONFIDENCE_COLOR, registerFor } from "@/lib/claimzero/docs";
+import { BAND_COLOR, scoreColorFor } from "@/lib/claimzero/scoring";
+import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
+
 
 export const Route = createFileRoute("/_authenticated/project/$id")({
   loader: ({ params }) => {
