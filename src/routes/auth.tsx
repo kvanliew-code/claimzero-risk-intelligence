@@ -131,8 +131,8 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[1.05fr_1fr]">
-      <div className="relative hidden overflow-hidden bg-cz-header md:block">
+    <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
+      <div className="relative hidden overflow-hidden bg-cz-header sm:block">
         <div className="absolute inset-0 opacity-90">
           <Motif />
         </div>
@@ -147,7 +147,12 @@ function AuthPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-6 py-12">
+      <div className="relative flex items-center justify-center px-6 py-12">
+        {/* Narrow screens: the crane motif sits behind the form instead of beside it. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.10] sm:hidden">
+          <Motif />
+        </div>
+
         <div className="w-full max-w-[380px]">
           <div className="leading-none">
             <div className="font-cz-sans text-[30px] font-extrabold tracking-[0.4px]">
