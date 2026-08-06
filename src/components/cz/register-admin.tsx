@@ -81,15 +81,21 @@ export function ControlRegisterAdmin() {
     }
   };
 
-  const exportCsv = () => {
-    const blob = new Blob([controlsToCsv(rows)], { type: "text/csv" });
+  const download = (name: string, text: string) => {
+    const blob = new Blob([text], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "claimzero-control-register.csv";
+    a.download = name;
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const exportCsv = () => download("claimzero-control-register.csv", controlsToCsv(rows));
+
+  const downloadTemplate = () =>
+    download("claimzero-control-register-template.csv", REGISTER_CSV_COLUMNS.join(",") + "\n");
+
 
   const saveStage = async (s: StageConfig, weights: string, criteria: string) => {
     let domain_weights: Record<string, number>;
