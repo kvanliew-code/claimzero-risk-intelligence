@@ -318,8 +318,11 @@ function Controls() {
             {/* families */}
             <div className="mt-3.5 space-y-3">
               {families.map(([family, specs]) => {
-                const verified = specs.filter(
-                  (s) => instMap.get(s.control_id)?.status === "Complete-Verified",
+                const scored = specs.filter(
+                  (s) => instMap.get(s.control_id)?.status !== "N/A",
+                );
+                const verified = scored.filter(
+                  (s) => instMap.get(s.control_id)?.status === "COMPLETE_VERIFIED",
                 ).length;
                 return (
                   <div
@@ -329,9 +332,11 @@ function Controls() {
                     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-cz-grid px-3.5 py-2">
                       <div className="font-cz-sans text-[13px] font-bold">{family}</div>
                       <div className="font-cz-mono text-[10.5px] text-cz-ink-3">
-                        {verified}/{specs.length} Complete-Verified
+                        {verified}/{scored.length} Complete — Verified
+                        {scored.length !== specs.length && ` · ${specs.length - scored.length} N/A`}
                       </div>
                     </div>
+
                     {specs.map((s) => {
                       const inst = instMap.get(s.control_id);
                       const status = inst?.status ?? "EVIDENCE_NOT_LOCATED";
