@@ -524,6 +524,14 @@ function Controls() {
                               {s.control_id}
                             </span>
                             <span className="flex-1 text-[12.5px]">{s.title || s.requirement}</span>
+                            {(evidenceByControl.get(s.control_id)?.length ?? 0) > 0 && (
+                              <span
+                                className="shrink-0 font-cz-mono text-[9.5px]"
+                                style={{ color: "var(--cz-accent)" }}
+                              >
+                                ▤ {evidenceByControl.get(s.control_id)!.length}
+                              </span>
+                            )}
                             <span className="hidden shrink-0 gap-1 md:flex">
                               <Badge color={CRITICALITY_COLOR[s.criticality]} label={s.criticality} />
                               <Badge
