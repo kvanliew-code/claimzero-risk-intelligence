@@ -279,6 +279,7 @@ export const REGISTER_CSV_COLUMNS = [
   "dependency",
   "min_tier",
   "domain",
+  "continuous",
 ] as const;
 
 /** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
