@@ -3,7 +3,8 @@ import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
-import { ASPECTS, statusOf } from "@/lib/claimzero/data";
+import { PROJECTS, statusOf } from "@/lib/claimzero/data";
+import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -103,7 +104,14 @@ function Foot({ left }: { left: string }) {
 }
 
 function Weekly() {
-  const top = ASPECTS.filter((a) => a.flag).sort((a, b) => b.s - a.s).slice(0, 10);
+  const project = PROJECTS[0]!;
+  const scoring = useProjectScoring(project);
+  const top = scoring.scores
+    .filter((a) => a.score !== null)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 10);
+  const published = scoring.composite?.index ?? null;
+  const confidence = scoring.composite?.confidence ?? 0;
   return (
     <>
       <RdHead
@@ -113,12 +121,13 @@ function Weekly() {
       <H4>Project Risk Index</H4>
       <div className="flex flex-wrap items-center gap-3.5">
         <span className="cz-figure text-[30px] font-bold" style={{ color: "var(--cz-serious)" }}>
-          71
+          {scoring.loading ? "…" : published === null ? "—" : published}
         </span>
-        <StatusPill status="Serious" />
+        <StatusPill status={statusOf(scoring.composite?.raw ?? project.idx)} />
         <span className="font-cz-serif text-[13px] text-cz-ink-2">
-          ▲ +9 vs last week — trajectory-weighted. Domains partially scored: none (all feeds live
-          except anticipated cost report, 8 days stale — flagged).
+          {published === null && !scoring.loading
+            ? `Index withheld: composite confidence is ${confidence}%, below the 60% publication floor. The evidence base is not yet sufficient to state a number to the owner.`
+            : `Composite confidence ${confidence}% · computed from ${scoring.register.length} register controls at stage ${scoring.stageNumber}.`}
         </span>
       </div>
 
@@ -136,18 +145,27 @@ function Weekly() {
         </thead>
         <tbody>
           {top.map((a, i) => (
-            <tr key={a.n}>
+            <tr key={a.aspect_id}>
               <td className={`${tdCls} font-cz-mono text-cz-ink-3`}>
                 {String(i + 1).padStart(2, "0")}
               </td>
-              <td className={`${tdCls} font-cz-serif`}>{strip(a.flag!.txt)}</td>
-              <td className={tdCls}>
-                {a.d > 2 ? "▲ worsening" : a.d < -2 ? "▼ improving" : "— holding"}
+              <td className={`${tdCls} font-cz-serif`}>
+                {a.aspect_id} · {a.aspect_name}
+                <div className="text-[11.5px] text-cz-ink-3">{a.owner_question}</div>
               </td>
-              <td className={tdCls}>{a.seat}</td>
-              <td className={`${tdCls} font-cz-mono whitespace-nowrap`}>$0.4–1.9M</td>
               <td className={tdCls}>
-                <StatusPill status={statusOf(a.s)} />
+                {a.adverse > 0
+                  ? `▲ ${a.adverse} adverse`
+                  : a.blockedOrOverdue > 0
+                    ? `▲ ${a.blockedOrOverdue} blocked/overdue`
+                    : "— holding"}
+              </td>
+              <td className={tdCls}>
+                {a.verified}/{a.controls} verified
+              </td>
+              <td className={`${tdCls} font-cz-mono whitespace-nowrap`}>{a.band}</td>
+              <td className={tdCls}>
+                <StatusPill status={statusOf(a.score ?? 0)} />
               </td>
             </tr>
           ))}
