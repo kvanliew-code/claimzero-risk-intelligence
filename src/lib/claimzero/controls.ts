@@ -79,7 +79,41 @@ export const STATUS_COLOR: Record<ControlStatus, string> = {
   SUPERSEDED: "var(--cz-ink-3)",
 };
 
+/** v4.0 §6 — the thirteen artefact classes a control can be satisfied by. */
+export const EVIDENCE_CLASSES = [
+  "INTERNAL_ANALYSIS",
+  "EXECUTED_INSTRUMENT",
+  "SCHEDULE_ARTIFACT",
+  "LOG_OR_REGISTER",
+  "AGENCY_ISSUANCE",
+  "DESIGN_DELIVERABLE",
+  "RECORD_OTHER",
+  "FINANCIAL_STATEMENT",
+  "THIRD_PARTY_REPORT",
+  "CORRESPONDENCE_NOTICE",
+  "INSPECTION_TEST_RECORD",
+  "INSURANCE_BOND",
+  "ATTESTATION",
+] as const;
+export type EvidenceClass = (typeof EVIDENCE_CLASSES)[number];
+
+/**
+ * v4.0 §6 — what a reviewer must do before COMPLETE_VERIFIED is permitted,
+ * ordered weakest to strongest. NOT_VERIFIABLE_BY_DOCUMENT can never reach
+ * COMPLETE_VERIFIED at all, so it sits outside the ordinal scale.
+ */
+export const VERIFICATION_METHODS = [
+  "DOCUMENT_ON_FILE",
+  "SOURCE_VERIFIED",
+  "RECOMPUTED",
+  "AGENCY_CONFIRMED",
+  "COUNTERPARTY_CONFIRMED",
+  "NOT_VERIFIABLE_BY_DOCUMENT",
+] as const;
+export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
+
 export interface ControlSpec {
+
   id: string;
   control_id: string;
   stage_number: number;
