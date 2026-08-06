@@ -167,12 +167,14 @@ function seededStatus(projectId: number, controlId: string, stageNumber: number,
   for (const ch of controlId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const r = (h % 100) / 100;
   const behind = current - stageNumber; // earlier stages are mostly closed out
-  if (behind >= 2) return r < 0.9 ? "Complete-Verified" : "Evidence Not Located";
-  if (behind === 1) return r < 0.75 ? "Complete-Verified" : r < 0.85 ? "Work In Progress" : "Evidence Not Located";
-  if (r < 0.35) return "Complete-Verified";
-  if (r < 0.62) return "Work In Progress";
-  if (r < 0.84) return "Work Not Started";
-  return "Evidence Not Located";
+  if (behind >= 2) return r < 0.9 ? "COMPLETE_VERIFIED" : "EVIDENCE_NOT_LOCATED";
+  if (behind === 1) return r < 0.75 ? "COMPLETE_VERIFIED" : r < 0.85 ? "IN_PROGRESS" : "EVIDENCE_NOT_LOCATED";
+  if (r < 0.3) return "COMPLETE_VERIFIED";
+  if (r < 0.38) return "COMPLETE_UNVERIFIED";
+  if (r < 0.62) return "IN_PROGRESS";
+  if (r < 0.84) return "NOT_STARTED";
+  return "EVIDENCE_NOT_LOCATED";
+
 }
 
 export async function fetchRegister(): Promise<ControlSpec[]> {
