@@ -171,7 +171,11 @@ function Digest() {
         />
         <Kpi label="Status changes overnight" value="3" sub="2 worsened · 1 improved" />
         <Kpi label="Feeds stale" value="3" sub="flagged on affected reports" />
-        <Kpi label="Reviewer queue" value="14" sub="6 risks · 8 exposure values" />
+        <Kpi
+          label="Reviewer queue"
+          value={queue ? queue.total : "—"}
+          sub={queue ? `${queue.risks} risks · ${queue.exposures} exposure values` : "loading"}
+        />
         <Kpi label="Reports due Monday" value="60" sub="all citation-verified" />
       </div>
 
