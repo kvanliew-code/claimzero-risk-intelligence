@@ -6,6 +6,7 @@ import { CzButton } from "@/components/cz/primitives";
 import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { projects } from "@/lib/claimzero/data";
+import { ControlRegisterAdmin } from "@/components/cz/register-admin";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -142,7 +143,7 @@ function Settings() {
         }
       />
       <SHead title="Settings" note="appearance, roles and project assignments" />
-      <div className="max-w-[640px] px-5 py-3 pb-10">
+      <div className="max-w-[900px] px-5 py-3 pb-10">
         <div className="flex items-center justify-between rounded-md border border-cz-rule bg-cz-surface px-3.5 py-3">
           <div>
             <div className="text-[13px] font-semibold">Appearance</div>
@@ -154,7 +155,10 @@ function Settings() {
         </div>
 
         {role === "admin" ? (
-          <Assignments />
+          <>
+            <Assignments />
+            <ControlRegisterAdmin />
+          </>
         ) : (
           <p className="mt-4 font-cz-serif text-cz-ink-2">
             Project assignments are managed by an Admin.

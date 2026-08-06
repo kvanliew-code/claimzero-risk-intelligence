@@ -1,0 +1,336 @@
+// ClaimZero — Control Register engine.
+// Every control, stage weighting, exit criterion and escalation rule is DATA
+// (Lovable Cloud tables), never code. New stage specifications load by import.
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Project } from "./data";
+
+export const CONTROL_STATUSES = [
+  "Evidence Not Located",
+  "Work Not Started",
+  "Work In Progress",
+  "Complete-Verified",
+] as const;
+export type ControlStatus = (typeof CONTROL_STATUSES)[number];
+
+export const DOMAINS = ["cost", "schedule", "design", "quality", "people", "compliance"] as const;
+export type Domain = (typeof DOMAINS)[number];
+
+export type Tier = "A" | "B" | "C";
+
+export const STATUS_COLOR: Record<ControlStatus, string> = {
+  "Evidence Not Located": "var(--cz-critical)",
+  "Work Not Started": "var(--cz-serious)",
+  "Work In Progress": "var(--cz-warn)",
+  "Complete-Verified": "var(--cz-good)",
+};
+
+export interface ControlSpec {
+  id: string;
+  control_id: string;
+  stage_number: number;
+  stage_name: string;
+  family_code: string;
+  family_name: string;
+  requirement: string;
+  expected_evidence: string;
+  primary_owner_role: string;
+  dependency: string;
+  min_tier: Tier;
+  domain: Domain;
+  active: boolean;
+}
+
+export interface ControlInstance {
+  id: string;
+  project_id: number;
+  control_id: string;
+  status: ControlStatus;
+  evidence_ref: string;
+  verified_by: string;
+  verified_date: string | null;
+  notes: string;
+}
+
+export interface StageConfig {
+  stage_number: number;
+  stage_name: string;
+  domain_weights: Record<string, number>;
+  exit_criteria: string[];
+}
+
+export interface EscalationRule {
+  id: string;
+  name: string;
+  description: string;
+  scope: string;
+  condition: Record<string, unknown>;
+  severity: string;
+  active: boolean;
+}
+
+/** Legacy project stage labels mapped onto the seven-stage lifecycle. */
+const STAGE_NUMBER: Record<string, number> = {
+  "Pre-Acquisition": 1,
+  Entitlement: 2,
+  Design: 3,
+  Preconstruction: 4,
+  Construction: 5,
+  Closeout: 6,
+  Sellout: 7,
+};
+
+export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
+
+/** Tier is a function of program size: A ≥ $250M, B ≥ $80M, otherwise C. */
+export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "A" : p.sizeM >= 80 ? "B" : "C");
+
+const TIER_RANK: Record<Tier, number> = { C: 1, B: 2, A: 3 };
+
+/** A control applies when the project has reached its stage and meets its minimum tier. */
+export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): boolean {
+  return spec.active && spec.stage_number <= stageNumber && TIER_RANK[tier] >= TIER_RANK[spec.min_tier];
+}
+
+/** Deterministic demo status so a freshly generated project reads as live work. */
+function seededStatus(projectId: number, controlId: string, stageNumber: number, current: number): ControlStatus {
+  let h = projectId * 2654435761;
+  for (const ch of controlId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const r = (h % 100) / 100;
+  const behind = current - stageNumber; // earlier stages are mostly closed out
+  if (behind >= 2) return r < 0.9 ? "Complete-Verified" : "Evidence Not Located";
+  if (behind === 1) return r < 0.75 ? "Complete-Verified" : r < 0.85 ? "Work In Progress" : "Evidence Not Located";
+  if (r < 0.35) return "Complete-Verified";
+  if (r < 0.62) return "Work In Progress";
+  if (r < 0.84) return "Work Not Started";
+  return "Evidence Not Located";
+}
+
+export async function fetchRegister(): Promise<ControlSpec[]> {
+  const { data, error } = await supabase
+    .from("control_register")
+    .select("*")
+    .order("stage_number")
+    .order("control_id");
+  if (error) throw error;
+  return (data ?? []) as unknown as ControlSpec[];
+}
+
+export async function fetchStages(): Promise<StageConfig[]> {
+  const { data, error } = await supabase.from("lifecycle_stages").select("*").order("stage_number");
+  if (error) throw error;
+  return (data ?? []).map((s) => ({
+    stage_number: s.stage_number,
+    stage_name: s.stage_name,
+    domain_weights: (s.domain_weights ?? {}) as Record<string, number>,
+    exit_criteria: Array.isArray(s.exit_criteria) ? (s.exit_criteria as string[]) : [],
+  }));
+}
+
+export async function fetchEscalationRules(): Promise<EscalationRule[]> {
+  const { data, error } = await supabase.from("escalation_rules").select("*").order("created_at");
+  if (error) throw error;
+  return (data ?? []) as unknown as EscalationRule[];
+}
+
+/**
+ * Generate the control instances for a project: one per applicable register
+ * control. Idempotent — re-running only fills in newly imported controls, so
+ * loading a new stage specification requires zero code changes.
+ */
+export async function ensureInstances(
+  project: Project,
+  register: ControlSpec[],
+): Promise<ControlInstance[]> {
+  const stageNumber = stageNumberFor(project);
+  const tier = tierFor(project);
+  const applicable = register.filter((c) => appliesTo(c, stageNumber, tier));
+
+  const { data: existing, error } = await supabase
+    .from("project_controls")
+    .select("*")
+    .eq("project_id", project.id);
+  if (error) throw error;
+  const have = new Set((existing ?? []).map((r) => r.control_id));
+  const missing = applicable.filter((c) => !have.has(c.control_id));
+
+  if (missing.length > 0) {
+    const rows = missing.map((c) => ({
+      project_id: project.id,
+      control_id: c.control_id,
+      status: seededStatus(project.id, c.control_id, c.stage_number, stageNumber),
+    }));
+    const { error: insErr } = await supabase
+      .from("project_controls")
+      .upsert(rows, { onConflict: "project_id,control_id", ignoreDuplicates: true });
+    if (insErr) throw insErr;
+    const { data: refreshed } = await supabase
+      .from("project_controls")
+      .select("*")
+      .eq("project_id", project.id);
+    return (refreshed ?? []) as unknown as ControlInstance[];
+  }
+  return (existing ?? []) as unknown as ControlInstance[];
+}
+
+export interface StageGate {
+  stage: StageConfig;
+  applicable: number;
+  verified: number;
+  completeness: number;
+  ready: boolean;
+  openItems: { control_id: string; requirement: string; status: ControlStatus }[];
+}
+
+export function stageGate(
+  stage: StageConfig,
+  register: ControlSpec[],
+  instances: Map<string, ControlInstance>,
+  stageNumber: number,
+  tier: Tier,
+): StageGate {
+  const specs = register.filter(
+    (c) => c.stage_number === stage.stage_number && appliesTo(c, stageNumber, tier),
+  );
+  const open = specs
+    .map((c) => ({ spec: c, inst: instances.get(c.control_id) }))
+    .filter((x) => x.inst?.status !== "Complete-Verified")
+    .map((x) => ({
+      control_id: x.spec.control_id,
+      requirement: x.spec.requirement,
+      status: (x.inst?.status ?? "Evidence Not Located") as ControlStatus,
+    }));
+  const verified = specs.length - open.length;
+  return {
+    stage,
+    applicable: specs.length,
+    verified,
+    completeness: specs.length ? Math.round((verified / specs.length) * 100) : 0,
+    ready: specs.length > 0 && open.length === 0,
+    openItems: open,
+  };
+}
+
+/** Evaluate configured escalation rules against a project's control instances. */
+export function evaluateEscalations(
+  rules: EscalationRule[],
+  register: ControlSpec[],
+  instances: Map<string, ControlInstance>,
+  stageCompleteness: number,
+): { rule: EscalationRule; hits: string[] }[] {
+  const out: { rule: EscalationRule; hits: string[] }[] = [];
+  for (const rule of rules.filter((r) => r.active)) {
+    const c = rule.condition ?? {};
+    const hits: string[] = [];
+    if (rule.scope === "metric" && c['metric'] === "stage_completeness") {
+      const v = Number(c['value'] ?? 0);
+      if (c['operator'] === "lt" && stageCompleteness < v) {
+        hits.push(`Stage completeness ${stageCompleteness}% is below ${v}%`);
+      }
+    } else if (rule.scope === "project" && c['operator'] === "count_gte") {
+      const owner = String(c['owner_role'] ?? "");
+      const n = register.filter(
+        (s) =>
+          s.primary_owner_role === owner &&
+          instances.has(s.control_id) &&
+          instances.get(s.control_id)!.status !== String(c['status_not']),
+      );
+      if (n.length >= Number(c['value'] ?? 0)) {
+        hits.push(`${n.length} ${owner}-owed controls are not Complete-Verified`);
+      }
+    } else {
+      for (const spec of register) {
+        const inst = instances.get(spec.control_id);
+        if (!inst) continue;
+        if (c['domain'] && spec.domain !== c['domain']) continue;
+        if (c['value'] && inst.status !== c['value']) continue;
+        hits.push(`${spec.control_id} — ${spec.requirement}`);
+      }
+    }
+    if (hits.length > 0) out.push({ rule, hits });
+  }
+  return out;
+}
+
+/** Composite Risk Index weighting for a stage, normalised to sum to 1. */
+export function weightsFor(stage: StageConfig | undefined): Record<string, number> {
+  const w = stage?.domain_weights ?? {};
+  const total = Object.values(w).reduce((a, b) => a + Number(b), 0) || 1;
+  return Object.fromEntries(Object.entries(w).map(([k, v]) => [k, Number(v) / total]));
+}
+
+export const REGISTER_CSV_COLUMNS = [
+  "control_id",
+  "stage_number",
+  "stage_name",
+  "family_code",
+  "family_name",
+  "requirement",
+  "expected_evidence",
+  "primary_owner_role",
+  "dependency",
+  "min_tier",
+  "domain",
+] as const;
+
+/** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else quoted = false;
+      } else field += ch;
+      continue;
+    }
+    if (ch === '"') quoted = true;
+    else if (ch === ",") {
+      row.push(field);
+      field = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      field = "";
+      if (row.some((c) => c.trim() !== "")) rows.push(row);
+      row = [];
+    } else field += ch;
+  }
+  row.push(field);
+  if (row.some((c) => c.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+export function csvToControls(text: string): Partial<ControlSpec>[] {
+  const rows = parseCsv(text);
+  if (rows.length < 2) return [];
+  const header = rows[0]!.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+  return rows.slice(1).map((r) => {
+    const rec: Record<string, unknown> = {};
+    header.forEach((h, i) => {
+      const v = (r[i] ?? "").trim();
+      if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
+      rec[h] = h === "stage_number" ? Number(v) : v;
+    });
+    return rec as Partial<ControlSpec>;
+  });
+}
+
+export function controlsToCsv(rows: ControlSpec[]): string {
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [
+    REGISTER_CSV_COLUMNS.join(","),
+    ...rows.map((r) =>
+      REGISTER_CSV_COLUMNS.map((c) => esc((r as unknown as Record<string, unknown>)[c])).join(","),
+    ),
+  ].join("\n");
+}
