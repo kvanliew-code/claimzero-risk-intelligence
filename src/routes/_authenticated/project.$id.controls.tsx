@@ -158,6 +158,7 @@ function Controls() {
   const [instances, setInstances] = useState<ControlInstance[]>([]);
   const [criteria, setCriteria] = useState<ExitCriterion[]>([]);
   const [aspectDefs, setAspectDefs] = useState<AspectDef[]>([]);
+  const [evidence, setEvidence] = useState<ControlEvidence[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
