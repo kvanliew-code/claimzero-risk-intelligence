@@ -6,23 +6,76 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Project } from "./data";
 
 export const CONTROL_STATUSES = [
-  "Evidence Not Located",
-  "Work Not Started",
-  "Work In Progress",
-  "Complete-Verified",
+  "N/A",
+  "NOT_STARTED",
+  "EVIDENCE_NOT_LOCATED",
+  "IN_PROGRESS",
+  "COMPLETE_UNVERIFIED",
+  "COMPLETE_VERIFIED",
+  "CONTROLLED_ASSUMPTION",
+  "BLOCKED",
+  "OVERDUE",
+  "ADVERSE",
+  "ACCEPTED_RISK",
+  "SUPERSEDED",
 ] as const;
 export type ControlStatus = (typeof CONTROL_STATUSES)[number];
+
+export const STATUS_LABEL: Record<ControlStatus, string> = {
+  "N/A": "N/A",
+  NOT_STARTED: "Not Started",
+  EVIDENCE_NOT_LOCATED: "Evidence Not Located",
+  IN_PROGRESS: "In Progress",
+  COMPLETE_UNVERIFIED: "Complete — Unverified",
+  COMPLETE_VERIFIED: "Complete — Verified",
+  CONTROLLED_ASSUMPTION: "Controlled Assumption",
+  BLOCKED: "Blocked",
+  OVERDUE: "Overdue",
+  ADVERSE: "Adverse",
+  ACCEPTED_RISK: "Accepted Risk",
+  SUPERSEDED: "Superseded",
+};
 
 export const DOMAINS = ["cost", "schedule", "design", "quality", "people", "compliance"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
 export type Tier = "A" | "B" | "C";
 
+export const CRITICALITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
+export type Criticality = (typeof CRITICALITIES)[number];
+
+export const IRREVERSIBILITIES = ["VERY_HIGH", "HIGH", "MEDIUM", "LOW"] as const;
+export type Irreversibility = (typeof IRREVERSIBILITIES)[number];
+
+export const DELIVERY_MODELS = ["SEQUENTIAL", "FAST_TRACK", "DESIGN_BUILD", "HYBRID"] as const;
+
+export const CRITICALITY_COLOR: Record<Criticality, string> = {
+  CRITICAL: "var(--cz-critical)",
+  HIGH: "var(--cz-serious)",
+  MEDIUM: "var(--cz-warn)",
+  LOW: "var(--cz-ink-3)",
+};
+
+export const IRREVERSIBILITY_COLOR: Record<Irreversibility, string> = {
+  VERY_HIGH: "var(--cz-critical)",
+  HIGH: "var(--cz-serious)",
+  MEDIUM: "var(--cz-warn)",
+  LOW: "var(--cz-ink-3)",
+};
+
 export const STATUS_COLOR: Record<ControlStatus, string> = {
-  "Evidence Not Located": "var(--cz-critical)",
-  "Work Not Started": "var(--cz-serious)",
-  "Work In Progress": "var(--cz-warn)",
-  "Complete-Verified": "var(--cz-good)",
+  "N/A": "var(--cz-ink-3)",
+  NOT_STARTED: "var(--cz-serious)",
+  EVIDENCE_NOT_LOCATED: "var(--cz-critical)",
+  IN_PROGRESS: "var(--cz-warn)",
+  COMPLETE_UNVERIFIED: "var(--cz-warn)",
+  COMPLETE_VERIFIED: "var(--cz-good)",
+  CONTROLLED_ASSUMPTION: "var(--cz-warn)",
+  BLOCKED: "var(--cz-critical)",
+  OVERDUE: "var(--cz-critical)",
+  ADVERSE: "var(--cz-critical)",
+  ACCEPTED_RISK: "var(--cz-ink-2)",
+  SUPERSEDED: "var(--cz-ink-3)",
 };
 
 export interface ControlSpec {
@@ -41,7 +94,20 @@ export interface ControlSpec {
   /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
   continuous: boolean;
   active: boolean;
+  criticality: Criticality;
+  irreversibility: Irreversibility;
+  inherits_forward: boolean;
+  title: string;
+  objective: string;
+  responsible_seat: string;
+  supporting_seats: string;
+  trigger_logic: string;
+  dependencies: string;
+  downstream_exposure: string;
+  /** Comma-separated delivery models; blank means all. */
+  applicable_delivery_models: string;
 }
+
 
 export interface ControlInstance {
   id: string;
