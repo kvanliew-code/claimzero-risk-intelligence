@@ -211,7 +211,10 @@ function Portfolio() {
                 </div>
               </div>
               <div className="mt-2 min-h-[34px] border-t border-cz-grid pt-1.5 text-[12px] text-cz-ink-2">
-                <span style={{ color: "var(--cz-accent)" }}>⚑</span> {p.topRisk}{" "}
+                <span style={{ color: "var(--cz-accent)" }}>⚑</span>{" "}
+                {scoring.byId.get(p.id)?.worst[0]
+                  ? `${scoring.byId.get(p.id)!.worst[0]!.aspect_id} ${scoring.byId.get(p.id)!.worst[0]!.aspect_name} — ${scoring.byId.get(p.id)!.worst[0]!.score}`
+                  : p.topRisk}{" "}
                 <span className="font-cz-mono text-[11px] text-cz-ink-3">
                   · ${p.exposure.toFixed(1)}M exp.
                 </span>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { pendingReviewCount } from "@/lib/claimzero/review";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
@@ -7,6 +7,10 @@ import { CzButton } from "@/components/cz/primitives";
 import { SourceDrawer } from "@/components/cz/source-drawer";
 import { DEMO_FINDINGS, DEMO_IDENTITY, DEMO_PROJECT_ID } from "@/lib/claimzero/demo";
 import { disclosureFlags } from "@/lib/claimzero/docs";
+import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
+import { visibleProjects } from "@/lib/claimzero/access";
+import { useAuth } from "@/hooks/useAuth";
+import { statusOf } from "@/lib/claimzero/data";
 
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -134,6 +138,31 @@ function ColdOpen() {
 
 
 function Digest() {
+  const { role, assignedProjectIds } = useAuth();
+  const scope = useMemo(
+    () => visibleProjects(role, assignedProjectIds),
+    [role, assignedProjectIds],
+  );
+  const scoring = usePortfolioScoring(scope);
+  const criticals = scoring.rollups.filter(
+    (r) => r.index !== null && statusOf(r.index) === "Critical",
+  ).length;
+  const serious = scoring.rollups.filter(
+    (r) => r.index !== null && statusOf(r.index) === "Serious",
+  ).length;
+  const withheld = scoring.rollups.filter((r) => r.index === null).length;
+  const adverse = scoring.rollups.reduce(
+    (a, r) => a + r.scores.reduce((x, s) => x + s.adverse, 0),
+    0,
+  );
+  const assertedUnverified = scoring.rollups.reduce(
+    (a, r) => a + r.scores.reduce((x, s) => x + s.assertedUnverified, 0),
+    0,
+  );
+  const criticalIrreversible = scoring.rollups.reduce(
+    (a, r) => a + r.scores.reduce((x, s) => x + s.criticalIrreversibleOpen, 0),
+    0,
+  );
   const [queue, setQueue] = useState<{ total: number; risks: number; exposures: number } | null>(
     null,
   );
@@ -165,18 +194,34 @@ function Digest() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2.5 px-5 py-3.5">
 
         <Kpi
-          label="Alerting today"
-          value={<span style={{ color: "var(--cz-critical)" }}>▲ 9</span>}
-          sub="4 daily-watch · 5 project flags"
+          label="Projects alerting"
+          value={
+            <span style={{ color: "var(--cz-critical)" }}>
+              ▲ {scoring.loading ? "…" : criticals}
+            </span>
+          }
+          sub={`${serious} serious · computed from the control register`}
         />
-        <Kpi label="Status changes overnight" value="3" sub="2 worsened · 1 improved" />
-        <Kpi label="Feeds stale" value="3" sub="flagged on affected reports" />
+        <Kpi
+          label="Adverse findings open"
+          value={scoring.loading ? "…" : adverse}
+          sub={`${criticalIrreversible} critical / very-high irreversibility unresolved`}
+        />
+        <Kpi
+          label="Asserted, unverified"
+          value={scoring.loading ? "…" : assertedUnverified}
+          sub="claimed complete, nobody checked — earns no credit"
+        />
         <Kpi
           label="Reviewer queue"
           value={queue ? queue.total : "—"}
           sub={queue ? `${queue.risks} risks · ${queue.exposures} exposure values` : "loading"}
         />
-        <Kpi label="Reports due Monday" value="60" sub="all citation-verified" />
+        <Kpi
+          label="Index withheld"
+          value={scoring.loading ? "…" : withheld}
+          sub="confidence below 60% — no number may be published"
+        />
       </div>
 
       <div className="px-5 pb-4">
