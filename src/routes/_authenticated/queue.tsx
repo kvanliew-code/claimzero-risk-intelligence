@@ -14,6 +14,15 @@ import {
   type ReviewItem,
   type ReviewStatus,
 } from "@/lib/claimzero/review";
+import {
+  evaluateRules,
+  fetchSpecRules,
+  submitHit,
+  type RuleHit,
+  type SpecEscalationRule,
+} from "@/lib/claimzero/escalation";
+import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
+import { visibleProjects } from "@/lib/claimzero/access";
 
 export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({
@@ -171,8 +180,56 @@ function Card({
   );
 }
 
+/** A rule that has fired but has not yet been promoted into the queue. */
+function HitCard({
+  hit,
+  disabled,
+  busy,
+  onSubmit,
+}: {
+  hit: RuleHit;
+  disabled: boolean;
+  busy: boolean;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="mb-2 rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="font-cz-mono text-[10.5px] tracking-[0.06em] text-cz-ink-3">
+          {hit.rule.rule_id ?? "RULE"} · {hit.aspect_id} · {hit.project_name}
+        </div>
+        <StatusPill status={hit.severity} />
+      </div>
+      <div className="mt-1 font-cz-sans text-[13.5px] font-semibold">{hit.headline}</div>
+      <p className="mt-1 font-cz-serif text-[12.5px] text-cz-ink-2">{hit.detail}</p>
+      <div className="mt-1.5 font-cz-mono text-[10.5px] text-cz-ink-3">
+        Fired on {hit.control_id} — {hit.control_title} · status {hit.status} ·{" "}
+        {hit.criticality} criticality · irreversibility {hit.irreversibility}
+        {hit.otherControls > 0 ? ` · ${hit.otherControls} further control(s) in the same aspect` : ""}
+      </div>
+      {hit.rule.false_positive_checks ? (
+        <div className="mt-1 font-cz-serif text-[12px] text-cz-ink-3">
+          Before escalating, check: {hit.rule.false_positive_checks}
+        </div>
+      ) : null}
+      <div className="mt-2.5">
+        <CzButton primary disabled={disabled || busy} onClick={onSubmit}>
+          {busy ? "Sending…" : "Send to reviewer queue"}
+        </CzButton>
+      </div>
+    </div>
+  );
+}
+
 function Queue() {
-  const { user, role } = useAuth();
+  const { user, role, assignedProjectIds } = useAuth();
+  const scope = useMemo(
+    () => visibleProjects(role, assignedProjectIds),
+    [role, assignedProjectIds],
+  );
+  const scoring = usePortfolioScoring(scope);
+  const [rules, setRules] = useState<SpecEscalationRule[]>([]);
+  const [submitting, setSubmitting] = useState<string | null>(null);
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,9 +251,37 @@ function Queue() {
 
   useEffect(() => {
     void load();
+    void fetchSpecRules()
+      .then(setRules)
+      .catch(() => setRules([]));
   }, []);
 
   const pending = items.filter((i) => i.status === "PENDING");
+
+  const hits = useMemo(() => {
+    if (!rules.length || !scoring.register.length) return [];
+    const already = new Set(items.map((i) => `${i.project_id}:${i.control_id}`));
+    return scoring.rollups
+      .flatMap((r) =>
+        evaluateRules(rules, scoring.register, r.instances, r.project, r.stageNumber),
+      )
+      .filter((h) => !already.has(`${h.project_id}:${h.control_id}`));
+  }, [rules, scoring.register, scoring.rollups, items]);
+
+  const aspectName = (id: string) =>
+    scoring.aspects.find((a) => a.aspect_id === id)?.aspect_name ?? id;
+
+  const promote = async (hit: RuleHit) => {
+    setSubmitting(hit.key);
+    try {
+      await submitHit(hit, aspectName(hit.aspect_id), user?.email ?? "ClaimZero engine");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That item did not reach the queue");
+    } finally {
+      setSubmitting(null);
+    }
+  };
   const shown = useMemo(
     () => (tab === "ALL" ? items : items.filter((i) => i.status === tab)),
     [items, tab],
@@ -257,6 +342,11 @@ function Queue() {
           sub={oldest >= 5 ? "past the 5-day service line" : "inside the service line"}
         />
         <Kpi
+          label="Rules fired, unqueued"
+          value={scoring.loading ? "…" : hits.length}
+          sub={`${rules.length} active escalation rules evaluated`}
+        />
+        <Kpi
           label="Decided"
           value={items.filter((i) => i.status !== "PENDING").length}
           sub={`${items.filter((i) => i.status === "APPROVED").length} approved · ${items.filter((i) => i.status === "CHANGES_REQUESTED").length} sent back`}
@@ -283,6 +373,33 @@ function Queue() {
         <p className="px-5 pt-3 text-[12.5px]" style={{ color: "var(--cz-critical)" }}>
           {error}
         </p>
+      )}
+
+      {tab === "PENDING" && (
+        <div className="px-5 pt-4">
+          <div className="cz-eyebrow" style={{ color: "var(--cz-accent)" }}>
+            —— Fired by rule, awaiting promotion ({hits.length})
+          </div>
+          <p className="mb-2 font-cz-serif text-[12.5px] text-cz-ink-2">
+            Produced by the escalation rules table running against live control status. Nothing
+            here was typed by hand; promoting an item puts it in front of a reviewer.
+          </p>
+          {scoring.loading && (
+            <p className="text-[13px] text-cz-ink-3">Evaluating the escalation rules…</p>
+          )}
+          {!scoring.loading && hits.length === 0 && (
+            <p className="text-[13px] text-cz-ink-3">No rule is firing outside the queue.</p>
+          )}
+          {hits.slice(0, 25).map((h) => (
+            <HitCard
+              key={h.key}
+              hit={h}
+              disabled={!canDecide}
+              busy={submitting === h.key}
+              onSubmit={() => void promote(h)}
+            />
+          ))}
+        </div>
       )}
 
       <div className="px-5 py-3.5 pb-12">
