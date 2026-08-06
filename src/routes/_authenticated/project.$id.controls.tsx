@@ -5,8 +5,13 @@ import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CONTROL_STATUSES,
+  CRITICALITIES,
+  CRITICALITY_COLOR,
   DOMAINS,
+  IRREVERSIBILITIES,
+  IRREVERSIBILITY_COLOR,
   STATUS_COLOR,
+  STATUS_LABEL,
   appliesTo,
   ensureInstances,
   evaluateEscalations,
@@ -20,7 +25,9 @@ import {
   type ControlInstance,
   type ControlSpec,
   type ControlStatus,
+  type Criticality,
   type EscalationRule,
+  type Irreversibility,
   type StageConfig,
 } from "@/lib/claimzero/controls";
 
