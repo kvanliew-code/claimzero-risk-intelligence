@@ -48,7 +48,7 @@ function RCard({
     >
       <h3 className="font-cz-sans text-[15px] font-semibold">{title}</h3>
       <p className="mt-1 mb-3 font-cz-serif text-[12.5px] text-cz-ink-2">{body}</p>
-      <CzButton primary={primary} onClick={onClick}>
+      <CzButton primary={primary === true} onClick={onClick}>
         {action}
       </CzButton>
     </div>
