@@ -351,7 +351,19 @@ export const REGISTER_CSV_COLUMNS = [
   "min_tier",
   "domain",
   "continuous",
+  "criticality",
+  "irreversibility",
+  "inherits_forward",
+  "title",
+  "objective",
+  "responsible_seat",
+  "supporting_seats",
+  "trigger_logic",
+  "dependencies",
+  "downstream_exposure",
+  "applicable_delivery_models",
 ] as const;
+
 
 /** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
 export function parseCsv(text: string): string[][] {
