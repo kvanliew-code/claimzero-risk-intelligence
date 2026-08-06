@@ -425,7 +425,7 @@ function Controls() {
                                         active={status === st}
                                         onClick={() => void update(s.control_id, { status: st })}
                                       >
-                                        {st}
+                                        {STATUS_LABEL[st]}
                                       </Pill>
                                     ))}
                                   </div>
