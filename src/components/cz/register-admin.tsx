@@ -131,7 +131,10 @@ export function ControlRegisterAdmin() {
             className={input + " max-w-[240px]"}
           />
           <CzButton onClick={exportCsv}>↓ Export CSV</CzButton>
-          <CzButton onClick={downloadTemplate}>↓ CSV template (24 columns)</CzButton>
+          <CzButton onClick={downloadTemplate}>
+            ↓ CSV template ({REGISTER_CSV_COLUMNS.length} columns)
+          </CzButton>
+
 
         </div>
         <div className="max-h-[420px] overflow-auto rounded-[6px] border border-cz-grid">
