@@ -77,15 +77,28 @@ function AuthPage() {
 
   const finish = () => navigate({ to: "/", replace: true });
 
-  const signIn = async (e: React.FormEvent) => {
+  const signIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Read straight from the DOM: password managers set input.value without
+    // firing React's synthetic change event, so React state can be stale/empty.
+    const fd = new FormData(e.currentTarget);
+    const emailValue = String(fd.get("email") ?? "").trim();
+    const passwordValue = String(fd.get("password") ?? "");
+    if (!emailValue || !passwordValue) {
+      setError("Enter your email and password.");
+      return;
+    }
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: emailValue,
+      password: passwordValue,
+    });
     setBusy(false);
     if (err) setError(err.message);
     else void finish();
   };
+
 
   const demo = async () => {
     setBusy(true);
@@ -145,7 +158,14 @@ function AuthPage() {
             </div>
           </div>
 
-          <form onSubmit={signIn} method="post" className="mt-8">
+          <form
+            id="claimzero-signin"
+            name="claimzero-signin"
+            onSubmit={signIn}
+            method="post"
+            action="#"
+            className="mt-8"
+          >
             <label className="cz-eyebrow block text-[10px]" htmlFor="email">
               Work email
             </label>
@@ -155,7 +175,7 @@ function AuthPage() {
               type="email"
               required
               autoComplete="username"
-              value={email}
+              defaultValue={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="name@company.com"
@@ -169,11 +189,12 @@ function AuthPage() {
               type="password"
               required
               autoComplete="current-password"
-              value={password}
+              defaultValue={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="••••••••••"
             />
+
 
             {error ? (
               <div
