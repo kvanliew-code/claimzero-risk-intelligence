@@ -193,8 +193,13 @@ export function stageGate(
   tier: Tier,
 ): StageGate {
   const specs = register.filter(
-    (c) => c.stage_number === stage.stage_number && appliesTo(c, stageNumber, tier),
+    (c) =>
+      appliesTo(c, stageNumber, tier) &&
+      (c.continuous
+        ? c.stage_number <= stage.stage_number
+        : c.stage_number === stage.stage_number),
   );
+
   const open = specs
     .map((c) => ({ spec: c, inst: instances.get(c.control_id) }))
     .filter((x) => x.inst?.status !== "Complete-Verified")
