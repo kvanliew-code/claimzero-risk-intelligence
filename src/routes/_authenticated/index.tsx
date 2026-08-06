@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
+import { disclosureFlags } from "@/lib/claimzero/docs";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
