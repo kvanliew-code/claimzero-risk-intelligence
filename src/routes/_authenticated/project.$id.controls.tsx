@@ -604,6 +604,20 @@ function Controls() {
                                   />
                                 </div>
                               </div>
+                              <EvidencePanel
+                                projectId={project.id}
+                                controlId={s.control_id}
+                                items={evidenceByControl.get(s.control_id) ?? []}
+                                onChanged={reloadEvidence}
+                                onVerify={(ref) =>
+                                  update(s.control_id, {
+                                    status: "COMPLETE_VERIFIED",
+                                    evidence_ref: ref,
+                                    verified_date: new Date().toISOString().slice(0, 10),
+                                  })
+                                }
+                              />
+
                             </div>
                           )}
                         </div>
