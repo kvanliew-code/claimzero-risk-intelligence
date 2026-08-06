@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedEngagementsRouteImport } from './routes/_authenticated/engagements'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
+import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -55,6 +56,11 @@ const AuthenticatedEngagementsRoute =
 const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPipelineRoute = AuthenticatedPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof AuthenticatedClientsRoute
   '/engagements': typeof AuthenticatedEngagementsRoute
   '/intake': typeof AuthenticatedIntakeRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/queue': typeof AuthenticatedQueueRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/clients': typeof AuthenticatedClientsRoute
   '/engagements': typeof AuthenticatedEngagementsRoute
   '/intake': typeof AuthenticatedIntakeRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/queue': typeof AuthenticatedQueueRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/engagements': typeof AuthenticatedEngagementsRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
+  '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/engagements'
     | '/intake'
+    | '/pipeline'
     | '/portfolio'
     | '/queue'
     | '/reports'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/engagements'
     | '/intake'
+    | '/pipeline'
     | '/portfolio'
     | '/queue'
     | '/reports'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients'
     | '/_authenticated/engagements'
     | '/_authenticated/intake'
+    | '/_authenticated/pipeline'
     | '/_authenticated/portfolio'
     | '/_authenticated/queue'
     | '/_authenticated/reports'
@@ -278,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/intake'
       fullPath: '/intake'
       preLoaderRoute: typeof AuthenticatedIntakeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pipeline': {
+      id: '/_authenticated/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AuthenticatedPipelineRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/portfolio': {
@@ -388,6 +407,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedEngagementsRoute: typeof AuthenticatedEngagementsRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
+  AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -400,6 +420,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedEngagementsRoute: AuthenticatedEngagementsRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
+  AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
@@ -418,13 +439,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
