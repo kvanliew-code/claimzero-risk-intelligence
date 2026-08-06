@@ -105,18 +105,22 @@ export function CzButton({
   primary,
   className = "",
   title,
+  disabled,
 }: {
   children: ReactNode;
   onClick?: (e: React.MouseEvent) => void;
   primary?: boolean;
   className?: string;
   title?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       title={title}
+      disabled={disabled}
       onClick={onClick}
+
       className={`cursor-pointer rounded-md border px-3 py-1.5 font-cz-mono text-[11px] tracking-[0.06em] uppercase transition-colors ${
         primary
           ? "border-transparent font-semibold text-white"
