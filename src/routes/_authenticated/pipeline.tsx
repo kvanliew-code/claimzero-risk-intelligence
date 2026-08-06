@@ -20,10 +20,15 @@ import {
   isRevenueDeal,
   totals,
   usd,
+  isOverdue,
+  importOpportunitiesCsv,
+  fetchReviewerDaysPerMonth,
+  OPPORTUNITY_CSV_COLUMNS,
   type CapacityRow,
   type OppStage,
   type Opportunity,
 } from "@/lib/claimzero/pipeline";
+import { parseCsv } from "@/lib/claimzero/controls";
 
 export const Route = createFileRoute("/_authenticated/pipeline")({
   head: () => ({
@@ -94,12 +99,22 @@ function Pipeline() {
   const [stageDraft, setStageDraft] = useState<OppStage>("IDENTIFIED");
   const [lossDraft, setLossDraft] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [daysPerMonth, setDaysPerMonth] = useState(20);
+  const [fSegment, setFSegment] = useState("");
+  const [fSource, setFSource] = useState("");
+  const [fOwner, setFOwner] = useState("");
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
   const load = async () => {
     try {
-      const [o, c] = await Promise.all([fetchOpportunities(), fetchCapacity()]);
+      const [o, c, d] = await Promise.all([
+        fetchOpportunities(),
+        fetchCapacity(),
+        fetchReviewerDaysPerMonth(),
+      ]);
       setRows(o);
       setCap(c);
+      setDaysPerMonth(d);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load the pipeline");
@@ -110,6 +125,42 @@ function Pipeline() {
   useEffect(() => {
     void load();
   }, []);
+
+  const segments = useMemo(
+    () => [...new Set(rows.map((o) => o.segment).filter(Boolean))].sort(),
+    [rows],
+  );
+  const sources = useMemo(
+    () => [...new Set(rows.map((o) => o.source).filter(Boolean))].sort(),
+    [rows],
+  );
+  const owners = useMemo(
+    () => [...new Set(rows.map((o) => o.owner).filter(Boolean))].sort(),
+    [rows],
+  );
+  const filtered = useMemo(
+    () =>
+      rows.filter(
+        (o) =>
+          (!fSegment || o.segment === fSegment) &&
+          (!fSource || o.source === fSource) &&
+          (!fOwner || o.owner === fOwner),
+      ),
+    [rows, fSegment, fSource, fOwner],
+  );
+
+  const onImport = async (file: File) => {
+    setImportMsg("Importing…");
+    try {
+      const res = await importOpportunitiesCsv(await file.text(), parseCsv);
+      setImportMsg(
+        `${res.rows} opportunities upserted${res.errors.length ? ` · ${res.errors.length} rejected` : ""}`,
+      );
+      await load();
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : "Import failed");
+    }
+  };
 
   const revenueDeals = useMemo(() => rows.filter(isRevenueDeal), [rows]);
   const acquisition = useMemo(
@@ -127,7 +178,7 @@ function Pipeline() {
   const acq = totals(acquisition);
   const exp = totals(expansion);
   const conv = expansionConversion(revenueDeals);
-  const months = useMemo(() => forecast(rows, cap), [rows, cap]);
+  const months = useMemo(() => forecast(rows, cap, daysPerMonth), [rows, cap, daysPerMonth]);
   const openDays = revenueDeals.filter(isOpen).reduce((a, o) => a + o.reviewer_days_required, 0);
   const lost = rows.filter((o) => o.stage === "LOST");
   const channel = rows.filter((o) => o.channel_deal);
@@ -136,14 +187,14 @@ function Pipeline() {
 
   const lossTally = useMemo(() => {
     const m = new Map<string, number>();
-    for (const o of lost) m.set(o.loss_reason, (m.get(o.loss_reason) ?? 0) + 1);
+    for (const o of lost) m.set(o.loss_reason_code || o.loss_reason || "UNCODED", (m.get(o.loss_reason_code || o.loss_reason || "UNCODED") ?? 0) + 1);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [lost]);
 
   const openDetail = (o: Opportunity) => {
     setOpen(o);
     setStageDraft(o.stage);
-    setLossDraft(o.loss_reason);
+    setLossDraft(o.loss_reason_code ?? o.loss_reason ?? "");
   };
 
   const saveStage = async () => {
@@ -156,6 +207,7 @@ function Pipeline() {
         stage: stageDraft,
         stage_entered: new Date().toISOString().slice(0, 10),
         loss_reason: stageDraft === "LOST" ? lossDraft : "",
+        loss_reason_code: stageDraft === "LOST" ? lossDraft : null,
       })
       .eq("id", open.id);
     setSaving(false);
@@ -167,7 +219,7 @@ function Pipeline() {
     await load();
   };
 
-  const byStage = (s: OppStage) => rows.filter((o) => o.stage === s);
+  const byStage = (s: OppStage) => filtered.filter((o) => o.stage === s);
 
   return (
     <div className="min-h-screen">
@@ -394,7 +446,7 @@ function Pipeline() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((o) => (
+              {filtered.map((o) => (
                 <tr
                   key={o.id}
                   className="cursor-pointer hover:bg-white/5"
@@ -459,7 +511,7 @@ function Pipeline() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-3 py-4 text-center text-cz-ink-3">
                     {loading ? "Loading…" : "No opportunities yet."}
