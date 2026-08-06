@@ -122,6 +122,66 @@ export type Database = {
         }
         Relationships: []
       }
+      control_evidence: {
+        Row: {
+          captured_by: string | null
+          captured_by_name: string
+          clause_ref: string
+          confidence: string
+          control_id: string
+          created_at: string
+          document_date: string | null
+          document_name: string
+          excerpt: string
+          file_size: number
+          id: string
+          mime_type: string
+          page_ref: string
+          project_id: number
+          source_class: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          captured_by?: string | null
+          captured_by_name?: string
+          clause_ref?: string
+          confidence?: string
+          control_id: string
+          created_at?: string
+          document_date?: string | null
+          document_name?: string
+          excerpt?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          page_ref?: string
+          project_id: number
+          source_class?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Update: {
+          captured_by?: string | null
+          captured_by_name?: string
+          clause_ref?: string
+          confidence?: string
+          control_id?: string
+          created_at?: string
+          document_date?: string | null
+          document_name?: string
+          excerpt?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          page_ref?: string
+          project_id?: number
+          source_class?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       control_register: {
         Row: {
           active: boolean

@@ -2,6 +2,8 @@ import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CzButton } from "@/components/cz/primitives";
 import { SourceDrawer } from "@/components/cz/source-drawer";
+import { EvidencePanel } from "@/components/cz/evidence-panel";
+import { fetchEvidence, type ControlEvidence } from "@/lib/claimzero/evidence";
 import { findingFor } from "@/lib/claimzero/demo";
 import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
@@ -156,6 +158,7 @@ function Controls() {
   const [instances, setInstances] = useState<ControlInstance[]>([]);
   const [criteria, setCriteria] = useState<ExitCriterion[]>([]);
   const [aspectDefs, setAspectDefs] = useState<AspectDef[]>([]);
+  const [evidence, setEvidence] = useState<ControlEvidence[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
@@ -173,12 +176,13 @@ function Controls() {
     (async () => {
       setLoading(true);
       try {
-        const [reg, stg, esc, crit, asp] = await Promise.all([
+        const [reg, stg, esc, crit, asp, ev] = await Promise.all([
           fetchRegister(),
           fetchStages(),
           fetchEscalationRules(),
           fetchExitCriteria(),
           fetchAspects(),
+          fetchEvidence(project.id).catch(() => [] as ControlEvidence[]),
         ]);
         const inst = await ensureInstances(project, reg);
         if (cancelled) return;
@@ -187,6 +191,7 @@ function Controls() {
         setRules(esc);
         setCriteria(crit);
         setAspectDefs(asp);
+        setEvidence(ev);
         setInstances(inst);
         setError(null);
       } catch (e) {
@@ -199,6 +204,24 @@ function Controls() {
       cancelled = true;
     };
   }, [project]);
+
+  const reloadEvidence = async () => {
+    try {
+      setEvidence(await fetchEvidence(project.id));
+    } catch {
+      /* evidence list stays as-is */
+    }
+  };
+
+  const evidenceByControl = useMemo(() => {
+    const m = new Map<string, ControlEvidence[]>();
+    for (const e of evidence) {
+      const list = m.get(e.control_id) ?? [];
+      list.push(e);
+      m.set(e.control_id, list);
+    }
+    return m;
+  }, [evidence]);
 
   const instMap = useMemo(() => new Map(instances.map((i) => [i.control_id, i])), [instances]);
   const applicable = useMemo(
@@ -501,6 +524,14 @@ function Controls() {
                               {s.control_id}
                             </span>
                             <span className="flex-1 text-[12.5px]">{s.title || s.requirement}</span>
+                            {(evidenceByControl.get(s.control_id)?.length ?? 0) > 0 && (
+                              <span
+                                className="shrink-0 font-cz-mono text-[9.5px]"
+                                style={{ color: "var(--cz-accent)" }}
+                              >
+                                ▤ {evidenceByControl.get(s.control_id)!.length}
+                              </span>
+                            )}
                             <span className="hidden shrink-0 gap-1 md:flex">
                               <Badge color={CRITICALITY_COLOR[s.criticality]} label={s.criticality} />
                               <Badge
@@ -581,6 +612,20 @@ function Controls() {
                                   />
                                 </div>
                               </div>
+                              <EvidencePanel
+                                projectId={project.id}
+                                controlId={s.control_id}
+                                items={evidenceByControl.get(s.control_id) ?? []}
+                                onChanged={reloadEvidence}
+                                onVerify={(ref) =>
+                                  update(s.control_id, {
+                                    status: "COMPLETE_VERIFIED",
+                                    evidence_ref: ref,
+                                    verified_date: new Date().toISOString().slice(0, 10),
+                                  })
+                                }
+                              />
+
                             </div>
                           )}
                         </div>
