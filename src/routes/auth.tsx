@@ -158,7 +158,14 @@ function AuthPage() {
             </div>
           </div>
 
-          <form onSubmit={signIn} method="post" className="mt-8">
+          <form
+            id="claimzero-signin"
+            name="claimzero-signin"
+            onSubmit={signIn}
+            method="post"
+            action="#"
+            className="mt-8"
+          >
             <label className="cz-eyebrow block text-[10px]" htmlFor="email">
               Work email
             </label>
@@ -168,7 +175,7 @@ function AuthPage() {
               type="email"
               required
               autoComplete="username"
-              value={email}
+              defaultValue={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="name@company.com"
@@ -182,11 +189,12 @@ function AuthPage() {
               type="password"
               required
               autoComplete="current-password"
-              value={password}
+              defaultValue={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="••••••••••"
             />
+
 
             {error ? (
               <div
