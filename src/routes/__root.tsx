@@ -123,14 +123,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const bare = pathname === "/auth";
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CzSidebar />
-      <div className="cz-main ml-[198px]">
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-      </div>
+      <AuthProvider>
+        <CzSidebar />
+        <div className={bare ? "cz-main" : "cz-main ml-[198px]"}>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </div>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
+
