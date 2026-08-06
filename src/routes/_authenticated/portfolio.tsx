@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { Sparkline, StatusPill, TrendTag, scoreColor } from "@/components/cz/primitives";
-import { STAGE_OPTIONS, projects, statusOf } from "@/lib/claimzero/data";
+import { STAGE_OPTIONS, statusOf } from "@/lib/claimzero/data";
+import { visibleProjects } from "@/lib/claimzero/access";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/portfolio")({
   head: () => ({
@@ -36,13 +38,18 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
 
 function Portfolio() {
   const navigate = useNavigate();
+  const { role, assignedProjectIds } = useAuth();
+  const scope = useMemo(
+    () => visibleProjects(role, assignedProjectIds),
+    [role, assignedProjectIds],
+  );
   const [stage, setStage] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("risk");
   const [q, setQ] = useState("");
 
   const list = useMemo(() => {
-    const out = projects.filter(
+    const out = scope.filter(
       (p) =>
         (!stage || p.stage === stage) &&
         (!status || statusOf(p.idx) === status) &&
@@ -56,7 +63,7 @@ function Portfolio() {
           : b.idx - a.idx,
     );
     return out;
-  }, [stage, status, sort, q]);
+  }, [scope, stage, status, sort, q]);
 
   const reds = list.filter((p) => statusOf(p.idx) === "Critical").length;
   const ser = list.filter((p) => statusOf(p.idx) === "Serious").length;
@@ -152,7 +159,7 @@ function Portfolio() {
           onChange={(e) => setQ(e.target.value)}
         />
         <span className="ml-auto font-cz-mono text-[11px] text-cz-ink-3">
-          {list.length} of {projects.length} projects
+          {list.length} of {scope.length} projects
         </span>
       </div>
 
