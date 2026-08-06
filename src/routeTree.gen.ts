@@ -9,180 +9,389 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as IntakeRouteImport } from './routes/intake'
-import { Route as PortfolioRouteImport } from './routes/portfolio'
-import { Route as QueueRouteImport } from './routes/queue'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ProjectIdRouteImport } from './routes/project.$id'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedEngagementsRouteImport } from './routes/_authenticated/engagements'
+import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
+import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
+import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedProjectIdRouteImport } from './routes/_authenticated/project.$id'
+import { Route as AuthenticatedProjectIdIndexRouteImport } from './routes/_authenticated/project.$id.index'
+import { Route as AuthenticatedProjectIdAspectsRouteImport } from './routes/_authenticated/project.$id.aspects'
+import { Route as AuthenticatedProjectIdDocumentsRouteImport } from './routes/_authenticated/project.$id.documents'
+import { Route as AuthenticatedProjectIdReportsRouteImport } from './routes/_authenticated/project.$id.reports'
+import { Route as AuthenticatedProjectIdTeamRouteImport } from './routes/_authenticated/project.$id.team'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const IntakeRoute = IntakeRouteImport.update({
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEngagementsRoute =
+  AuthenticatedEngagementsRouteImport.update({
+    id: '/engagements',
+    path: '/engagements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const PortfolioRoute = PortfolioRouteImport.update({
+const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const QueueRoute = QueueRouteImport.update({
+const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
   id: '/queue',
   path: '/queue',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ReportsRoute = ReportsRouteImport.update({
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ProjectIdRoute = ProjectIdRouteImport.update({
+const AuthenticatedProjectIdRoute = AuthenticatedProjectIdRouteImport.update({
   id: '/project/$id',
   path: '/project/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProjectIdIndexRoute =
+  AuthenticatedProjectIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
+const AuthenticatedProjectIdAspectsRoute =
+  AuthenticatedProjectIdAspectsRouteImport.update({
+    id: '/aspects',
+    path: '/aspects',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
+const AuthenticatedProjectIdDocumentsRoute =
+  AuthenticatedProjectIdDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
+const AuthenticatedProjectIdReportsRoute =
+  AuthenticatedProjectIdReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
+const AuthenticatedProjectIdTeamRoute =
+  AuthenticatedProjectIdTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/intake': typeof IntakeRoute
-  '/portfolio': typeof PortfolioRoute
-  '/queue': typeof QueueRoute
-  '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRoute
-  '/project/$id': typeof ProjectIdRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/engagements': typeof AuthenticatedEngagementsRoute
+  '/intake': typeof AuthenticatedIntakeRoute
+  '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/queue': typeof AuthenticatedQueueRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
+  '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
+  '/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
+  '/project/$id/team': typeof AuthenticatedProjectIdTeamRoute
+  '/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/intake': typeof IntakeRoute
-  '/portfolio': typeof PortfolioRoute
-  '/queue': typeof QueueRoute
-  '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRoute
-  '/project/$id': typeof ProjectIdRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/engagements': typeof AuthenticatedEngagementsRoute
+  '/intake': typeof AuthenticatedIntakeRoute
+  '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/queue': typeof AuthenticatedQueueRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
+  '/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
+  '/project/$id/team': typeof AuthenticatedProjectIdTeamRoute
+  '/project/$id': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/intake': typeof IntakeRoute
-  '/portfolio': typeof PortfolioRoute
-  '/queue': typeof QueueRoute
-  '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRoute
-  '/project/$id': typeof ProjectIdRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/engagements': typeof AuthenticatedEngagementsRoute
+  '/_authenticated/intake': typeof AuthenticatedIntakeRoute
+  '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
+  '/_authenticated/queue': typeof AuthenticatedQueueRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/project/$id': typeof AuthenticatedProjectIdRouteWithChildren
+  '/_authenticated/project/$id/aspects': typeof AuthenticatedProjectIdAspectsRoute
+  '/_authenticated/project/$id/documents': typeof AuthenticatedProjectIdDocumentsRoute
+  '/_authenticated/project/$id/reports': typeof AuthenticatedProjectIdReportsRoute
+  '/_authenticated/project/$id/team': typeof AuthenticatedProjectIdTeamRoute
+  '/_authenticated/project/$id/': typeof AuthenticatedProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
+    | '/clients'
+    | '/engagements'
     | '/intake'
     | '/portfolio'
     | '/queue'
     | '/reports'
     | '/settings'
     | '/project/$id'
+    | '/project/$id/aspects'
+    | '/project/$id/documents'
+    | '/project/$id/reports'
+    | '/project/$id/team'
+    | '/project/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/auth'
+    | '/clients'
+    | '/engagements'
     | '/intake'
     | '/portfolio'
     | '/queue'
     | '/reports'
     | '/settings'
+    | '/'
+    | '/project/$id/aspects'
+    | '/project/$id/documents'
+    | '/project/$id/reports'
+    | '/project/$id/team'
     | '/project/$id'
   id:
     | '__root__'
-    | '/'
-    | '/intake'
-    | '/portfolio'
-    | '/queue'
-    | '/reports'
-    | '/settings'
-    | '/project/$id'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/clients'
+    | '/_authenticated/engagements'
+    | '/_authenticated/intake'
+    | '/_authenticated/portfolio'
+    | '/_authenticated/queue'
+    | '/_authenticated/reports'
+    | '/_authenticated/settings'
+    | '/_authenticated/'
+    | '/_authenticated/project/$id'
+    | '/_authenticated/project/$id/aspects'
+    | '/_authenticated/project/$id/documents'
+    | '/_authenticated/project/$id/reports'
+    | '/_authenticated/project/$id/team'
+    | '/_authenticated/project/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  IntakeRoute: typeof IntakeRoute
-  PortfolioRoute: typeof PortfolioRoute
-  QueueRoute: typeof QueueRoute
-  ReportsRoute: typeof ReportsRoute
-  SettingsRoute: typeof SettingsRoute
-  ProjectIdRoute: typeof ProjectIdRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/intake': {
-      id: '/intake'
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/engagements': {
+      id: '/_authenticated/engagements'
+      path: '/engagements'
+      fullPath: '/engagements'
+      preLoaderRoute: typeof AuthenticatedEngagementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/intake': {
+      id: '/_authenticated/intake'
       path: '/intake'
       fullPath: '/intake'
-      preLoaderRoute: typeof IntakeRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIntakeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/portfolio': {
-      id: '/portfolio'
+    '/_authenticated/portfolio': {
+      id: '/_authenticated/portfolio'
       path: '/portfolio'
       fullPath: '/portfolio'
-      preLoaderRoute: typeof PortfolioRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedPortfolioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/queue': {
-      id: '/queue'
+    '/_authenticated/queue': {
+      id: '/_authenticated/queue'
       path: '/queue'
       fullPath: '/queue'
-      preLoaderRoute: typeof QueueRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedQueueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/reports': {
-      id: '/reports'
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
       path: '/reports'
       fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/settings': {
-      id: '/settings'
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/project/$id': {
-      id: '/project/$id'
+    '/_authenticated/project/$id': {
+      id: '/_authenticated/project/$id'
       path: '/project/$id'
       fullPath: '/project/$id'
-      preLoaderRoute: typeof ProjectIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProjectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/project/$id/': {
+      id: '/_authenticated/project/$id/'
+      path: '/'
+      fullPath: '/project/$id/'
+      preLoaderRoute: typeof AuthenticatedProjectIdIndexRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
+    '/_authenticated/project/$id/aspects': {
+      id: '/_authenticated/project/$id/aspects'
+      path: '/aspects'
+      fullPath: '/project/$id/aspects'
+      preLoaderRoute: typeof AuthenticatedProjectIdAspectsRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
+    '/_authenticated/project/$id/documents': {
+      id: '/_authenticated/project/$id/documents'
+      path: '/documents'
+      fullPath: '/project/$id/documents'
+      preLoaderRoute: typeof AuthenticatedProjectIdDocumentsRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
+    '/_authenticated/project/$id/reports': {
+      id: '/_authenticated/project/$id/reports'
+      path: '/reports'
+      fullPath: '/project/$id/reports'
+      preLoaderRoute: typeof AuthenticatedProjectIdReportsRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
+    }
+    '/_authenticated/project/$id/team': {
+      id: '/_authenticated/project/$id/team'
+      path: '/team'
+      fullPath: '/project/$id/team'
+      preLoaderRoute: typeof AuthenticatedProjectIdTeamRouteImport
+      parentRoute: typeof AuthenticatedProjectIdRoute
     }
   }
 }
 
+interface AuthenticatedProjectIdRouteChildren {
+  AuthenticatedProjectIdAspectsRoute: typeof AuthenticatedProjectIdAspectsRoute
+  AuthenticatedProjectIdDocumentsRoute: typeof AuthenticatedProjectIdDocumentsRoute
+  AuthenticatedProjectIdReportsRoute: typeof AuthenticatedProjectIdReportsRoute
+  AuthenticatedProjectIdTeamRoute: typeof AuthenticatedProjectIdTeamRoute
+  AuthenticatedProjectIdIndexRoute: typeof AuthenticatedProjectIdIndexRoute
+}
+
+const AuthenticatedProjectIdRouteChildren: AuthenticatedProjectIdRouteChildren =
+  {
+    AuthenticatedProjectIdAspectsRoute: AuthenticatedProjectIdAspectsRoute,
+    AuthenticatedProjectIdDocumentsRoute: AuthenticatedProjectIdDocumentsRoute,
+    AuthenticatedProjectIdReportsRoute: AuthenticatedProjectIdReportsRoute,
+    AuthenticatedProjectIdTeamRoute: AuthenticatedProjectIdTeamRoute,
+    AuthenticatedProjectIdIndexRoute: AuthenticatedProjectIdIndexRoute,
+  }
+
+const AuthenticatedProjectIdRouteWithChildren =
+  AuthenticatedProjectIdRoute._addFileChildren(
+    AuthenticatedProjectIdRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedEngagementsRoute: typeof AuthenticatedEngagementsRoute
+  AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
+  AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
+  AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedProjectIdRoute: typeof AuthenticatedProjectIdRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedEngagementsRoute: AuthenticatedEngagementsRoute,
+  AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
+  AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
+  AuthenticatedQueueRoute: AuthenticatedQueueRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedProjectIdRoute: AuthenticatedProjectIdRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  IntakeRoute: IntakeRoute,
-  PortfolioRoute: PortfolioRoute,
-  QueueRoute: QueueRoute,
-  ReportsRoute: ReportsRoute,
-  SettingsRoute: SettingsRoute,
-  ProjectIdRoute: ProjectIdRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
