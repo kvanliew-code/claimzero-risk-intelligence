@@ -147,10 +147,10 @@ export function Row3({
       }`}
     >
       <span className="min-w-0 flex-[3]">{a}</span>
-      <span className="mx-2.5 min-w-0 flex-[4] text-right font-cz-mono text-[11px] text-cz-ink-3">
+      <span className="mx-2.5 min-w-0 flex-[2] text-right font-cz-mono text-[11px] text-cz-ink-3">
         {b}
       </span>
-      <span className="w-[74px] flex-none text-right font-cz-mono text-[11px]">{c}</span>
+      <span className="w-[168px] flex-none text-right font-cz-mono text-[11px]">{c}</span>
     </div>
   );
 }
