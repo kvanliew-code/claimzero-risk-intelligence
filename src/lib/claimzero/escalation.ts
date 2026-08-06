@@ -77,11 +77,17 @@ const UNSATISFIED: ControlStatus[] = [
   "BLOCKED",
   "OVERDUE",
   "EVIDENCE_NOT_LOCATED",
-  "NOT_STARTED",
-  "CONTROLLED_ASSUMPTION",
-  "COMPLETE_UNVERIFIED",
-  "IN_PROGRESS",
 ];
+
+/**
+ * A rule only escalates where the failure is material: an adverse finding, or
+ * a blocked / overdue / unevidenced control that is itself CRITICAL. Anything
+ * softer belongs on the control register, not in front of a reviewer.
+ */
+function isMaterial(status: ControlStatus, criticality: string): boolean {
+  if (status === "ADVERSE") return true;
+  return criticality === "CRITICAL";
+}
 
 /** The order in which an unsatisfied status is worth escalating. */
 const SEVERITY_RANK: Record<string, number> = {
@@ -108,6 +114,9 @@ export function evaluateRules(
   stageNumber: number,
 ): RuleHit[] {
   const hits: RuleHit[] = [];
+  // One control feeds one rule. Without this, a dozen rules in the same aspect
+  // all cite the same failing control and the queue reads as noise.
+  const claimed = new Set<string>();
 
   for (const rule of rules) {
     if (!rule.aspect_id) continue;
@@ -121,7 +130,12 @@ export function evaluateRules(
           (rule.stages.length === 0 || rule.stages.includes(c.stage_number) || c.continuous),
       )
       .map((c) => ({ spec: c, status: instances.get(c.control_id)?.status as ControlStatus }))
-      .filter((x) => x.status && UNSATISFIED.includes(x.status));
+      .filter(
+        (x) =>
+          x.status &&
+          UNSATISFIED.includes(x.status) &&
+          isMaterial(x.status, x.spec.criticality),
+      );
 
     if (candidates.length === 0) continue;
 
@@ -133,7 +147,9 @@ export function evaluateRules(
       );
     });
 
-    const worst = candidates[0]!;
+    const worst = candidates.find((c) => !claimed.has(c.spec.control_id));
+    if (!worst) continue;
+    claimed.add(worst.spec.control_id);
     const floorSeverity = severityOf(rule.severity_floor);
     const severity: StatusName =
       worst.status === "ADVERSE" || worst.spec.criticality === "CRITICAL"
