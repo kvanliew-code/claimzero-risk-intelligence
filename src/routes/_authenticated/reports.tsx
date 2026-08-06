@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
-import { PROJECTS, statusOf } from "@/lib/claimzero/data";
+import { projects, statusOf } from "@/lib/claimzero/data";
 import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
 
 export const Route = createFileRoute("/_authenticated/reports")({
@@ -104,7 +104,7 @@ function Foot({ left }: { left: string }) {
 }
 
 function Weekly() {
-  const project = PROJECTS[0]!;
+  const project = projects[0]!;
   const scoring = useProjectScoring(project);
   const top = scoring.scores
     .filter((a) => a.score !== null)
