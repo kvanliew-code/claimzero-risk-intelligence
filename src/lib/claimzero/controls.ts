@@ -79,7 +79,41 @@ export const STATUS_COLOR: Record<ControlStatus, string> = {
   SUPERSEDED: "var(--cz-ink-3)",
 };
 
+/** v4.0 §6 — the thirteen artefact classes a control can be satisfied by. */
+export const EVIDENCE_CLASSES = [
+  "INTERNAL_ANALYSIS",
+  "EXECUTED_INSTRUMENT",
+  "SCHEDULE_ARTIFACT",
+  "LOG_OR_REGISTER",
+  "AGENCY_ISSUANCE",
+  "DESIGN_DELIVERABLE",
+  "RECORD_OTHER",
+  "FINANCIAL_STATEMENT",
+  "THIRD_PARTY_REPORT",
+  "CORRESPONDENCE_NOTICE",
+  "INSPECTION_TEST_RECORD",
+  "INSURANCE_BOND",
+  "ATTESTATION",
+] as const;
+export type EvidenceClass = (typeof EVIDENCE_CLASSES)[number];
+
+/**
+ * v4.0 §6 — what a reviewer must do before COMPLETE_VERIFIED is permitted,
+ * ordered weakest to strongest. NOT_VERIFIABLE_BY_DOCUMENT can never reach
+ * COMPLETE_VERIFIED at all, so it sits outside the ordinal scale.
+ */
+export const VERIFICATION_METHODS = [
+  "DOCUMENT_ON_FILE",
+  "SOURCE_VERIFIED",
+  "RECOMPUTED",
+  "AGENCY_CONFIRMED",
+  "COUNTERPARTY_CONFIRMED",
+  "NOT_VERIFIABLE_BY_DOCUMENT",
+] as const;
+export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
+
 export interface ControlSpec {
+
   id: string;
   control_id: string;
   stage_number: number;
@@ -107,9 +141,14 @@ export interface ControlSpec {
   downstream_exposure: string;
   /** Comma-separated delivery models; blank means all. */
   applicable_delivery_models: string;
+  /** v4.0 — what kind of artefact satisfies this control. */
+  evidence_class: EvidenceClass | "";
+  /** v4.0 — what the reviewer must do before COMPLETE_VERIFIED is permitted. */
+  verification_method: VerificationMethod | "";
   /** Aspect roll-up (A01–A15), derived from family_code by the register. */
   aspect_id: string | null;
 }
+
 
 
 export interface ControlInstance {
@@ -366,7 +405,10 @@ export const REGISTER_CSV_COLUMNS = [
   "dependencies",
   "downstream_exposure",
   "applicable_delivery_models",
+  "evidence_class",
+  "verification_method",
 ] as const;
+
 
 
 /** Minimal RFC-4180 CSV parser (quoted fields, embedded commas and newlines). */
@@ -403,6 +445,20 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+/**
+ * v4.0 accepts either the legacy A/B/C control tiers or the CORE/EXTENDED/
+ * COMPREHENSIVE labels. Returns null for anything unrecognised — the caller
+ * must surface that as an import error rather than substituting a default.
+ * A silent default here is what pushed every row to a single tier last time.
+ */
+export function normaliseControlTier(raw: string): Tier | null {
+  const v = raw.trim().toUpperCase();
+  if (v === "A" || v === "CORE") return "A";
+  if (v === "B" || v === "EXTENDED") return "B";
+  if (v === "C" || v === "COMPREHENSIVE") return "C";
+  return null;
+}
+
 export function csvToControls(text: string): Partial<ControlSpec>[] {
   const rows = parseCsv(text);
   if (rows.length < 2) return [];
@@ -414,13 +470,22 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
       if (!REGISTER_CSV_COLUMNS.includes(h as (typeof REGISTER_CSV_COLUMNS)[number])) return;
       if (h === "stage_number") rec[h] = Number(v);
       else if (h === "continuous" || h === "inherits_forward") rec[h] = /^(true|yes|y|1)$/i.test(v);
-      else if (h === "min_tier") rec[h] = (v || "A").toUpperCase();
-      else if (h === "criticality") {
+      else if (h === "min_tier") {
+        const tier = normaliseControlTier(v);
+        // Never coerce. registerCsvIssues() blocks the import when this is null.
+        if (tier) rec[h] = tier;
+      } else if (h === "criticality") {
         const up = v.toUpperCase().replace(/[\s-]+/g, "_");
         rec[h] = CRITICALITIES.includes(up as Criticality) ? up : "HIGH";
       } else if (h === "irreversibility") {
         const up = v.toUpperCase().replace(/[\s-]+/g, "_");
         rec[h] = IRREVERSIBILITIES.includes(up as Irreversibility) ? up : "MEDIUM";
+      } else if (h === "evidence_class") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = EVIDENCE_CLASSES.includes(up as EvidenceClass) ? up : "";
+      } else if (h === "verification_method") {
+        const up = v.toUpperCase().replace(/[\s-]+/g, "_");
+        rec[h] = VERIFICATION_METHODS.includes(up as VerificationMethod) ? up : "";
       } else if (h === "applicable_delivery_models") {
         rec[h] = v
           .split(",")
@@ -432,6 +497,50 @@ export function csvToControls(text: string): Partial<ControlSpec>[] {
     return rec as Partial<ControlSpec>;
   });
 }
+
+/**
+ * Pre-flight gate for a register import. An import that reports issues must be
+ * refused outright: a partially-coerced register is worse than no import.
+ */
+export function registerCsvIssues(text: string): string[] {
+  const rows = parseCsv(text);
+  const issues: string[] = [];
+  if (rows.length < 2) return ["File contains no data rows."];
+  const header = rows[0]!.map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+
+  for (const required of ["control_id", "min_tier", "stage_number", "family_code"]) {
+    if (!header.includes(required)) issues.push(`Missing required column: ${required}`);
+  }
+  if (issues.length > 0) return issues;
+
+  const tierIdx = header.indexOf("min_tier");
+  const idIdx = header.indexOf("control_id");
+  const seen = new Set<string>();
+  let badTier = 0;
+  let blankTier = 0;
+
+  for (const r of rows.slice(1)) {
+    const id = (r[idIdx] ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) issues.push(`Duplicate control_id: ${id}`);
+    seen.add(id);
+    const raw = (r[tierIdx] ?? "").trim();
+    if (!raw) blankTier++;
+    else if (!normaliseControlTier(raw)) badTier++;
+  }
+  if (blankTier > 0) issues.push(`${blankTier} row(s) have a blank min_tier. Tiers are never defaulted.`);
+  if (badTier > 0) issues.push(`${badTier} row(s) have an unrecognised min_tier value.`);
+
+  // A register that lands on one tier is the signature of the v3.0 defect.
+  const tiers = new Set(
+    rows.slice(1).map((r) => normaliseControlTier((r[tierIdx] ?? "").trim())).filter(Boolean),
+  );
+  if (seen.size > 50 && tiers.size === 1) {
+    issues.push(`All ${seen.size} rows resolved to a single tier — refusing the import.`);
+  }
+  return issues.slice(0, 25);
+}
+
 
 export function controlsToCsv(rows: ControlSpec[]): string {
   const esc = (v: unknown) => {

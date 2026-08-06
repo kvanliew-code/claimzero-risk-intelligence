@@ -6,6 +6,8 @@ import {
   REGISTER_CSV_COLUMNS,
   controlsToCsv,
   csvToControls,
+  registerCsvIssues,
+
   fetchEscalationRules,
   fetchRegister,
   fetchStages,
@@ -63,11 +65,17 @@ export function ControlRegisterAdmin() {
   };
 
   const importCsv = async () => {
+    const issues = registerCsvIssues(csv);
+    if (issues.length > 0) {
+      setMsg(`Import refused — ${issues.join(" · ")}`);
+      return;
+    }
     const parsed = csvToControls(csv).filter((r) => r.control_id);
     if (parsed.length === 0) {
       setMsg("No rows found — the header must include control_id.");
       return;
     }
+
     setBusy(true);
     const { error } = await supabase
       .from("control_register")
