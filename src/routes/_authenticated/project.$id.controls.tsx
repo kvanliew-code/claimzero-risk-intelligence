@@ -176,12 +176,13 @@ function Controls() {
     (async () => {
       setLoading(true);
       try {
-        const [reg, stg, esc, crit, asp] = await Promise.all([
+        const [reg, stg, esc, crit, asp, ev] = await Promise.all([
           fetchRegister(),
           fetchStages(),
           fetchEscalationRules(),
           fetchExitCriteria(),
           fetchAspects(),
+          fetchEvidence(project.id).catch(() => [] as ControlEvidence[]),
         ]);
         const inst = await ensureInstances(project, reg);
         if (cancelled) return;
@@ -190,6 +191,7 @@ function Controls() {
         setRules(esc);
         setCriteria(crit);
         setAspectDefs(asp);
+        setEvidence(ev);
         setInstances(inst);
         setError(null);
       } catch (e) {
@@ -202,6 +204,24 @@ function Controls() {
       cancelled = true;
     };
   }, [project]);
+
+  const reloadEvidence = async () => {
+    try {
+      setEvidence(await fetchEvidence(project.id));
+    } catch {
+      /* evidence list stays as-is */
+    }
+  };
+
+  const evidenceByControl = useMemo(() => {
+    const m = new Map<string, ControlEvidence[]>();
+    for (const e of evidence) {
+      const list = m.get(e.control_id) ?? [];
+      list.push(e);
+      m.set(e.control_id, list);
+    }
+    return m;
+  }, [evidence]);
 
   const instMap = useMemo(() => new Map(instances.map((i) => [i.control_id, i])), [instances]);
   const applicable = useMemo(
