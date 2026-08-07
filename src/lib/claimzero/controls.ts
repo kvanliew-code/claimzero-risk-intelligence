@@ -40,7 +40,16 @@ export const STATUS_LABEL: Record<ControlStatus, string> = {
 export const DOMAINS = ["cost", "schedule", "design", "quality", "people", "compliance"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
-export type Tier = "A" | "B" | "C";
+/** v4.0 §5 — control-side tiers. Ordinal, weakest first. */
+export const CONTROL_TIERS = ["CORE", "EXTENDED", "COMPREHENSIVE"] as const;
+export type ControlTier = (typeof CONTROL_TIERS)[number];
+
+/** v4.0 §5 — project-side tiers. ESSENTIAL sees CORE only; COMPREHENSIVE sees all. */
+export const PROJECT_TIERS = ["ESSENTIAL", "STANDARD", "COMPREHENSIVE"] as const;
+export type ProjectTier = (typeof PROJECT_TIERS)[number];
+
+/** Historic alias — project tier is the one the scoring engine takes. */
+export type Tier = ProjectTier;
 
 export const CRITICALITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
 export type Criticality = (typeof CRITICALITIES)[number];
@@ -124,7 +133,7 @@ export interface ControlSpec {
   expected_evidence: string;
   primary_owner_role: string;
   dependency: string;
-  min_tier: Tier;
+  min_tier: ControlTier;
   domain: Domain;
   /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
   continuous: boolean;
@@ -192,14 +201,33 @@ const STAGE_NUMBER: Record<string, number> = {
 
 export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
 
-/** Tier is a function of program size: C major ≥ $250M, B institutional ≥ $100M, otherwise A standard. */
-export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "C" : p.sizeM >= 100 ? "B" : "A");
+/**
+ * v4.0 §5 — engagement default from contract value: under $25M ESSENTIAL,
+ * $25M–$100M STANDARD, above $100M COMPREHENSIVE. Overridable with a reason.
+ */
+export const tierForValue = (sizeM: number): ProjectTier =>
+  sizeM > 100 ? "COMPREHENSIVE" : sizeM >= 25 ? "STANDARD" : "ESSENTIAL";
 
-const TIER_RANK: Record<Tier, number> = { A: 1, B: 2, C: 3 };
+export const tierFor = (p: Project): ProjectTier => tierForValue(p.sizeM);
 
-/** A control applies when the project has reached its stage and meets its minimum tier. */
-export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): boolean {
-  return spec.active && spec.stage_number <= stageNumber && TIER_RANK[tier] >= TIER_RANK[spec.min_tier];
+const CONTROL_TIER_RANK: Record<ControlTier, number> = {
+  CORE: 1,
+  EXTENDED: 2,
+  COMPREHENSIVE: 3,
+};
+const PROJECT_TIER_RANK: Record<ProjectTier, number> = {
+  ESSENTIAL: 1,
+  STANDARD: 2,
+  COMPREHENSIVE: 3,
+};
+
+/** ESSENTIAL sees CORE, STANDARD sees CORE+EXTENDED, COMPREHENSIVE sees everything. */
+export function appliesTo(spec: ControlSpec, stageNumber: number, tier: ProjectTier): boolean {
+  return (
+    spec.active &&
+    spec.stage_number <= stageNumber &&
+    (PROJECT_TIER_RANK[tier] ?? 0) >= (CONTROL_TIER_RANK[spec.min_tier] ?? 99)
+  );
 }
 
 
@@ -451,11 +479,11 @@ export function parseCsv(text: string): string[][] {
  * must surface that as an import error rather than substituting a default.
  * A silent default here is what pushed every row to a single tier last time.
  */
-export function normaliseControlTier(raw: string): Tier | null {
+export function normaliseControlTier(raw: string): ControlTier | null {
   const v = raw.trim().toUpperCase();
-  if (v === "A" || v === "CORE") return "A";
-  if (v === "B" || v === "EXTENDED") return "B";
-  if (v === "C" || v === "COMPREHENSIVE") return "C";
+  if (v === "A" || v === "CORE") return "CORE";
+  if (v === "B" || v === "EXTENDED") return "EXTENDED";
+  if (v === "C" || v === "COMPREHENSIVE") return "COMPREHENSIVE";
   return null;
 }
 
@@ -554,3 +582,45 @@ export function controlsToCsv(rows: ControlSpec[]): string {
     ),
   ].join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Family applicability (v1.0 rules). The predicate grammar is evaluated by the
+// database function get_project_family_applicability — one implementation, on
+// the server, used by every consumer. Nothing re-implements it client-side.
+// ---------------------------------------------------------------------------
+
+export interface FamilyVerdict {
+  family_code: string;
+  applies: boolean;
+  reason: string;
+}
+
+export type FamilyApplicability = Map<string, FamilyVerdict>;
+
+export async function fetchFamilyApplicability(projectId: number): Promise<FamilyApplicability> {
+  const { data, error } = await supabase.rpc("get_project_family_applicability", {
+    p_project_id: projectId,
+  });
+  if (error) throw error;
+  const out: FamilyApplicability = new Map();
+  for (const row of (data ?? []) as FamilyVerdict[]) {
+    out.set(row.family_code, {
+      family_code: row.family_code,
+      applies: row.applies !== false,
+      reason: row.reason ?? "Family does not apply to this project profile",
+    });
+  }
+  return out;
+}
+
+/** A family is suppressed only when the engine says so; unknown families apply. */
+export const familyApplies = (fa: FamilyApplicability | undefined, code: string): boolean =>
+  fa ? (fa.get(code)?.applies ?? true) : true;
+
+export const suppressionReason = (
+  fa: FamilyApplicability | undefined,
+  code: string,
+): string | null => {
+  const v = fa?.get(code);
+  return v && !v.applies ? v.reason : null;
+};

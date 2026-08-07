@@ -10,6 +10,7 @@ import {
   seededStatus,
   stageNumberFor,
   tierFor,
+  type ProjectTier,
   type ControlInstance,
   type ControlSpec,
   type ControlStatus,
@@ -28,7 +29,7 @@ import type { Project } from "./data";
 export interface ProjectRollup {
   project: Project;
   stageNumber: number;
-  tier: "A" | "B" | "C";
+  tier: ProjectTier;
   scores: AspectScore[];
   instances: Map<string, ControlInstance>;
   composite: Composite;
