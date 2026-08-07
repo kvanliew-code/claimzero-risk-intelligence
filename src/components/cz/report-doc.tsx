@@ -18,6 +18,25 @@ function H4({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * NO FINDING WITHOUT A REMEDY. Every failing or at-risk line carries the work
+ * that raises it, the seat accountable, the cost and the required-by date.
+ */
+function RemedyBlock({ remedy }: { remedy: Remedy }) {
+  return (
+    <div className="mt-1.5 border-l-2 border-cz-accent pl-2.5">
+      <span className="font-cz-mono text-[9px] tracking-[0.12em] uppercase text-cz-accent">
+        Remedy
+      </span>
+      <p className="font-cz-serif text-[12.5px] text-cz-ink-2">{remedy.work}</p>
+      <p className="font-cz-mono text-[10px] tracking-[0.04em] text-cz-ink-3">
+        SEAT: {remedy.seat} · COST: {remedy.cost} · REQUIRED BY: {remedy.requiredBy}
+      </p>
+    </div>
+  );
+}
+
+
 function Section({ s }: { s: ReportSection }) {
   switch (s.type) {
     case "narrative":
