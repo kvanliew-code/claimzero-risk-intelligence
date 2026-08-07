@@ -560,12 +560,15 @@ const gradeFor = (
 const STAGE_KPI: Record<number, string> = {
   1: "Basis of cost — land, entitlement assumptions and underwriting inputs evidenced before close",
   2: "Conditions of approval priced and scheduled before they become a cost event",
-  3: "Design completeness against the budget the equity was raised on",
-  4: "GMP integrity — scope gaps, allowances and contingency sized to the risk carried",
-  5: "Cost and schedule growth controlled and evidenced as it happens",
-  6: "Closeout evidence secured while the trades are still on site and payable",
-  7: "Sellout and turnover exposure closed out of the record",
+  3: "Design intent fixed against the programme and the budget the equity was raised on",
+  4: "Design completeness and coordination proven before the set goes out to price",
+  5: "GMP integrity — scope gaps, allowances and contingency sized to the risk carried",
+  6: "Cost and schedule growth controlled and evidenced as it happens",
+  7: "Takeout secured — the capital event that retires construction debt, evidenced before maturity",
+  8: "Closeout evidence secured while the trades are still on site and payable",
+  9: "Sellout and turnover exposure closed out of the record",
 };
+
 
 const timeMoneyGenerator: Generator = (ctx) => {
   const { scoring, stageNumber, project } = ctx;
