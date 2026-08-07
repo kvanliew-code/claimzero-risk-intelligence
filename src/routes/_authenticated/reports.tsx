@@ -1,10 +1,29 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
 import { statusOf, useProjects, type Project } from "@/lib/claimzero/data";
-import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
+import { useProjectScoring, type ProjectScoring } from "@/lib/claimzero/useProjectScoring";
+import { ReportDoc } from "@/components/cz/report-doc";
+import { renderPublishedReport } from "@/lib/claimzero/report-print.functions";
+import {
+  advanceStatus,
+  fetchEscalationRules,
+  fetchReportDefinitions,
+  fetchReports,
+  generateReport,
+  isImplemented,
+  nextRevision,
+  publishReport,
+  saveDraft,
+  stageName,
+  type GeneratedReport,
+  type ReportDefinition,
+  type ReportRow,
+} from "@/lib/claimzero/reports";
+import type { SpecEscalationRule } from "@/lib/claimzero/escalation";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -103,13 +122,6 @@ function Foot({ left }: { left: string }) {
   );
 }
 
-function Weekly() {
-  const project = useProjects()[0];
-  if (!project)
-    return <div className="p-6 font-cz-mono text-[12px] text-cz-ink-3">Loading portfolio…</div>;
-  return <WeeklyBody project={project} />;
-}
-
 function WeeklyBody({ project }: { project: Project }) {
   const scoring = useProjectScoring(project);
   const top = scoring.scores
@@ -122,7 +134,7 @@ function WeeklyBody({ project }: { project: Project }) {
     <>
       <RdHead
         title="Weekly Development Intelligence Report"
-        meta={`1428 Brickell · Miami, FL · $500M · Week 32 · Mon ${TODAY} · v.W32-1`}
+        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · Mon ${TODAY}`}
       />
       <H4>Project Risk Index</H4>
       <div className="flex flex-wrap items-center gap-3.5">
@@ -193,12 +205,12 @@ function WeeklyBody({ project }: { project: Project }) {
   );
 }
 
-function Monthly() {
+function Monthly({ project }: { project: Project }) {
   return (
     <>
       <RdHead
         title="End-of-Month Executive Report"
-        meta={`1428 Brickell · Miami, FL · July 2026 · issued ${TODAY} · v.M07-1`}
+        meta={`${project.name} · ${project.city} · July 2026 · issued ${TODAY}`}
       />
       <H4>The month in one paragraph</H4>
       <Commentary>
@@ -289,59 +301,3 @@ function Monthly() {
   );
 }
 
-function Reports() {
-  const navigate = useNavigate();
-  const [doc, setDoc] = useState<"none" | "weekly" | "monthly">("none");
-
-  return (
-    <div className="min-h-screen">
-      <CzHeader
-        crumb={
-          <>
-            <b className="text-cz-ink-1">Reports</b> · concept mockup · synthetic data
-          </>
-        }
-      />
-      <div className="cz-no-print">
-        <SHead
-          title="Reports"
-          note="every report cites its records and passes the reviewer gate before it leaves the building"
-        />
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3 px-5 py-3.5">
-          <RCard
-            title="Weekly Development Intelligence Report"
-            body="The Monday one-pager: Top 10 risks, priced and cited, with senior commentary. Five-minute read; act the same day."
-            action="Generate — 1428 Brickell, Wk 32 →"
-            primary
-            onClick={() => setDoc("weekly")}
-          />
-          <RCard
-            title="End-of-Month Executive Report"
-            body="The month reconciled: cost vs budget vs pro forma, schedule, draws pencil-walked, risks opened and retired, the city ledger."
-            action="Generate — 1428 Brickell, July →"
-            primary
-            onClick={() => setDoc("monthly")}
-          />
-          <RCard
-            title="Stakeholder Packages"
-            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR. Issued only from reviewed risks, so each package is assembled per project from its own Reports tab."
-            action="Open a project → Reports"
-            onClick={() => navigate({ to: "/portfolio" })}
-          />
-
-        </div>
-      </div>
-
-      {doc !== "none" ? (
-        <div className="cz-print-doc mx-5 my-4 max-w-[880px] rounded-lg border border-cz-rule bg-cz-surface px-[30px] py-[26px]">
-          {doc === "weekly" ? <Weekly /> : <Monthly />}
-          <div className="cz-no-print mt-3.5">
-            <CzButton primary onClick={() => window.print()}>
-              Print / Save as PDF
-            </CzButton>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
