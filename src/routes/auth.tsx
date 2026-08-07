@@ -112,7 +112,7 @@ function AuthPage() {
           </div>
           <p className="mt-2 max-w-[440px] font-cz-serif text-[14px] text-cz-ink-2">
             Every flagged risk cites a source record and passes a reviewer approval gate before it
-            reaches an owner. Nothing is estimated; missing inputs are declared, never filled in.
+            reaches an Owner. You see problems before they become claims — source-cited, reviewer-approved, and never estimated.
           </p>
         </div>
       </div>
