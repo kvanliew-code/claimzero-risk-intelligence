@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
@@ -284,6 +284,7 @@ function Monthly() {
 }
 
 function Reports() {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<"none" | "weekly" | "monthly">("none");
 
   return (
