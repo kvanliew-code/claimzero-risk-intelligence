@@ -62,6 +62,30 @@ export interface Citation {
   clause?: string;
 }
 
+/**
+ * NO FINDING WITHOUT A REMEDY.
+ *
+ * Binding rule (REPORT_STYLE.md). Every failing or at-risk line in every
+ * ClaimZero report carries the specific work that raises it, the named seat
+ * accountable for doing it, what it costs and the date it is required by.
+ * A mark without a remedy is a complaint, not intelligence.
+ *
+ * `cost` and `requiredBy` are withheld rather than estimated when the facts
+ * have not been captured — the withholding is itself the finding.
+ */
+export interface Remedy {
+  /** The specific work that raises the mark. Never "monitor" or "review". */
+  work: string;
+  /** Named responsible seat. Never a company, never blank. */
+  seat: string;
+  /** Cost of the remedy, or an explicit withholding. */
+  cost: string;
+  /** Date the work must be complete by, or the gate it must precede. */
+  requiredBy: string;
+}
+
+
+
 export interface Column {
   key: string;
   label: string;
@@ -113,13 +137,61 @@ export type ReportSection =
   | {
       type: "finding_list";
       title: string;
-      items: { headline: string; detail: string; severity: string; consequence: string }[];
+      items: {
+        headline: string;
+        detail: string;
+        severity: string;
+        consequence: string;
+        remedy: Remedy;
+      }[];
     }
+
   | {
       type: "chronology";
       title: string;
       entries: { date: string; event: string; owner: string; source: string }[];
     }
+  | {
+      /**
+       * The Development Control Report Card. Each aspect is a subject, credits
+       * are proportional to applicable control mass at the current stage, and
+       * the mark is 100 minus the aspect risk score — HIGH IS GOOD. This is the
+       * deliberate inverse of the risk index: owners read grades intuitively,
+       * risk indices they do not. Subjects with no applicable control at this
+       * stage are N/A and excluded from the term grade — never counted as
+       * passing.
+       */
+      type: "transcript";
+      title: string;
+      note: string | null;
+      subjects: {
+        aspect_id: string;
+        aspect_name: string;
+        owner_question: string;
+        /** null = N/A, excluded from the term grade. */
+        mark: number | null;
+        letter: string;
+        gradePoints: number | null;
+        credits: number;
+        controls: number;
+        verified: number;
+        confidence: number;
+        band: string;
+        tone: "good" | "warn" | "bad" | "neutral";
+        /** Required on every subject below the pass mark. */
+        remedy: Remedy | null;
+      }[];
+      termGrade: {
+        mark: number | null;
+        letter: string;
+        gpa: number | null;
+        credits: number;
+        subjectsGraded: number;
+        subjectsNotApplicable: number;
+        tone: "good" | "warn" | "bad" | "neutral";
+      };
+    }
+
   | {
       type: "signature_block";
       title: string;
@@ -218,20 +290,55 @@ export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
   });
 }
 
-const STAGE_NAME: Record<number, string> = {
-  1: "Pre-Acquisition",
-  2: "Entitlement",
-  3: "Design",
-  4: "Preconstruction",
-  5: "Construction",
-  6: "Closeout",
-  7: "Sellout",
-};
+import { stageName, STAGE_NUMBERS } from "./stages";
+export { stageName };
 
-export const stageName = (n: number) => STAGE_NAME[n] ?? `Stage ${n}`;
+
 
 const today = () =>
   new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+/* ------------------------------------------- NO FINDING WITHOUT A REMEDY */
+
+const NO_SEAT = "— NO NAMED SEAT — assign before this report is issued";
+const NOT_QUOTED = "Not yet quoted — obtain a figure from the responsible seat";
+
+const gateDeadline = (stageNumber: number, urgent: boolean) =>
+  urgent
+    ? `Immediately — irreversible at this stage; every week compounds the cost`
+    : `Before the Stage ${stageNumber} · ${stageName(stageNumber)} gate`;
+
+/** The specific work that closes an open control, tied to a seat and a date. */
+function remedyForControl(c: ControlSpec, stageNumber: number): Remedy {
+  const spec = c as ControlSpec & { mitigation_template?: string | null };
+  const urgent =
+    c.irreversibility === "VERY_HIGH" ||
+    c.irreversibility === "HIGH" ||
+    c.criticality === "CRITICAL";
+  return {
+    work:
+      (spec.mitigation_template || "").trim() ||
+      (c.objective || "").trim() ||
+      `Produce ${c.expected_evidence || "the required evidence"} and have it verified against ${c.control_id}.`,
+    seat: (c.responsible_seat || c.primary_owner_role || "").trim() || NO_SEAT,
+    cost: NOT_QUOTED,
+    requiredBy: gateDeadline(stageNumber, urgent),
+  };
+}
+
+/** The specific work that clears an escalation trigger before it fires. */
+function remedyForRule(r: SpecEscalationRule, stageNumber: number): Remedy {
+  const urgent = /CRITICAL|SEVERE/i.test(r.severity_floor || "");
+  return {
+    work:
+      (r.action || "").trim() ||
+      `Close the conditions that trigger ${r.rule_id || r.name} and record the evidence against the controls it watches.`,
+    seat: NO_SEAT,
+    cost: NOT_QUOTED,
+    requiredBy: gateDeadline(stageNumber, urgent),
+  };
+}
+
 
 const docNumber = (key: string, projectId: number, stage: number) =>
   `CZ-${key.split("_").map((w) => w.slice(0, 3)).join("").toUpperCase()}-${String(projectId).padStart(4, "0")}-S${stage}`;
@@ -342,6 +449,7 @@ const rmpGenerator: Generator = (ctx) => {
     detail: r.conditions || r.description,
     severity: severityOf(r.severity_floor),
     consequence: r.action || "Escalates to the reviewer queue and is reported to the owner.",
+    remedy: remedyForRule(r, stageNumber),
   }));
   if (!findings.length) unresolved.push("No escalation rules are configured for this stage");
 
@@ -529,6 +637,15 @@ const stageGateGenerator: Generator = (ctx) => {
           severity: "Critical",
           consequence:
             "Irreversibility VERY_HIGH — once the stage releases, this cannot be recovered without rework or claim.",
+          remedy: spec
+            ? remedyForControl(spec, stageNumber)
+            : {
+                work: `Locate control ${id} in the register and restore its specification — the gate cannot be decided against a control the register cannot describe.`,
+                seat: NO_SEAT,
+                cost: NOT_QUOTED,
+                requiredBy: gateDeadline(stageNumber, true),
+              },
+
         };
       }),
     },
@@ -567,12 +684,15 @@ const gradeFor = (
 const STAGE_KPI: Record<number, string> = {
   1: "Basis of cost — land, entitlement assumptions and underwriting inputs evidenced before close",
   2: "Conditions of approval priced and scheduled before they become a cost event",
-  3: "Design completeness against the budget the equity was raised on",
-  4: "GMP integrity — scope gaps, allowances and contingency sized to the risk carried",
-  5: "Cost and schedule growth controlled and evidenced as it happens",
-  6: "Closeout evidence secured while the trades are still on site and payable",
-  7: "Sellout and turnover exposure closed out of the record",
+  3: "Design intent fixed against the programme and the budget the equity was raised on",
+  4: "Design completeness and coordination proven before the set goes out to price",
+  5: "GMP integrity — scope gaps, allowances and contingency sized to the risk carried",
+  6: "Cost and schedule growth controlled and evidenced as it happens",
+  7: "Takeout secured — the capital event that retires construction debt, evidenced before maturity",
+  8: "Closeout evidence secured while the trades are still on site and payable",
+  9: "Sellout and turnover exposure closed out of the record",
 };
+
 
 const timeMoneyGenerator: Generator = (ctx) => {
   const { scoring, stageNumber, project } = ctx;
@@ -588,7 +708,7 @@ const timeMoneyGenerator: Generator = (ctx) => {
     );
 
   /* --- phase report card ------------------------------------------------ */
-  const phaseRows = [1, 2, 3, 4, 5, 6, 7].map((s) => {
+  const phaseRows = STAGE_NUMBERS.map((s) => {
     const specs = scoring.register.filter(
       (c) => (c.continuous ? c.stage_number <= s : c.stage_number === s) &&
         instStatus(scoring, c.control_id) !== "N/A",
@@ -720,6 +840,7 @@ const timeMoneyGenerator: Generator = (ctx) => {
       c.irreversibility === "VERY_HIGH" || c.irreversibility === "HIGH"
         ? "Irreversible at this stage — the cost of closing it later is recovered through change order or claim, not through management."
         : "Recoverable now; cost grows with every week it stays open.",
+    remedy: remedyForControl(c, stageNumber),
   }));
 
   if (openCritical.length)
@@ -809,15 +930,237 @@ const timeMoneyGenerator: Generator = (ctx) => {
   };
 };
 
+/* ----------------------- generator — development control report card */
+
+/**
+ * Standard academic scale applied to the mark. The mark is 100 minus the
+ * aspect risk score, so HIGH IS GOOD — the deliberate inverse of the risk
+ * index. Colour appears alongside the letter and the percentage, never
+ * instead of them.
+ */
+const LETTER_SCALE: {
+  min: number;
+  letter: string;
+  points: number;
+  tone: "good" | "warn" | "bad";
+}[] = [
+  { min: 93, letter: "A", points: 4.0, tone: "good" },
+  { min: 90, letter: "A−", points: 3.7, tone: "good" },
+  { min: 87, letter: "B+", points: 3.3, tone: "good" },
+  { min: 83, letter: "B", points: 3.0, tone: "good" },
+  { min: 80, letter: "B−", points: 2.7, tone: "good" },
+  { min: 77, letter: "C+", points: 2.3, tone: "warn" },
+  { min: 73, letter: "C", points: 2.0, tone: "warn" },
+  { min: 70, letter: "C−", points: 1.7, tone: "warn" },
+  { min: 67, letter: "D+", points: 1.3, tone: "warn" },
+  { min: 63, letter: "D", points: 1.0, tone: "warn" },
+  { min: 60, letter: "D−", points: 0.7, tone: "warn" },
+  { min: -Infinity, letter: "F", points: 0.0, tone: "bad" },
+];
+
+const markToGrade = (mark: number) =>
+  LETTER_SCALE.find((g) => mark >= g.min) ?? LETTER_SCALE[LETTER_SCALE.length - 1]!;
+
+/** Below this mark a subject carries a mandatory remedy. */
+const PASS_MARK = 80;
+
+const half = (n: number) => Math.max(0.5, Math.round(n * 2) / 2);
+
+const reportCardGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber, project } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+
+  /* Applicable controls at this stage, by aspect — the control mass that
+     credits are proportional to. */
+  const applicable = scoring.register.filter((c) =>
+    c.continuous ? c.stage_number <= stageNumber : c.stage_number === stageNumber,
+  );
+  const openByAspect = new Map<string, ControlSpec[]>();
+  for (const c of applicable) {
+    if (instStatus(scoring, c.control_id) === "COMPLETE_VERIFIED") continue;
+    if (instStatus(scoring, c.control_id) === "N/A") continue;
+    const list = openByAspect.get(c.aspect_id ?? "UNMAPPED") ?? [];
+    list.push(c);
+    openByAspect.set(c.aspect_id ?? "UNMAPPED", list);
+  }
+
+  const rated = scoring.scores.filter((s) => s.score !== null && s.applicableWeight > 0);
+  const naCount = scoring.scores.length - rated.length;
+  const totalWeight = rated.reduce((a, s) => a + s.applicableWeight, 0);
+
+  /* Credits are proportional to applicable control mass, scaled so a typical
+     subject reads as a 3-credit course on a normal transcript. */
+  const creditFor = (weight: number) =>
+    totalWeight > 0 && rated.length > 0
+      ? half((weight / totalWeight) * rated.length * 3)
+      : 0;
+
+  const subjects = scoring.scores
+    .slice()
+    .sort((a, b) => a.aspect_id.localeCompare(b.aspect_id))
+    .map((s) => {
+      const applies = s.score !== null && s.applicableWeight > 0;
+      if (!applies) {
+        return {
+          aspect_id: s.aspect_id,
+          aspect_name: s.aspect_name,
+          owner_question: s.owner_question,
+          mark: null,
+          letter: "N/A",
+          gradePoints: null,
+          credits: 0,
+          controls: s.controls,
+          verified: s.verified,
+          confidence: s.confidence,
+          band: s.band,
+          tone: "neutral" as const,
+          remedy: null,
+        };
+      }
+      const mark = Math.max(0, Math.min(100, Math.round(100 - (s.score as number))));
+      const g = markToGrade(mark);
+      const worst =
+        (openByAspect.get(s.aspect_id) ?? [])
+          .slice()
+          .sort((a, b) => {
+            const rank = (c: ControlSpec) =>
+              (c.criticality === "CRITICAL" ? 2 : c.criticality === "HIGH" ? 1 : 0) +
+              (c.irreversibility === "VERY_HIGH" ? 2 : c.irreversibility === "HIGH" ? 1 : 0);
+            return rank(b) - rank(a);
+          })[0] ?? null;
+
+      let remedy: Remedy | null = null;
+      if (mark < PASS_MARK) {
+        remedy = worst
+          ? remedyForControl(worst, stageNumber)
+          : {
+              work: `${s.aspect_name} is marked ${mark}% with no open control to attribute it to. Re-verify the evidence behind this aspect — a mark this low with nothing open means the register is out of step with the record.`,
+              seat: NO_SEAT,
+              cost: NOT_QUOTED,
+              requiredBy: gateDeadline(stageNumber, false),
+            };
+        if (remedy.seat === NO_SEAT)
+          unresolved.push(
+            `${s.aspect_id} · ${s.aspect_name} is below the pass mark and its remedy has no named seat — the work cannot be enforced against an unnamed party`,
+          );
+      }
+
+      return {
+        aspect_id: s.aspect_id,
+        aspect_name: s.aspect_name,
+        owner_question: s.owner_question,
+        mark,
+        letter: g.letter,
+        gradePoints: g.points,
+        credits: creditFor(s.applicableWeight),
+        controls: s.controls,
+        verified: s.verified,
+        confidence: s.confidence,
+        band: s.band,
+        tone: g.tone,
+        remedy,
+      };
+    });
+
+  /* Term grade — credit weighted, N/A subjects excluded entirely. Never
+     counted as passing. */
+  const graded = subjects.filter((s) => s.mark !== null && s.credits > 0);
+  const credits = graded.reduce((a, s) => a + s.credits, 0);
+  const termMark = credits
+    ? Math.round(graded.reduce((a, s) => a + (s.mark as number) * s.credits, 0) / credits)
+    : null;
+  const gpa = credits
+    ? Math.round(
+        (graded.reduce((a, s) => a + (s.gradePoints as number) * s.credits, 0) / credits) * 100,
+      ) / 100
+    : null;
+  const termLetter = termMark === null ? "N/A" : markToGrade(termMark).letter;
+  const termTone = termMark === null ? ("neutral" as const) : markToGrade(termMark).tone;
+
+  if (naCount)
+    unresolved.push(
+      `${naCount} of ${scoring.scores.length} aspects carry no applicable control at stage ${stageNumber} and are marked N/A — they are excluded from the term grade rather than counted as passing`,
+    );
+  if (!credits)
+    unresolved.push(
+      "No aspect carries applicable control mass at this stage — a term grade cannot be stated",
+    );
+
+  const failing = subjects.filter((s) => s.mark !== null && s.mark < PASS_MARK);
+
+  const sections: ReportSection[] = [
+    {
+      type: "narrative",
+      title: "How to read this report card",
+      body: [
+        `This grades ${project.name} the way a transcript grades a term. Each of the ${scoring.scores.length} control aspects is a subject. Credits are proportional to how much applicable control mass that subject carries at Stage ${stageNumber} · ${stageName(stageNumber)} — a subject governing more of the work is worth more of the grade.`,
+        "The mark is 100 minus the aspect risk score. HIGH IS GOOD. This is the deliberate inverse of the risk index shown elsewhere in the platform, because an Owner reads a grade intuitively and a risk index they do not. The two never disagree; they are the same number read from opposite ends.",
+        "A subject with no applicable control at this stage is marked N/A and excluded from the term grade. It is never counted as passing. Colour is shown alongside the letter and the percentage, never instead of them.",
+        `Every subject below ${PASS_MARK}% carries the specific work that raises it, the seat accountable for doing it, what it costs and the date it is required by. A mark without a remedy is a complaint, not intelligence.`,
+      ],
+    },
+    {
+      type: "transcript",
+      title: "Subject grades",
+      note: `Term grade is credit weighted across ${graded.length} graded subjects; ${naCount} subject${naCount === 1 ? " is" : "s are"} not applicable at this stage and excluded.`,
+      subjects,
+      termGrade: {
+        mark: termMark,
+        letter: termLetter,
+        gpa,
+        credits: Math.round(credits * 2) / 2,
+        subjectsGraded: graded.length,
+        subjectsNotApplicable: naCount,
+        tone: termTone,
+      },
+    },
+    {
+      type: "finding_list",
+      title: `Subjects below the pass mark — required work`,
+      items: failing.map((s) => ({
+        headline: `${s.aspect_id} · ${s.aspect_name} — ${s.letter} (${s.mark}%)`,
+        detail: s.owner_question,
+        severity: (s.mark as number) < 60 ? "Critical" : "High",
+        consequence: `${s.verified} of ${s.controls} controls in this subject are verified. Carrying ${s.credits} credits, it is pulling the term grade down by the largest single amount available to it.`,
+        remedy: s.remedy ?? {
+          work: "Remedy not stated — this report may not be issued in this condition.",
+          seat: NO_SEAT,
+          cost: NOT_QUOTED,
+          requiredBy: gateDeadline(stageNumber, true),
+        },
+      })),
+    },
+    {
+      type: "signature_block",
+      title: "Issued to the ownership group",
+      statement: `This report card states the grade for Stage ${stageNumber} · ${stageName(stageNumber)} on the evidence in the record at revision ${ctx.revision}. Marks are computed, not opinion; every subject below the pass mark carries the work required to raise it.`,
+      signatories: ["Owner / Sponsor", "Construction Manager", "ClaimZero reviewer"],
+    },
+  ];
+
+  return {
+    meta,
+    sections,
+    citations: citationsFor(
+      failing.flatMap((s) => openByAspect.get(s.aspect_id) ?? []).slice(0, 30),
+      scoring,
+    ),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
 /* --------------------------------------------------------- generator map */
 
 
 export const GENERATORS: Record<string, Generator> = {
   RISK_MITIGATION_PLAN: rmpGenerator,
   TIME_AND_MONEY: timeMoneyGenerator,
-
+  DEVELOPMENT_CONTROL_REPORT_CARD: reportCardGenerator,
   STAGE_GATE: stageGateGenerator,
 };
+
 
 export const isImplemented = (key: string) => Boolean(GENERATORS[key]);
 

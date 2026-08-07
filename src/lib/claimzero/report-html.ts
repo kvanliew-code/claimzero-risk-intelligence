@@ -77,11 +77,46 @@ function sectionHtml(s: ReportSection): string {
           ? s.items
               .map(
                 (i) =>
-                  `<div class="finding"><b>${esc(i.headline)}</b> <span class="sev">${esc(i.severity)}</span><p>${esc(i.detail)}</p><p class="cons">Consequence: ${esc(i.consequence)}</p></div>`,
+                  `<div class="finding"><b>${esc(i.headline)}</b> <span class="sev">${esc(i.severity)}</span><p>${esc(i.detail)}</p><p class="cons">Consequence: ${esc(i.consequence)}</p>` +
+                  `<div class="remedy"><span class="rlab">Remedy</span><p>${esc(i.remedy.work)}</p>` +
+                  `<p class="cons"><b>Seat:</b> ${esc(i.remedy.seat)} &nbsp;·&nbsp; <b>Cost:</b> ${esc(i.remedy.cost)} &nbsp;·&nbsp; <b>Required by:</b> ${esc(i.remedy.requiredBy)}</p></div></div>`,
               )
               .join("")
           : "<p>None recorded.</p>")
       );
+    case "transcript": {
+      const t = s.termGrade;
+      return (
+        h +
+        (s.note ? `<p class="cons">${esc(s.note)}</p>` : "") +
+        `<table><thead>${rows(
+          ["Subject", "Owner question", "Credits", "Verified", "Mark", "Grade", "Points"],
+          "th",
+        )}</thead><tbody>${s.subjects
+          .map(
+            (r) =>
+              `<tr><td><b>${esc(r.aspect_id)}</b> ${esc(r.aspect_name)}</td><td>${esc(r.owner_question)}</td><td>${
+                r.mark === null ? "—" : esc(r.credits.toFixed(1))
+              }</td><td>${esc(r.verified)}/${esc(r.controls)}</td><td>${
+                r.mark === null ? "N/A" : `${esc(r.mark)}%`
+              }</td><td class="grade t-${esc(r.tone)}">${esc(r.letter)}</td><td>${
+                r.gradePoints === null ? "—" : esc(r.gradePoints.toFixed(2))
+              }</td></tr>` +
+              (r.remedy
+                ? `<tr><td colspan="7"><div class="remedy"><span class="rlab">Remedy</span><p>${esc(r.remedy.work)}</p><p class="cons"><b>Seat:</b> ${esc(r.remedy.seat)} &nbsp;·&nbsp; <b>Cost:</b> ${esc(r.remedy.cost)} &nbsp;·&nbsp; <b>Required by:</b> ${esc(r.remedy.requiredBy)}</p></div></td></tr>`
+                : ""),
+          )
+          .join("")}</tbody></table>` +
+        `<div class="term"><span class="rlab">Term grade</span> <span class="grade t-${esc(t.tone)}">${esc(
+          t.letter,
+        )}</span> <b>${t.mark === null ? "N/A" : `${esc(t.mark)}%`}</b> &nbsp;·&nbsp; Control GPA <b>${
+          t.gpa === null ? "—" : esc(t.gpa.toFixed(2))
+        }</b> / 4.00 &nbsp;·&nbsp; ${esc(t.credits.toFixed(1))} credits across ${esc(
+          t.subjectsGraded,
+        )} graded subjects &nbsp;·&nbsp; ${esc(t.subjectsNotApplicable)} not applicable and excluded</div>`
+      );
+    }
+
     case "chronology":
       return `${h}<table><thead>${rows(["Date", "Event", "Owner", "Source"], "th")}</thead><tbody>${
         s.entries.length
@@ -168,6 +203,15 @@ export function reportToHtml(
   .msub { display: block; font-size: 10px; color: #5a6773; line-height: 1.4; }
   .grade { font: 700 14px Helvetica, Arial, sans-serif; }
   .t-good { color: #1f7a4d; } .t-warn { color: #a8730f; } .t-bad { color: #a33; }
+  .t-neutral { color: #5a6773; }
+  .remedy { border-left: 2px solid #c9622f; padding: 2px 0 2px 8px; margin: 5px 0 2px;
+            break-inside: avoid; }
+  .rlab { font: 700 8.5px "Courier New", monospace; letter-spacing: .12em;
+          text-transform: uppercase; color: #c9622f; }
+  .remedy p { margin: 2px 0; }
+  .term { border-top: 2px solid #c9622f; margin-top: 10px; padding-top: 8px;
+          font-size: 12px; break-inside: avoid; }
+
   .t-neutral { color: #14202c; }
 
   footer { margin-top: 22px; border-top: 1px solid #e3e7ea; padding-top: 8px;

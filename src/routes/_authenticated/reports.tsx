@@ -26,6 +26,7 @@ import {
   type ReportRow,
 } from "@/lib/claimzero/reports";
 import type { SpecEscalationRule } from "@/lib/claimzero/escalation";
+import { STAGE_NUMBERS } from "@/lib/claimzero/stages";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -593,7 +594,7 @@ function ReportsBody({
             value={stage}
             onChange={(e) => setStagePick(Number(e.target.value))}
           >
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            {STAGE_NUMBERS.map((n) => (
               <option key={n} value={n}>
                 {n} · {stageName(n)}
               </option>

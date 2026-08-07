@@ -2,17 +2,17 @@
 // Synthetic and deterministic: the same project always produces the same register.
 
 import { projects, type Project } from "./data";
+import { STAGE_OPTIONS, stageNumberOf, type StageName } from "./stages";
 
-export const LIFECYCLE = [
-  "Owner Package",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Closeout",
-] as const;
+/**
+ * The document register runs on the same nine stages as the control engine.
+ * Stages with no expected documents of their own simply carry none — an empty
+ * column is honest, an invented one is not.
+ */
+export const LIFECYCLE = STAGE_OPTIONS;
 
-export type Lifecycle = (typeof LIFECYCLE)[number];
+export type Lifecycle = StageName;
+
 export type OwedBy = "Owner" | "Architect" | "CM" | "Counsel";
 export type DocStatus = "received" | "outstanding" | "not-yet-applicable";
 export type DocSource = "Owner upload" | "Egnyte" | "Procore" | "Autodesk";
@@ -37,32 +37,29 @@ export interface DocItem extends DocSpec {
   indexed: boolean;
 }
 
-/** Stage of the project mapped onto the document lifecycle. */
-const STAGE_INDEX: Record<string, number> = {
-  "Pre-Acquisition": 0,
-  Entitlement: 1,
-  Design: 2,
-  Preconstruction: 3,
-  Construction: 4,
-  Closeout: 5,
-  Sellout: 5,
-};
+/**
+ * How far along the nine stages this project is. Documents belonging to a later
+ * stage are "not yet applicable" rather than outstanding — we never hold an
+ * Owner to a deliverable their project has not reached.
+ */
+const stageCutFor = (project: Project) => stageNumberOf(project.stage) - 1;
+
 
 export const REGISTER: DocSpec[] = [
-  // ---- Owner Package (upfront) ----
-  { stage: "Owner Package", category: "Acquisition & Title", name: "Purchase and sale agreement", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Acquisition & Title", name: "Title report and exceptions", owedBy: "Counsel" },
-  { stage: "Owner Package", category: "Acquisition & Title", name: "ALTA survey", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Acquisition & Title", name: "Phase I environmental", owedBy: "Owner", optional: true },
-  { stage: "Owner Package", category: "Budgets & Pro Forma", name: "Underwriting pro forma (baseline)", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Loan & Capital Stack", name: "Executed loan agreement", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Loan & Capital Stack", name: "Mezzanine / preferred equity terms", owedBy: "Counsel", optional: true },
-  { stage: "Owner Package", category: "Loan & Capital Stack", name: "Interest reserve schedule", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Entity & Governance", name: "Borrower entity documents", owedBy: "Counsel" },
-  { stage: "Owner Package", category: "Entity & Governance", name: "Operating agreement / JV terms", owedBy: "Counsel" },
-  { stage: "Owner Package", category: "Insurance", name: "Builder's risk policy", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Insurance", name: "General liability / excess certificates", owedBy: "Owner" },
-  { stage: "Owner Package", category: "Insurance", name: "Owner-controlled insurance program (OCIP) manual", owedBy: "Owner", optional: true },
+  // ---- Acquisition (upfront owner package) ----
+  { stage: "Acquisition", category: "Acquisition & Title", name: "Purchase and sale agreement", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Acquisition & Title", name: "Title report and exceptions", owedBy: "Counsel" },
+  { stage: "Acquisition", category: "Acquisition & Title", name: "ALTA survey", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Acquisition & Title", name: "Phase I environmental", owedBy: "Owner", optional: true },
+  { stage: "Acquisition", category: "Budgets & Pro Forma", name: "Underwriting pro forma (baseline)", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Loan & Capital Stack", name: "Executed loan agreement", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Loan & Capital Stack", name: "Mezzanine / preferred equity terms", owedBy: "Counsel", optional: true },
+  { stage: "Acquisition", category: "Loan & Capital Stack", name: "Interest reserve schedule", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Entity & Governance", name: "Borrower entity documents", owedBy: "Counsel" },
+  { stage: "Acquisition", category: "Entity & Governance", name: "Operating agreement / JV terms", owedBy: "Counsel" },
+  { stage: "Acquisition", category: "Insurance", name: "Builder's risk policy", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Insurance", name: "General liability / excess certificates", owedBy: "Owner" },
+  { stage: "Acquisition", category: "Insurance", name: "Owner-controlled insurance program (OCIP) manual", owedBy: "Owner", optional: true },
 
   // ---- Entitlement ----
   { stage: "Entitlement", category: "Entitlement", name: "Zoning analysis", owedBy: "Architect" },
@@ -73,15 +70,15 @@ export const REGISTER: DocSpec[] = [
   { stage: "Entitlement", category: "Entitlement", name: "Zoning legal opinion", owedBy: "Counsel" },
   { stage: "Entitlement", category: "Entitlement", name: "Environmental review determination", owedBy: "Counsel", optional: true },
 
-  // ---- Design ----
-  { stage: "Design", category: "Design", name: "Architectural set — schematic design", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "Architectural set — design development", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "Architectural set — construction documents", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "Structural drawing set", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "MEP drawing set", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "Façade / curtain wall package", owedBy: "Architect" },
-  { stage: "Design", category: "Design", name: "Project specifications", owedBy: "Architect" },
-  { stage: "Design", category: "Contracts & Agreements", name: "Architect agreement (AIA B101 or equivalent)", owedBy: "Counsel" },
+  // ---- Design Development ----
+  { stage: "Design Development", category: "Design", name: "Architectural set — schematic design", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "Architectural set — design development", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "Architectural set — construction documents", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "Structural drawing set", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "MEP drawing set", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "Façade / curtain wall package", owedBy: "Architect" },
+  { stage: "Design Development", category: "Design", name: "Project specifications", owedBy: "Architect" },
+  { stage: "Design Development", category: "Contracts & Agreements", name: "Architect agreement (AIA B101 or equivalent)", owedBy: "Counsel" },
 
   // ---- Preconstruction ----
   { stage: "Preconstruction", category: "Contracts & Agreements", name: "GMP contract / exhibits", owedBy: "CM" },
@@ -103,13 +100,13 @@ export const REGISTER: DocSpec[] = [
   { stage: "Construction", category: "Contracts & Agreements", name: "Executed change orders", owedBy: "CM" },
   { stage: "Construction", category: "Insurance", name: "Insurance renewal certificates", owedBy: "Owner" },
 
-  // ---- Closeout ----
-  { stage: "Closeout", category: "Closeout", name: "Special inspection sign-offs", owedBy: "CM" },
-  { stage: "Closeout", category: "Closeout", name: "Final agency inspections", owedBy: "CM" },
-  { stage: "Closeout", category: "Closeout", name: "Temporary certificate of occupancy", owedBy: "CM" },
-  { stage: "Closeout", category: "Closeout", name: "Certificate of occupancy", owedBy: "CM" },
-  { stage: "Closeout", category: "Closeout", name: "Closeout manuals, warranties, as-builts", owedBy: "CM" },
-  { stage: "Closeout", category: "Closeout", name: "Final lien waivers", owedBy: "Counsel" },
+  // ---- Certificate of Occupancy ----
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Special inspection sign-offs", owedBy: "CM" },
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Final agency inspections", owedBy: "CM" },
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Temporary certificate of occupancy", owedBy: "CM" },
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Certificate of occupancy", owedBy: "CM" },
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Closeout manuals, warranties, as-builts", owedBy: "CM" },
+  { stage: "Certificate of Occupancy", category: "Closeout", name: "Final lien waivers", owedBy: "Counsel" },
 ];
 
 const SOURCES: DocSource[] = ["Owner upload", "Egnyte", "Procore", "Autodesk"];
@@ -140,7 +137,7 @@ export interface Register {
 }
 
 export function registerFor(project: Project): Register {
-  const cut = STAGE_INDEX[project.stage] ?? 4;
+  const cut = stageCutFor(project);
   const rnd = seeded(project.id + 7);
   const items: DocItem[] = REGISTER.map((spec, i) => {
     const stageIdx = LIFECYCLE.indexOf(spec.stage);

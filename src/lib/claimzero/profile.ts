@@ -24,15 +24,12 @@ const opt = (...vals: string[]) =>
       .replace(/\b\w/g, (c) => c.toUpperCase()),
   }));
 
-export const STAGE_NAMES = [
-  "Pre-Acquisition",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Closeout",
-  "Sellout",
-] as const;
+import { STAGE_OPTIONS, stageNumberOf } from "./stages";
+
+/** The nine canonical stages. Defined once, in ./stages. */
+export const STAGE_NAMES = STAGE_OPTIONS;
+
+
 
 export const PROFILE_FIELDS: ProfileField[] = [
   { key: "name", label: "Project name", kind: "text", group: "Identity" },
@@ -257,15 +254,9 @@ export function tierFromValueBand(band: string): "ESSENTIAL" | "STANDARD" | "COM
   return "ESSENTIAL";
 }
 
-export const STAGE_NUMBER: Record<string, number> = {
-  "Pre-Acquisition": 1,
-  Entitlement: 2,
-  Design: 3,
-  Preconstruction: 4,
-  Construction: 5,
-  Closeout: 6,
-  Sellout: 7,
-};
+/** Stage label -> number. Resolves legacy labels too. See ./stages. */
+export const stageNumberForLabel = stageNumberOf;
+
 
 export type ProfileDraft = Record<string, string | number | boolean | string[]>;
 
@@ -275,7 +266,7 @@ export const EMPTY_DRAFT: ProfileDraft = {
   state: "",
   county_jurisdiction: "",
   size_m: 0,
-  stage: "Pre-Acquisition",
+  stage: "Acquisition",
   asset_class: [],
   delivery_model: "CM_AT_RISK_GMP",
   contract_form: "AIA_A133",
@@ -361,7 +352,7 @@ export async function createProjectFromDraft(draft: ProfileDraft) {
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase())
       : "Mixed-Use",
-    current_stage: STAGE_NUMBER[stage] ?? 1,
+    current_stage: stageNumberOf(stage),
     engagement_level: String(draft["project_tier"]),
   };
 

@@ -23,15 +23,10 @@ function makeRnd(start: number) {
 
 
 
-export const STAGE_OPTIONS = [
-  "Pre-Acquisition",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Closeout",
-  "Sellout",
-] as const;
+// Re-exported so existing consumers keep working; the nine stages are defined
+// once, in ./stages.
+export { STAGE_OPTIONS } from "./stages";
+
 
 
 

@@ -4,6 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Project } from "./data";
+import { stageNumberOf } from "./stages";
 import { demoStatus, isDemoProject } from "./demo";
 
 export const CONTROL_STATUSES = [
@@ -190,18 +191,9 @@ export interface EscalationRule {
   active: boolean;
 }
 
-/** Legacy project stage labels mapped onto the seven-stage lifecycle. */
-const STAGE_NUMBER: Record<string, number> = {
-  "Pre-Acquisition": 1,
-  Entitlement: 2,
-  Design: 3,
-  Preconstruction: 4,
-  Construction: 5,
-  Closeout: 6,
-  Sellout: 7,
-};
+/** Project stage label -> stage number on the nine-stage lifecycle (./stages). */
+export const stageNumberFor = (p: Project): number => stageNumberOf(p.stage);
 
-export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
 
 /**
  * v4.0 §5 — engagement default from contract value: under $25M ESSENTIAL,
