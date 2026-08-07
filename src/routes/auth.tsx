@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ReportMotif } from "@/components/cz/report-motif";
+
 
 
 export const Route = createFileRoute("/auth")({
@@ -27,40 +29,26 @@ export const Route = createFileRoute("/auth")({
 
 
 
-function Motif() {
+/** Faint drafting grid — the only thing left of the old line-art panel. */
+function Grid() {
   return (
-    <svg
-      viewBox="0 0 520 520"
-      aria-hidden="true"
-      className="h-full w-full"
-      style={{ color: "var(--cz-accent)" }}
-    >
+    <svg aria-hidden="true" className="h-full w-full" style={{ color: "var(--cz-accent)" }}>
       <defs>
         <pattern id="cz-blueprint" width="26" height="26" patternUnits="userSpaceOnUse">
-          <path d="M26 0H0v26" fill="none" stroke="currentColor" strokeOpacity="0.13" strokeWidth="0.6" />
+          <path
+            d="M26 0H0v26"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.12"
+            strokeWidth="0.6"
+          />
         </pattern>
       </defs>
-      <rect width="520" height="520" fill="url(#cz-blueprint)" />
-      <g fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.85">
-        {/* mast */}
-        <path d="M250 470V120M274 470V120M250 470h24" />
-        {[...Array(11)].map((_, i) => (
-          <path key={i} d={`M250 ${140 + i * 30} L274 ${170 + i * 30} M274 ${140 + i * 30} L250 ${170 + i * 30}`} strokeOpacity="0.35" />
-        ))}
-        {/* jib */}
-        <path d="M110 120h380M120 120l40-34M470 120l-30-26" />
-        <path d="M262 96 L150 118 M262 96 L400 118" strokeOpacity="0.5" />
-        <path d="M262 120V86" />
-        {/* hoist */}
-        <path d="M356 120v78" strokeOpacity="0.6" />
-        <path d="M344 198h24v18h-24z" />
-        {/* skyline */}
-        <path d="M40 470h440" strokeOpacity="0.5" />
-        <path d="M60 470V330h58v140M140 470V378h44v92M330 470V300h52v170M400 470V352h48v118" strokeOpacity="0.28" />
-      </g>
+      <rect width="100%" height="100%" fill="url(#cz-blueprint)" />
     </svg>
   );
 }
+
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -103,26 +91,45 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
-      <div className="relative hidden overflow-hidden bg-cz-header sm:block">
-        <div className="absolute inset-0 opacity-90">
-          <Motif />
+      {/* Left: the deliverable itself, lit — a Risk Mitigation Plan page with the
+          Monday digest behind it, rather than generic construction imagery. */}
+      <div
+        className="relative hidden overflow-hidden sm:block"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 30% 18%, color-mix(in srgb, var(--cz-accent) 22%, transparent) 0%, transparent 62%), radial-gradient(90% 70% at 88% 92%, color-mix(in srgb, #4d7fa8 22%, transparent) 0%, transparent 60%), linear-gradient(168deg, #1c2836 0%, #16202c 52%, #101a25 100%)",
+        }}
+      >
+        <div className="absolute inset-0 opacity-70">
+          <Grid />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center pr-14 pb-12">
+          <ReportMotif />
         </div>
         <div className="absolute right-8 bottom-8 left-8">
           <div className="cz-eyebrow text-[10px] tracking-[0.22em]" style={{ color: "var(--cz-accent)" }}>
-            —— The Weekly Top 10
+            —— What lands on Monday
           </div>
-          <p className="mt-2 max-w-[420px] font-cz-serif text-[14px] text-cz-ink-2">
+          <p className="mt-2 max-w-[440px] font-cz-serif text-[14px] text-cz-ink-2">
             Every flagged risk cites a source record and passes a reviewer approval gate before it
             reaches an owner. Nothing is estimated; missing inputs are declared, never filled in.
           </p>
         </div>
       </div>
 
-      <div className="relative flex items-center justify-center px-6 py-12">
-        {/* Narrow screens: the crane motif sits behind the form instead of beside it. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.10] sm:hidden">
-          <Motif />
+      <div
+        className="relative flex items-center justify-center px-6 py-12"
+        style={{
+          background:
+            "radial-gradient(100% 70% at 50% 0%, color-mix(in srgb, var(--cz-accent) 7%, transparent) 0%, transparent 58%), var(--cz-page)",
+        }}
+      >
+        {/* Narrow screens: a faint grid sits behind the form instead of the sheets. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.5] sm:hidden">
+          <Grid />
         </div>
+
+
 
         <div className="relative w-full max-w-[380px]">
           <div className="leading-none">
