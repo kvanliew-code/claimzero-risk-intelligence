@@ -37,16 +37,13 @@ export interface DocItem extends DocSpec {
   indexed: boolean;
 }
 
-/** Stage of the project mapped onto the document lifecycle. */
-const STAGE_INDEX: Record<string, number> = {
-  "Pre-Acquisition": 0,
-  Entitlement: 1,
-  Design: 2,
-  Preconstruction: 3,
-  Construction: 4,
-  Closeout: 5,
-  Sellout: 5,
-};
+/**
+ * How far along the nine stages this project is. Documents belonging to a later
+ * stage are "not yet applicable" rather than outstanding — we never hold an
+ * Owner to a deliverable their project has not reached.
+ */
+const stageCutFor = (project: Project) => stageNumberOf(project.stage) - 1;
+
 
 export const REGISTER: DocSpec[] = [
   // ---- Acquisition (upfront owner package) ----
