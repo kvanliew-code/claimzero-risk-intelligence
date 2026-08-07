@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, ClientOnly } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ReportMotif } from "@/components/cz/report-motif";
@@ -90,7 +90,8 @@ function AuthPage() {
 
 
   return (
-    <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
+    <ClientOnly fallback={<div className="min-h-screen" />}>
+      <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
       {/* Left: the deliverable itself, lit — a Risk Mitigation Plan page with the
           Monday digest behind it, rather than generic construction imagery. */}
       <div
@@ -217,5 +218,6 @@ function AuthPage() {
         </div>
       </div>
     </div>
+    </ClientOnly>
   );
 }
