@@ -160,6 +160,16 @@ export function reportToHtml(
   .line { display: block; border-bottom: 1px solid #14202c; width: 320px; height: 22px; }
   .role { font: 9px "Courier New", monospace; letter-spacing: .08em; text-transform: uppercase; color: #5a6773; }
   .unresolved li { margin-bottom: 4px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
+  .metric { border: 1px solid #e3e7ea; padding: 7px 9px; break-inside: avoid; }
+  .mlabel { display: block; font: 700 8.5px "Courier New", monospace; letter-spacing: .1em;
+            text-transform: uppercase; color: #5a6773; }
+  .mval { display: block; font: 700 15px Helvetica, Arial, sans-serif; margin: 3px 0 2px; }
+  .msub { display: block; font-size: 10px; color: #5a6773; line-height: 1.4; }
+  .grade { font: 700 14px Helvetica, Arial, sans-serif; }
+  .t-good { color: #1f7a4d; } .t-warn { color: #a8730f; } .t-bad { color: #a33; }
+  .t-neutral { color: #14202c; }
+
   footer { margin-top: 22px; border-top: 1px solid #e3e7ea; padding-top: 8px;
            font: 9px "Courier New", monospace; letter-spacing: .08em; text-transform: uppercase; color: #5a6773;
            display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
