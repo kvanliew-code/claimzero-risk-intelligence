@@ -21,7 +21,10 @@ export const SECTION_TYPES = [
   "chronology",
   "narrative",
   "signature_block",
+  "metric_grid",
+  "grade_card",
 ] as const;
+
 export type SectionType = (typeof SECTION_TYPES)[number];
 
 export interface SectionConfig {
