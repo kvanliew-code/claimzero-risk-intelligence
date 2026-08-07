@@ -201,14 +201,33 @@ const STAGE_NUMBER: Record<string, number> = {
 
 export const stageNumberFor = (p: Project): number => STAGE_NUMBER[p.stage] ?? 1;
 
-/** Tier is a function of program size: C major ≥ $250M, B institutional ≥ $100M, otherwise A standard. */
-export const tierFor = (p: Project): Tier => (p.sizeM >= 250 ? "C" : p.sizeM >= 100 ? "B" : "A");
+/**
+ * v4.0 §5 — engagement default from contract value: under $25M ESSENTIAL,
+ * $25M–$100M STANDARD, above $100M COMPREHENSIVE. Overridable with a reason.
+ */
+export const tierForValue = (sizeM: number): ProjectTier =>
+  sizeM > 100 ? "COMPREHENSIVE" : sizeM >= 25 ? "STANDARD" : "ESSENTIAL";
 
-const TIER_RANK: Record<Tier, number> = { A: 1, B: 2, C: 3 };
+export const tierFor = (p: Project): ProjectTier => tierForValue(p.sizeM);
 
-/** A control applies when the project has reached its stage and meets its minimum tier. */
-export function appliesTo(spec: ControlSpec, stageNumber: number, tier: Tier): boolean {
-  return spec.active && spec.stage_number <= stageNumber && TIER_RANK[tier] >= TIER_RANK[spec.min_tier];
+const CONTROL_TIER_RANK: Record<ControlTier, number> = {
+  CORE: 1,
+  EXTENDED: 2,
+  COMPREHENSIVE: 3,
+};
+const PROJECT_TIER_RANK: Record<ProjectTier, number> = {
+  ESSENTIAL: 1,
+  STANDARD: 2,
+  COMPREHENSIVE: 3,
+};
+
+/** ESSENTIAL sees CORE, STANDARD sees CORE+EXTENDED, COMPREHENSIVE sees everything. */
+export function appliesTo(spec: ControlSpec, stageNumber: number, tier: ProjectTier): boolean {
+  return (
+    spec.active &&
+    spec.stage_number <= stageNumber &&
+    (PROJECT_TIER_RANK[tier] ?? 0) >= (CONTROL_TIER_RANK[spec.min_tier] ?? 99)
+  );
 }
 
 
