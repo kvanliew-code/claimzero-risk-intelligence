@@ -203,6 +203,15 @@ export function reportToHtml(
   .msub { display: block; font-size: 10px; color: #5a6773; line-height: 1.4; }
   .grade { font: 700 14px Helvetica, Arial, sans-serif; }
   .t-good { color: #1f7a4d; } .t-warn { color: #a8730f; } .t-bad { color: #a33; }
+  .t-neutral { color: #5a6773; }
+  .remedy { border-left: 2px solid #c9622f; padding: 2px 0 2px 8px; margin: 5px 0 2px;
+            break-inside: avoid; }
+  .rlab { font: 700 8.5px "Courier New", monospace; letter-spacing: .12em;
+          text-transform: uppercase; color: #c9622f; }
+  .remedy p { margin: 2px 0; }
+  .term { border-top: 2px solid #c9622f; margin-top: 10px; padding-top: 8px;
+          font-size: 12px; break-inside: avoid; }
+
   .t-neutral { color: #14202c; }
 
   footer { margin-top: 22px; border-top: 1px solid #e3e7ea; padding-top: 8px;
