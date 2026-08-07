@@ -16,6 +16,13 @@ const PORTFOLIO_GROUPS: Group[] = [
     ],
   },
   {
+    label: "Operations",
+    items: [
+      { to: "/queue", icon: "✓", label: "Reviewer Queue" },
+      { to: "/settings", icon: "⚙", label: "Settings" },
+    ],
+  },
+  {
     label: "Pipeline",
     items: [
       { to: "/pipeline", icon: "⤢", label: "Pipeline" },
@@ -24,13 +31,7 @@ const PORTFOLIO_GROUPS: Group[] = [
       { to: "/intake", icon: "＋", label: "New Project Intake" },
     ],
   },
-  {
-    label: "Operations",
-    items: [
-      { to: "/queue", icon: "✓", label: "Reviewer Queue" },
-      { to: "/settings", icon: "⚙", label: "Settings" },
-    ],
-  },
+
 ];
 
 const PROJECT_ITEMS: Item[] = [
