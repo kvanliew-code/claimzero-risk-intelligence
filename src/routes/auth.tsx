@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, ClientOnly } from "@tanstack/react-router
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ReportMotif } from "@/components/cz/report-motif";
+import { Button } from "@/components/ui/button";
 
 
 
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/auth")({
         content: "Secure sign-in to the ClaimZero development risk command center.",
       },
       { name: "robots", content: "noindex" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -56,6 +59,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"signin" | "forgot">("signin");
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -85,6 +90,25 @@ function AuthPage() {
     setBusy(false);
     if (err) setError(err.message);
     else void finish();
+  };
+
+  const sendReset = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const emailValue = String(form.get("email") ?? "").trim();
+    if (!emailValue) {
+      setError("Enter your work email.");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(emailValue, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (resetError) setError(resetError.message);
+    else setResetSent(true);
   };
 
 
@@ -142,13 +166,41 @@ function AuthPage() {
             </div>
           </div>
 
+          <h1 className="mt-8 font-cz-serif text-[22px] text-cz-ink-1">
+            {mode === "signin" ? "Sign in" : "Reset your password"}
+          </h1>
+          {mode === "forgot" ? (
+            <p className="mt-2 font-cz-serif text-[13px] text-cz-ink-3">
+              Enter your account email and we’ll send you a secure reset link.
+            </p>
+          ) : null}
+
+          {mode === "forgot" && resetSent ? (
+            <div className="mt-6 border-l-2 border-cz-accent pl-4">
+              <p className="font-cz-serif text-sm text-cz-ink-2">
+                Check your inbox for a password reset link. It may take a minute to arrive.
+              </p>
+              <Button
+                type="button"
+                variant="link"
+                className="mt-3 h-auto p-0 font-cz-mono text-xs text-cz-accent"
+                onClick={() => {
+                  setMode("signin");
+                  setResetSent(false);
+                  setError(null);
+                }}
+              >
+                Return to sign in
+              </Button>
+            </div>
+          ) : (
           <form
             id="claimzero-signin"
             name="claimzero-signin"
-            onSubmit={signIn}
+            onSubmit={mode === "signin" ? signIn : sendReset}
             method="post"
             action="#"
-            className="mt-8"
+            className="mt-6"
           >
             <label className="cz-eyebrow block text-[10px]" htmlFor="email">
               Work email
@@ -164,7 +216,7 @@ function AuthPage() {
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="name@company.com"
             />
-            <label className="cz-eyebrow mt-4 block text-[10px]" htmlFor="password">
+            {mode === "signin" ? <><label className="cz-eyebrow mt-4 block text-[10px]" htmlFor="password">
               Password
             </label>
             <input
@@ -178,6 +230,19 @@ function AuthPage() {
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="••••••••••"
             />
+            <div className="mt-2 text-right">
+              <Button
+                type="button"
+                variant="link"
+                className="h-auto p-0 font-cz-mono text-[11px] text-cz-accent"
+                onClick={() => {
+                  setMode("forgot");
+                  setError(null);
+                }}
+              >
+                Forgot password?
+              </Button>
+            </div></> : null}
 
 
             {error ? (
@@ -191,15 +256,28 @@ function AuthPage() {
                 {error}
               </div>
             ) : null}
-            <button
+            <Button
               type="submit"
               disabled={busy}
-              className="mt-5 w-full rounded-[6px] px-3 py-2.5 font-cz-sans text-[13px] font-bold disabled:opacity-60"
-              style={{ background: "var(--cz-accent-solid)", color: "#fff" }}
+              className="mt-5 w-full bg-cz-accent-solid font-cz-sans text-[13px] font-bold disabled:opacity-60"
             >
-              {busy ? "Signing in…" : "Sign in"}
-            </button>
+              {busy ? (mode === "signin" ? "Signing in…" : "Sending…") : (mode === "signin" ? "Sign in" : "Send reset link")}
+            </Button>
+            {mode === "forgot" ? (
+              <Button
+                type="button"
+                variant="link"
+                className="mt-3 w-full font-cz-mono text-xs text-cz-ink-3"
+                onClick={() => {
+                  setMode("signin");
+                  setError(null);
+                }}
+              >
+                Back to sign in
+              </Button>
+            ) : null}
           </form>
+          )}
 
 
 
