@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      aspect_id_history: {
+        Row: {
+          migrated_at: string
+          new_aspect_id: string
+          old_aspect_id: string
+          old_aspect_name: string
+        }
+        Insert: {
+          migrated_at?: string
+          new_aspect_id: string
+          old_aspect_id: string
+          old_aspect_name: string
+        }
+        Update: {
+          migrated_at?: string
+          new_aspect_id?: string
+          old_aspect_id?: string
+          old_aspect_name?: string
+        }
+        Relationships: []
+      }
       aspect_weight_overrides: {
         Row: {
           aspect_id: string
@@ -71,7 +92,10 @@ export type Database = {
           aspect_name: string
           created_at: string
           family_codes: string
+          first_active_stage: number | null
+          legacy_aspect_id: string | null
           owner_question: string
+          stream: string
           updated_at: string
         }
         Insert: {
@@ -79,7 +103,10 @@ export type Database = {
           aspect_name: string
           created_at?: string
           family_codes?: string
+          first_active_stage?: number | null
+          legacy_aspect_id?: string | null
           owner_question?: string
+          stream: string
           updated_at?: string
         }
         Update: {
@@ -87,7 +114,10 @@ export type Database = {
           aspect_name?: string
           created_at?: string
           family_codes?: string
+          first_active_stage?: number | null
+          legacy_aspect_id?: string | null
           owner_question?: string
+          stream?: string
           updated_at?: string
         }
         Relationships: []
@@ -1039,21 +1069,30 @@ export type Database = {
         Row: {
           aspect_id: string
           aspect_name: string
+          assigned_to: string | null
+          class: string | null
           confidence: string
           control_id: string
           created_at: string
+          cycle_key: string | null
+          decided_in_minutes: number | null
+          decision_level: number | null
           detail: string
           due_date: string | null
           evidence_ref: string
-          exposure_usd: number
+          exposure_usd: number | null
           headline: string
+          held: boolean
           id: string
           kind: string
           project_id: number
           project_name: string
+          rank_score: number | null
           reviewed_at: string | null
           reviewed_by: string | null
           reviewer_note: string
+          rule_id: string | null
+          session_id: string | null
           severity: string
           source_excerpt: string
           status: string
@@ -1064,21 +1103,30 @@ export type Database = {
         Insert: {
           aspect_id?: string
           aspect_name?: string
+          assigned_to?: string | null
+          class?: string | null
           confidence?: string
           control_id?: string
           created_at?: string
+          cycle_key?: string | null
+          decided_in_minutes?: number | null
+          decision_level?: number | null
           detail?: string
           due_date?: string | null
           evidence_ref?: string
-          exposure_usd?: number
+          exposure_usd?: number | null
           headline?: string
+          held?: boolean
           id?: string
           kind?: string
           project_id: number
           project_name?: string
+          rank_score?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_note?: string
+          rule_id?: string | null
+          session_id?: string | null
           severity?: string
           source_excerpt?: string
           status?: string
@@ -1089,21 +1137,30 @@ export type Database = {
         Update: {
           aspect_id?: string
           aspect_name?: string
+          assigned_to?: string | null
+          class?: string | null
           confidence?: string
           control_id?: string
           created_at?: string
+          cycle_key?: string | null
+          decided_in_minutes?: number | null
+          decision_level?: number | null
           detail?: string
           due_date?: string | null
           evidence_ref?: string
-          exposure_usd?: number
+          exposure_usd?: number | null
           headline?: string
+          held?: boolean
           id?: string
           kind?: string
           project_id?: number
           project_name?: string
+          rank_score?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_note?: string
+          rule_id?: string | null
+          session_id?: string | null
           severity?: string
           source_excerpt?: string
           status?: string
@@ -1120,6 +1177,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      review_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          items_worked: number
+          minutes: number | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          items_worked?: number
+          minutes?: number | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          items_worked?: number
+          minutes?: number | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       reviewer_capacity: {
         Row: {
