@@ -4,6 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Project } from "./data";
+import { stageNumberOf } from "./stages";
 import { demoStatus, isDemoProject } from "./demo";
 
 export const CONTROL_STATUSES = [
