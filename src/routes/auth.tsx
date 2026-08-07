@@ -218,7 +218,6 @@ function AuthPage() {
         </div>
       </div>
     </div>
-      )}
     </ClientOnly>
   );
 }
