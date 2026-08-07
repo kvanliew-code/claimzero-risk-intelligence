@@ -62,6 +62,30 @@ export interface Citation {
   clause?: string;
 }
 
+/**
+ * NO FINDING WITHOUT A REMEDY.
+ *
+ * Binding rule (REPORT_STYLE.md). Every failing or at-risk line in every
+ * ClaimZero report carries the specific work that raises it, the named seat
+ * accountable for doing it, what it costs and the date it is required by.
+ * A mark without a remedy is a complaint, not intelligence.
+ *
+ * `cost` and `requiredBy` are withheld rather than estimated when the facts
+ * have not been captured — the withholding is itself the finding.
+ */
+export interface Remedy {
+  /** The specific work that raises the mark. Never "monitor" or "review". */
+  work: string;
+  /** Named responsible seat. Never a company, never blank. */
+  seat: string;
+  /** Cost of the remedy, or an explicit withholding. */
+  cost: string;
+  /** Date the work must be complete by, or the gate it must precede. */
+  requiredBy: string;
+}
+
+
+
 export interface Column {
   key: string;
   label: string;
