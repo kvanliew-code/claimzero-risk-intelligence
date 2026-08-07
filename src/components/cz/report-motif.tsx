@@ -278,7 +278,7 @@ export function ReportMotif({ className = "" }: { className?: string }) {
       className={`pointer-events-none relative flex items-center justify-center select-none ${className}`}
     >
       <div className="relative">
-        <div className="absolute -top-16 -right-10 rotate-[6deg]">
+        <div className="absolute -top-28 -right-36 rotate-[7deg]">
           <DigestSheet />
         </div>
         <div className="relative rotate-[-2deg]">
