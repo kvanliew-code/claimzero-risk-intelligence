@@ -131,8 +131,16 @@ function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setBusy(false);
 
-    if (updateError) setError(updateError.message);
-    else setComplete(true);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    // A recovery link creates a temporary authenticated session. Clear it so
+    // returning to /auth presents a real sign-in form instead of immediately
+    // redirecting with the recovery session still active.
+    await supabase.auth.signOut({ scope: "local" });
+    setComplete(true);
   };
 
   return (

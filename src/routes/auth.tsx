@@ -55,8 +55,6 @@ function Grid() {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"signin" | "forgot">("signin");
@@ -67,8 +65,6 @@ function AuthPage() {
       if (data.session) void navigate({ to: "/", replace: true });
     });
   }, [navigate]);
-
-  const finish = () => navigate({ to: "/", replace: true });
 
   const signIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,13 +79,24 @@ function AuthPage() {
     }
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({
+    const { data, error: err } = await supabase.auth.signInWithPassword({
       email: emailValue,
       password: passwordValue,
     });
-    setBusy(false);
-    if (err) setError(err.message);
-    else void finish();
+    if (err || !data.session) {
+      setBusy(false);
+      setError(err?.message ?? "Sign-in did not create a session. Please try again.");
+      return;
+    }
+
+    const { data: verified, error: verificationError } = await supabase.auth.getUser();
+    if (verificationError || !verified.user) {
+      setBusy(false);
+      setError("Your sign-in could not be verified. Please try again.");
+      return;
+    }
+
+    window.location.assign("/");
   };
 
   const sendReset = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -199,7 +206,8 @@ function AuthPage() {
             name="claimzero-signin"
             onSubmit={mode === "signin" ? signIn : sendReset}
             method="post"
-            action="#"
+            action="/auth"
+            autoComplete="on"
             className="mt-6"
           >
             <label className="cz-eyebrow block text-[10px]" htmlFor="email">
@@ -211,8 +219,8 @@ function AuthPage() {
               type="email"
               required
               autoComplete="username"
-              defaultValue={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoCapitalize="none"
+              spellCheck={false}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="name@company.com"
             />
@@ -225,8 +233,6 @@ function AuthPage() {
               type="password"
               required
               autoComplete="current-password"
-              defaultValue={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="mt-1.5 w-full rounded-[6px] border border-cz-rule bg-cz-surface px-3 py-2.5 font-cz-mono text-[13px] outline-none focus:border-cz-accent"
               placeholder="••••••••••"
             />
