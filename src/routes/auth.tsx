@@ -103,7 +103,7 @@ function AuthPage() {
         <div className="absolute inset-0 opacity-70">
           <Grid />
         </div>
-        <div className="absolute inset-0 flex items-center justify-center pr-16 pb-28">
+        <div className="absolute inset-0 flex items-center justify-center pr-14 pb-12">
           <ReportMotif />
         </div>
         <div className="absolute right-8 bottom-8 left-8">
