@@ -178,7 +178,10 @@ export interface GeneratorContext {
   revision: number;
   /** Stage the user picked; defaults to the project's current stage. */
   stageNumber: number;
+  /** Captured budget and schedule facts. Null when nothing has been entered. */
+  finance?: ProjectFinance | null;
 }
+
 
 export type Generator = (ctx: GeneratorContext) => GeneratedReport;
 
