@@ -129,7 +129,8 @@ export function CzSidebar() {
 
       <div className="mt-3 border-t border-cz-grid px-2 pt-2.5">
         <div className="font-cz-sans text-[12.5px] font-bold">
-          {profile?.full_name || profile?.email || "Signed in"}
+          {session ? profile?.full_name || profile?.email || "Signed in" : "Not signed in"}
+
         </div>
         <div className="cz-eyebrow text-[9px]" style={{ color: "var(--cz-accent)" }}>
           {role ? ROLE_LABEL[role] : "No role assigned"}
