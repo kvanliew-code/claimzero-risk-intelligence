@@ -1,10 +1,29 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
 import { statusOf, useProjects, type Project } from "@/lib/claimzero/data";
-import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
+import { useProjectScoring, type ProjectScoring } from "@/lib/claimzero/useProjectScoring";
+import { ReportDoc } from "@/components/cz/report-doc";
+import { renderPublishedReport } from "@/lib/claimzero/report-print.functions";
+import {
+  advanceStatus,
+  fetchEscalationRules,
+  fetchReportDefinitions,
+  fetchReports,
+  generateReport,
+  isImplemented,
+  nextRevision,
+  publishReport,
+  saveDraft,
+  stageName,
+  type GeneratedReport,
+  type ReportDefinition,
+  type ReportRow,
+} from "@/lib/claimzero/reports";
+import type { SpecEscalationRule } from "@/lib/claimzero/escalation";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -103,13 +122,6 @@ function Foot({ left }: { left: string }) {
   );
 }
 
-function Weekly() {
-  const project = useProjects()[0];
-  if (!project)
-    return <div className="p-6 font-cz-mono text-[12px] text-cz-ink-3">Loading portfolio…</div>;
-  return <WeeklyBody project={project} />;
-}
-
 function WeeklyBody({ project }: { project: Project }) {
   const scoring = useProjectScoring(project);
   const top = scoring.scores
@@ -122,7 +134,7 @@ function WeeklyBody({ project }: { project: Project }) {
     <>
       <RdHead
         title="Weekly Development Intelligence Report"
-        meta={`1428 Brickell · Miami, FL · $500M · Week 32 · Mon ${TODAY} · v.W32-1`}
+        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · Mon ${TODAY}`}
       />
       <H4>Project Risk Index</H4>
       <div className="flex flex-wrap items-center gap-3.5">
@@ -193,12 +205,12 @@ function WeeklyBody({ project }: { project: Project }) {
   );
 }
 
-function Monthly() {
+function Monthly({ project }: { project: Project }) {
   return (
     <>
       <RdHead
         title="End-of-Month Executive Report"
-        meta={`1428 Brickell · Miami, FL · July 2026 · issued ${TODAY} · v.M07-1`}
+        meta={`${project.name} · ${project.city} · July 2026 · issued ${TODAY}`}
       />
       <H4>The month in one paragraph</H4>
       <Commentary>
@@ -289,52 +301,365 @@ function Monthly() {
   );
 }
 
+/* ------------------------------------------------------- registry grid */
+
+const STATUS_ORDER: Record<string, number> = {
+  DRAFT: 0,
+  IN_REVIEW: 1,
+  APPROVED: 2,
+  PUBLISHED: 3,
+};
+
+const LEGACY: Record<string, "weekly" | "monthly"> = {
+  WEEKLY_INTELLIGENCE: "weekly",
+  MONTHLY_EXECUTIVE: "monthly",
+};
+
+function Badge({ children, tone }: { children: React.ReactNode; tone?: string }) {
+  return (
+    <span
+      className="rounded-sm border px-1.5 py-0.5 font-cz-mono text-[9px] tracking-[0.1em] uppercase"
+      style={{ borderColor: tone ?? "var(--cz-rule)", color: tone ?? "var(--cz-ink-3)" }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function RegistryCard({
+  def,
+  stageNumber,
+  onOpen,
+  latest,
+}: {
+  def: ReportDefinition;
+  stageNumber: number;
+  onOpen: () => void;
+  latest: ReportRow | undefined;
+}) {
+  const inStage =
+    def.applicable_stages.length === 0 || def.applicable_stages.includes(stageNumber);
+  const available = isImplemented(def.report_key) || Boolean(LEGACY[def.report_key]);
+  return (
+    <div
+      className="flex flex-col rounded-md border border-cz-rule bg-cz-surface p-[18px]"
+      style={{
+        borderTop: `2px solid ${available ? "var(--cz-accent-solid)" : "var(--cz-rule)"}`,
+        opacity: available ? 1 : 0.72,
+      }}
+    >
+      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+        <Badge>{def.cadence.replace("_", " ")}</Badge>
+        <Badge>
+          stages {def.applicable_stages.length ? def.applicable_stages.join("/") : "any"}
+        </Badge>
+        {inStage ? (
+          <Badge tone="var(--cz-good)">in stage</Badge>
+        ) : (
+          <Badge>out of stage</Badge>
+        )}
+        {latest ? <Badge tone="var(--cz-accent)">{latest.status.replace("_", " ")}</Badge> : null}
+      </div>
+      <h3 className="font-cz-sans text-[15px] font-semibold">{def.title}</h3>
+      <div className="cz-eyebrow mt-0.5 tracking-[0.1em] text-cz-ink-3">{def.audience}</div>
+      <p className="mt-1 mb-3 font-cz-serif text-[12.5px] text-cz-ink-2">{def.decision}</p>
+      <div className="mt-auto">
+        {available ? (
+          <CzButton primary={inStage} onClick={onOpen}>
+            Generate →
+          </CzButton>
+        ) : (
+          <span className="font-cz-mono text-[10px] tracking-[0.1em] uppercase text-cz-ink-3">
+            Not yet available — sections configured, generation pending the aspect taxonomy fix
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ the page */
+
 function Reports() {
-  const navigate = useNavigate();
-  const [doc, setDoc] = useState<"none" | "weekly" | "monthly">("none");
+  const projects = useProjects();
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const project = projects.find((p) => p.id === projectId) ?? projects[0];
+
+  if (!project)
+    return (
+      <div className="min-h-screen">
+        <CzHeader crumb={<b className="text-cz-ink-1">Reports</b>} />
+        <div className="px-5 py-6 font-cz-mono text-[12px] text-cz-ink-3">Loading portfolio…</div>
+      </div>
+    );
+
+  return (
+    <ReportsBody
+      key={project.id}
+      project={project}
+      projects={projects}
+      onProject={setProjectId}
+    />
+  );
+}
+
+function ReportsBody({
+  project,
+  projects,
+  onProject,
+}: {
+  project: Project;
+  projects: Project[];
+  onProject: (id: number) => void;
+}) {
+  const scoring = useProjectScoring(project);
+  const [defs, setDefs] = useState<ReportDefinition[]>([]);
+  const [rules, setRules] = useState<SpecEscalationRule[]>([]);
+  const [rows, setRows] = useState<ReportRow[]>([]);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [stagePick, setStagePick] = useState<number | null>(null);
+  const [doc, setDoc] = useState<GeneratedReport | null>(null);
+  const [row, setRow] = useState<ReportRow | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const renderServerHtml = useServerFn(renderPublishedReport);
+
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      try {
+        const [d, r, existing] = await Promise.all([
+          fetchReportDefinitions(),
+          fetchEscalationRules().catch(() => [] as SpecEscalationRule[]),
+          fetchReports(project.id).catch(() => [] as ReportRow[]),
+        ]);
+        if (dead) return;
+        setDefs(d);
+        setRules(r);
+        setRows(existing);
+      } catch (e) {
+        if (!dead) setNote(e instanceof Error ? e.message : "Unable to load the report registry");
+      }
+    })();
+    return () => {
+      dead = true;
+    };
+  }, [project.id]);
+
+  const stage = stagePick ?? scoring.stageNumber;
+  const latestByKey = useMemo(() => {
+    const m = new Map<string, ReportRow>();
+    for (const r of rows) {
+      const prev = m.get(r.report_key);
+      if (!prev || STATUS_ORDER[r.status]! > STATUS_ORDER[prev.status]!) m.set(r.report_key, r);
+    }
+    return m;
+  }, [rows]);
+
+  const openDef = defs.find((d) => d.report_key === openKey) ?? null;
+  const legacy = openKey ? LEGACY[openKey] : undefined;
+
+  const runGenerate = async (def: ReportDefinition) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const revision = await nextRevision(project.id, def.report_key);
+      const generated = generateReport({
+        definition: def,
+        project,
+        scoring,
+        rules,
+        revision,
+        stageNumber: stage,
+      });
+      if (!generated) {
+        setNote("This report has no generator yet.");
+        return;
+      }
+      const saved = await saveDraft(generated);
+      setDoc(generated);
+      setRow(saved);
+      setRows((r) => [saved, ...r]);
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Generation failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const move = async (status: "IN_REVIEW" | "APPROVED") => {
+    if (!row) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const next = await advanceStatus(row, status);
+      setRow(next);
+      setRows((r) => r.map((x) => (x.id === next.id ? next : x)));
+    } catch {
+      setNote(
+        "Only an admin or reviewer may move a report past draft — the database refused the change.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doPublish = async () => {
+    if (!row) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const next = await publishReport(row);
+      setRow(next);
+      setRows((r) => r.map((x) => (x.id === next.id ? next : x)));
+      setNote("Published — an immutable, hash-chained snapshot was written.");
+    } catch {
+      setNote("Publishing was refused: an approved report and a reviewer or admin role are required.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doExport = async () => {
+    if (!row || row.status !== "PUBLISHED") return;
+    setBusy(true);
+    try {
+      const res = await renderServerHtml({ data: { reportId: row.id } });
+      const w = window.open("", "_blank");
+      if (!w) {
+        setNote("Allow pop-ups to export this document.");
+        return;
+      }
+      w.document.write(res.html);
+      w.document.close();
+      w.focus();
+      w.print();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
       <CzHeader
         crumb={
           <>
-            <b className="text-cz-ink-1">Reports</b> · concept mockup · synthetic data
+            <b className="text-cz-ink-1">Reports</b> · {project.name} · stage {stage}{" "}
+            {stageName(stage)}
           </>
         }
       />
       <div className="cz-no-print">
         <SHead
           title="Reports"
-          note="every report cites its records and passes the reviewer gate before it leaves the building"
+          note="nine report types, one generator interface — export and share only from a published, snapshotted revision"
         />
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3 px-5 py-3.5">
-          <RCard
-            title="Weekly Development Intelligence Report"
-            body="The Monday one-pager: Top 10 risks, priced and cited, with senior commentary. Five-minute read; act the same day."
-            action="Generate — 1428 Brickell, Wk 32 →"
-            primary
-            onClick={() => setDoc("weekly")}
-          />
-          <RCard
-            title="End-of-Month Executive Report"
-            body="The month reconciled: cost vs budget vs pro forma, schedule, draws pencil-walked, risks opened and retired, the city ledger."
-            action="Generate — 1428 Brickell, July →"
-            primary
-            onClick={() => setDoc("monthly")}
-          />
-          <RCard
-            title="Stakeholder Packages"
-            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR. Issued only from reviewed risks, so each package is assembled per project from its own Reports tab."
-            action="Open a project → Reports"
-            onClick={() => navigate({ to: "/portfolio" })}
-          />
 
+        <div className="flex flex-wrap items-center gap-3 px-5 pt-3.5">
+          <label className="cz-eyebrow tracking-[0.12em] text-cz-ink-3" htmlFor="rp-project">
+            Project
+          </label>
+          <select
+            id="rp-project"
+            className="rounded-sm border border-cz-rule bg-cz-surface px-2 py-1 font-cz-mono text-[11px]"
+            value={project.id}
+            onChange={(e) => {
+              onProject(Number(e.target.value));
+              setDoc(null);
+              setRow(null);
+              setOpenKey(null);
+            }}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} — {p.city}
+              </option>
+            ))}
+          </select>
+
+          <label className="cz-eyebrow tracking-[0.12em] text-cz-ink-3" htmlFor="rp-stage">
+            Stage
+          </label>
+          <select
+            id="rp-stage"
+            className="rounded-sm border border-cz-rule bg-cz-surface px-2 py-1 font-cz-mono text-[11px]"
+            value={stage}
+            onChange={(e) => setStagePick(Number(e.target.value))}
+          >
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <option key={n} value={n}>
+                {n} · {stageName(n)}
+              </option>
+            ))}
+          </select>
+          {scoring.loading ? (
+            <span className="font-cz-mono text-[10px] tracking-[0.1em] uppercase text-cz-ink-3">
+              scoring…
+            </span>
+          ) : null}
         </div>
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3 px-5 py-3.5">
+          {defs.map((d) => (
+            <RegistryCard
+              key={d.report_key}
+              def={d}
+              stageNumber={stage}
+              latest={latestByKey.get(d.report_key)}
+              onOpen={() => {
+                setOpenKey(d.report_key);
+                setDoc(null);
+                setRow(null);
+                setNote(null);
+                if (isImplemented(d.report_key)) void runGenerate(d);
+              }}
+            />
+          ))}
+        </div>
+
+        {note ? (
+          <div className="mx-5 mb-3 rounded-sm border border-cz-rule bg-cz-surface px-3 py-2 font-cz-serif text-[12.5px] text-cz-ink-2">
+            {note}
+          </div>
+        ) : null}
+
+        {row && doc ? (
+          <div className="mx-5 mb-1 flex flex-wrap items-center gap-2 rounded-sm border border-cz-rule bg-cz-surface px-3 py-2">
+            <span className="font-cz-mono text-[10px] tracking-[0.1em] uppercase text-cz-ink-3">
+              {doc.meta.doc_number} · rev {doc.meta.revision} · {row.status.replace("_", " ")}
+            </span>
+            <CzButton disabled={busy || row.status !== "DRAFT"} onClick={() => void move("IN_REVIEW")}>
+              Submit for review
+            </CzButton>
+            <CzButton
+              disabled={busy || row.status !== "IN_REVIEW"}
+              onClick={() => void move("APPROVED")}
+            >
+              Approve
+            </CzButton>
+            <CzButton primary disabled={busy || row.status !== "APPROVED"} onClick={() => void doPublish()}>
+              Publish &amp; snapshot
+            </CzButton>
+            <CzButton
+              disabled={busy || row.status !== "PUBLISHED"}
+              title={
+                row.status === "PUBLISHED"
+                  ? "Server-rendered canonical HTML"
+                  : "Export is available only from a published revision"
+              }
+              onClick={() => void doExport()}
+            >
+              Export / share
+            </CzButton>
+          </div>
+        ) : null}
       </div>
 
-      {doc !== "none" ? (
+      {legacy ? (
         <div className="cz-print-doc mx-5 my-4 max-w-[880px] rounded-lg border border-cz-rule bg-cz-surface px-[30px] py-[26px]">
-          {doc === "weekly" ? <Weekly /> : <Monthly />}
+          {legacy === "weekly" ? <WeeklyBody project={project} /> : <Monthly project={project} />}
           <div className="cz-no-print mt-3.5">
             <CzButton primary onClick={() => window.print()}>
               Print / Save as PDF
@@ -342,6 +667,8 @@ function Reports() {
           </div>
         </div>
       ) : null}
+
+      {doc && openDef && !legacy ? <ReportDoc report={doc} /> : null}
     </div>
   );
 }
