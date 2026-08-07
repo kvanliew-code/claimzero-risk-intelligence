@@ -81,9 +81,11 @@ parallel — leave `sections` empty rather than guessing at it.
 
 `20260807050542` created both by copying a neighbour's `domain_weights` with `exit_criteria = '[]'::jsonb`.
 **A project in either stage currently passes its gate by default because there is nothing to fail.**
-Load exit criteria and control families from `docs/registers/ClaimZero_Schematic_and_Takeout_Register_v1.csv`
-(47 controls: 19 Schematic, 28 Takeout). **If that CSV is not in the repo, say so and stop — do not invent
-controls.**
+Load exit criteria and control families from
+`docs/registers/ClaimZero_Schematic_and_Takeout_Register_v2_T30.csv`
+(47 controls: 19 Schematic, 28 Takeout) — **committed 7 Aug 2026, commit `6f0dd11`.** Aspect ids in that file are
+already remapped to the thirty-aspect taxonomy (REQ-006); `legacy_aspect_id` is preserved in the file for audit.
+**If that CSV is not in the repo, say so and stop — do not invent controls.**
 
 ## REQ-012 — Engagement billing
 
@@ -128,8 +130,12 @@ Every event and every piece of evidence needs **two** dates:
 - `known_at` — when ClaimZero could first have known it from a loaded source
 
 **Playback filters on `known_at`, never `occurred_at`.** The CZ-001 seed already depends on this: the 2/28/2019
-Stop Work Order *happened* in February but only became knowable on 4/23/2019 when the monthly report disclosed
-it. A single-date implementation passes the 4/23 checkpoint by accident and is wrong everywhere else.
+partial Stop Work Order *happened* on 28 February and became **knowable on 3/6/2019**, when the monthly report
+covering that period disclosed it — a **six-day gap**, verified in `2019-03-06_Monthy Report - 40 East 66th .docx`.
+A single-date implementation collapses that gap and is wrong at every checkpoint falling inside it.
+
+*(Correction of record: earlier versions of this file stated 4/23/2019. That was wrong — the 6 March report
+discloses the SWO twice, verbatim. `CLAUDE.md` carries the same correction.)*
 
 **Enforce quarantine server-side, not with an application-level filter.** One forgotten `.filter()` contaminates
 a report, and contamination is fatal for a product whose value is defensibility.
