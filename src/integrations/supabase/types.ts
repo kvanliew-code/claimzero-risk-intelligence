@@ -697,27 +697,42 @@ export type Database = {
         Row: {
           architect_agreement: string
           asset_class: string[]
+          baseline_start: string | null
+          baseline_substantial_completion: string | null
           below_grade_levels: number
           building_height_stories: number
           capital_structure: string[]
+          carry_cost_per_day_usd: number
+          change_orders_approved_usd: number
+          change_orders_pending_usd: number
           city: string
           client_id: string | null
+          contingency_drawn_usd: number
+          contingency_total_usd: number
           contract_form: string
+          contract_sum_usd: number
           contract_value_band: string
           county_jurisdiction: string
           created_at: string
           current_stage: number
+          debt_committed_usd: number
           delivery_model: string
           engagement_id: string | null
           engagement_level: string
           entitlement_status: string
+          equity_committed_usd: number
           exposure: number
+          forecast_substantial_completion: string | null
           ground_lease: boolean
+          hard_cost_usd: number
           historic_designation: boolean
           hvhz: boolean
           id: number
           idx: number
           labor_market: string
+          land_cost_usd: number
+          ld_per_day_usd: number
+          loan_maturity: string | null
           name: string
           native_schedule_files_required: boolean
           occupancy_phasing: string
@@ -727,6 +742,7 @@ export type Database = {
           schedule_software: string
           site_condition: string
           size_m: number
+          soft_cost_usd: number
           stage: string
           state: string
           threshold_building: boolean
@@ -738,27 +754,42 @@ export type Database = {
         Insert: {
           architect_agreement?: string
           asset_class?: string[]
+          baseline_start?: string | null
+          baseline_substantial_completion?: string | null
           below_grade_levels?: number
           building_height_stories?: number
           capital_structure?: string[]
+          carry_cost_per_day_usd?: number
+          change_orders_approved_usd?: number
+          change_orders_pending_usd?: number
           city?: string
           client_id?: string | null
+          contingency_drawn_usd?: number
+          contingency_total_usd?: number
           contract_form?: string
+          contract_sum_usd?: number
           contract_value_band?: string
           county_jurisdiction?: string
           created_at?: string
           current_stage?: number
+          debt_committed_usd?: number
           delivery_model?: string
           engagement_id?: string | null
           engagement_level?: string
           entitlement_status?: string
+          equity_committed_usd?: number
           exposure?: number
+          forecast_substantial_completion?: string | null
           ground_lease?: boolean
+          hard_cost_usd?: number
           historic_designation?: boolean
           hvhz?: boolean
           id: number
           idx?: number
           labor_market?: string
+          land_cost_usd?: number
+          ld_per_day_usd?: number
+          loan_maturity?: string | null
           name: string
           native_schedule_files_required?: boolean
           occupancy_phasing?: string
@@ -768,6 +799,7 @@ export type Database = {
           schedule_software?: string
           site_condition?: string
           size_m?: number
+          soft_cost_usd?: number
           stage?: string
           state?: string
           threshold_building?: boolean
@@ -779,27 +811,42 @@ export type Database = {
         Update: {
           architect_agreement?: string
           asset_class?: string[]
+          baseline_start?: string | null
+          baseline_substantial_completion?: string | null
           below_grade_levels?: number
           building_height_stories?: number
           capital_structure?: string[]
+          carry_cost_per_day_usd?: number
+          change_orders_approved_usd?: number
+          change_orders_pending_usd?: number
           city?: string
           client_id?: string | null
+          contingency_drawn_usd?: number
+          contingency_total_usd?: number
           contract_form?: string
+          contract_sum_usd?: number
           contract_value_band?: string
           county_jurisdiction?: string
           created_at?: string
           current_stage?: number
+          debt_committed_usd?: number
           delivery_model?: string
           engagement_id?: string | null
           engagement_level?: string
           entitlement_status?: string
+          equity_committed_usd?: number
           exposure?: number
+          forecast_substantial_completion?: string | null
           ground_lease?: boolean
+          hard_cost_usd?: number
           historic_designation?: boolean
           hvhz?: boolean
           id?: number
           idx?: number
           labor_market?: string
+          land_cost_usd?: number
+          ld_per_day_usd?: number
+          loan_maturity?: string | null
           name?: string
           native_schedule_files_required?: boolean
           occupancy_phasing?: string
@@ -809,6 +856,7 @@ export type Database = {
           schedule_software?: string
           site_condition?: string
           size_m?: number
+          soft_cost_usd?: number
           stage?: string
           state?: string
           threshold_building?: boolean

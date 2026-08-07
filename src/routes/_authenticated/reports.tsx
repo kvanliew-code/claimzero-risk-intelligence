@@ -5,7 +5,9 @@ import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
 import { statusOf, useProjects, type Project } from "@/lib/claimzero/data";
+import { fetchProjectFinance } from "@/lib/claimzero/finance";
 import { useProjectScoring, type ProjectScoring } from "@/lib/claimzero/useProjectScoring";
+
 import { ReportDoc } from "@/components/cz/report-doc";
 import { renderPublishedReport } from "@/lib/claimzero/report-print.functions";
 import {
@@ -464,6 +466,7 @@ function ReportsBody({
     setNote(null);
     try {
       const revision = await nextRevision(project.id, def.report_key);
+      const finance = await fetchProjectFinance(project.id).catch(() => null);
       const generated = generateReport({
         definition: def,
         project,
@@ -471,7 +474,9 @@ function ReportsBody({
         rules,
         revision,
         stageNumber: stage,
+        finance,
       });
+
       if (!generated) {
         setNote("This report has no generator yet.");
         return;

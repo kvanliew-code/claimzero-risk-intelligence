@@ -242,6 +242,96 @@ function Section({ s }: { s: ReportSection }) {
         </>
       );
 
+    case "metric_grid": {
+      const toneColor = (t: string) =>
+        t === "good"
+          ? "var(--cz-good)"
+          : t === "warn"
+            ? "var(--cz-warn, #b8860b)"
+            : t === "bad"
+              ? "var(--cz-critical)"
+              : "inherit";
+      return (
+        <>
+          <H4>{s.title}</H4>
+          {s.note ? (
+            <p
+              className="mb-2 border-l-2 pl-3 font-cz-serif text-[12.5px] text-cz-ink-2"
+              style={{ borderColor: "var(--cz-accent-solid)" }}
+            >
+              {s.note}
+            </p>
+          ) : null}
+          <div className="my-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {s.metrics.map((m) => (
+              <div key={m.label} className="rounded border border-cz-grid px-3 py-2.5">
+                <div className="cz-eyebrow tracking-[0.12em] text-cz-ink-3">{m.label}</div>
+                <div
+                  className="cz-figure mt-1 text-[17px] font-bold"
+                  style={{ color: toneColor(m.tone) }}
+                >
+                  {m.value}
+                </div>
+                <div className="mt-0.5 font-cz-serif text-[11.5px] leading-[1.45] text-cz-ink-3">
+                  {m.sub}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    case "grade_card": {
+      const toneColor = (t: string) =>
+        t === "good"
+          ? "var(--cz-good)"
+          : t === "warn"
+            ? "var(--cz-warn, #b8860b)"
+            : t === "bad"
+              ? "var(--cz-critical)"
+              : "var(--cz-ink-3, inherit)";
+      return (
+        <>
+          <H4>{s.title}</H4>
+          {s.note ? (
+            <p className="mb-2 font-cz-serif text-[12.5px] text-cz-ink-3">{s.note}</p>
+          ) : null}
+          <table className="my-2 w-full border-collapse text-[12.5px]">
+            <thead>
+              <tr>
+                {["Stage", "Phase", "State", "KPI", "Verified", "Complete", "Grade"].map((h) => (
+                  <th key={h} className={thCls}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {s.rows.map((r) => (
+                <tr key={r.stage}>
+                  <td className={`${tdCls} font-cz-mono`}>{r.stage}</td>
+                  <td className={`${tdCls} font-cz-sans font-semibold`}>{r.phase}</td>
+                  <td className={`${tdCls} font-cz-mono text-[11px]`}>{r.state}</td>
+                  <td className={`${tdCls} font-cz-serif`}>{r.kpi}</td>
+                  <td className={`${tdCls} font-cz-mono`}>
+                    {r.verified}/{r.applicable}
+                  </td>
+                  <td className={`${tdCls} font-cz-mono`}>{r.completeness}%</td>
+                  <td
+                    className={`${tdCls} font-cz-sans text-[15px] font-bold`}
+                    style={{ color: toneColor(r.tone) }}
+                  >
+                    {r.grade}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      );
+    }
+
     case "signature_block":
       return (
         <>
@@ -259,6 +349,7 @@ function Section({ s }: { s: ReportSection }) {
           </div>
         </>
       );
+
 
     default:
       return null;

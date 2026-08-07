@@ -90,6 +90,28 @@ function sectionHtml(s: ReportSection): string {
               .join("")
           : rows(["—", "No dated entries", "—", "—"])
       }</tbody></table>`;
+    case "metric_grid":
+      return (
+        h +
+        (s.note ? `<p class="withheld">${esc(s.note)}</p>` : "") +
+        `<div class="metrics">${s.metrics
+          .map(
+            (m) =>
+              `<div class="metric"><span class="mlabel">${esc(m.label)}</span><span class="mval t-${esc(m.tone)}">${esc(m.value)}</span><span class="msub">${esc(m.sub)}</span></div>`,
+          )
+          .join("")}</div>`
+      );
+    case "grade_card":
+      return (
+        h +
+        (s.note ? `<p class="cons">${esc(s.note)}</p>` : "") +
+        `<table><thead>${rows(["Stage", "Phase", "State", "KPI", "Verified", "Complete", "Grade"], "th")}</thead><tbody>${s.rows
+          .map(
+            (r) =>
+              `<tr><td>${esc(r.stage)}</td><td><b>${esc(r.phase)}</b></td><td>${esc(r.state)}</td><td>${esc(r.kpi)}</td><td>${esc(r.verified)}/${esc(r.applicable)}</td><td>${esc(r.completeness)}%</td><td class="grade t-${esc(r.tone)}">${esc(r.grade)}</td></tr>`,
+          )
+          .join("")}</tbody></table>`
+      );
     case "signature_block":
       return `${h}<p>${esc(s.statement)}</p>${s.signatories
         .map(
@@ -97,6 +119,7 @@ function sectionHtml(s: ReportSection): string {
             `<div class="sig"><span class="line"></span><span class="role">${esc(r)} — name, signature, date</span></div>`,
         )
         .join("")}`;
+
     default:
       return h;
   }
@@ -137,6 +160,16 @@ export function reportToHtml(
   .line { display: block; border-bottom: 1px solid #14202c; width: 320px; height: 22px; }
   .role { font: 9px "Courier New", monospace; letter-spacing: .08em; text-transform: uppercase; color: #5a6773; }
   .unresolved li { margin-bottom: 4px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
+  .metric { border: 1px solid #e3e7ea; padding: 7px 9px; break-inside: avoid; }
+  .mlabel { display: block; font: 700 8.5px "Courier New", monospace; letter-spacing: .1em;
+            text-transform: uppercase; color: #5a6773; }
+  .mval { display: block; font: 700 15px Helvetica, Arial, sans-serif; margin: 3px 0 2px; }
+  .msub { display: block; font-size: 10px; color: #5a6773; line-height: 1.4; }
+  .grade { font: 700 14px Helvetica, Arial, sans-serif; }
+  .t-good { color: #1f7a4d; } .t-warn { color: #a8730f; } .t-bad { color: #a33; }
+  .t-neutral { color: #14202c; }
+
   footer { margin-top: 22px; border-top: 1px solid #e3e7ea; padding-top: 8px;
            font: 9px "Courier New", monospace; letter-spacing: .08em; text-transform: uppercase; color: #5a6773;
            display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
