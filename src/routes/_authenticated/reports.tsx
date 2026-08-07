@@ -317,10 +317,11 @@ function Reports() {
           />
           <RCard
             title="Stakeholder Packages"
-            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR — issued only from reviewed risks."
-            action="In platform build"
-            onClick={() => setDoc("none")}
+            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR. Issued only from reviewed risks, so each package is assembled per project from its own Reports tab."
+            action="Open a project → Reports"
+            onClick={() => navigate({ to: "/portfolio" })}
           />
+
         </div>
       </div>
 
