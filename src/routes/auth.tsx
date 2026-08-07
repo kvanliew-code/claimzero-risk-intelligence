@@ -6,7 +6,7 @@ import { ReportMotif } from "@/components/cz/report-motif";
 
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
+  
   head: () => ({
     meta: [
       { title: "Sign in — ClaimZero Development Risk Intelligence" },
