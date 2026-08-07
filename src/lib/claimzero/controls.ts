@@ -133,7 +133,7 @@ export interface ControlSpec {
   expected_evidence: string;
   primary_owner_role: string;
   dependency: string;
-  min_tier: Tier;
+  min_tier: ControlTier;
   domain: Domain;
   /** Cross-cutting: evaluated in every stage gate from stage_number forward. */
   continuous: boolean;
@@ -479,11 +479,11 @@ export function parseCsv(text: string): string[][] {
  * must surface that as an import error rather than substituting a default.
  * A silent default here is what pushed every row to a single tier last time.
  */
-export function normaliseControlTier(raw: string): Tier | null {
+export function normaliseControlTier(raw: string): ControlTier | null {
   const v = raw.trim().toUpperCase();
-  if (v === "A" || v === "CORE") return "A";
-  if (v === "B" || v === "EXTENDED") return "B";
-  if (v === "C" || v === "COMPREHENSIVE") return "C";
+  if (v === "A" || v === "CORE") return "CORE";
+  if (v === "B" || v === "EXTENDED") return "EXTENDED";
+  if (v === "C" || v === "COMPREHENSIVE") return "COMPREHENSIVE";
   return null;
 }
 

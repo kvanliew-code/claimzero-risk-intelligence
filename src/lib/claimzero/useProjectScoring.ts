@@ -8,6 +8,7 @@ import {
   fetchRegister,
   stageNumberFor,
   tierFor,
+  type ProjectTier,
   type ControlInstance,
   type ControlSpec,
 } from "./controls";
@@ -38,7 +39,7 @@ export interface ProjectScoring {
   gate: SpecStageGate | null;
   exitCriteria: ExitCriterion[];
   stageNumber: number;
-  tier: "A" | "B" | "C";
+  tier: ProjectTier;
 }
 
 export function useProjectScoring(project: Project): ProjectScoring {
