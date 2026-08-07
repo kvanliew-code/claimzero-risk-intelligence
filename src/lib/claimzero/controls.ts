@@ -156,6 +156,8 @@ export interface ControlSpec {
   verification_method: VerificationMethod | "";
   /** Aspect roll-up (A01–A15), derived from family_code by the register. */
   aspect_id: string | null;
+  /** v4.0 — the mitigation language issued to third parties in the RMP. */
+  mitigation_template?: string | null;
 }
 
 
