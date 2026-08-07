@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, ClientOnly } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ReportMotif } from "@/components/cz/report-motif";
+import { PreviewTour } from "@/components/cz/preview-tour";
 import { Button } from "@/components/ui/button";
 
 
@@ -135,16 +135,17 @@ function AuthPage() {
         <div className="absolute inset-0 opacity-70">
           <Grid />
         </div>
-        <div className="absolute inset-0 flex items-center justify-center pr-14 pb-12">
-          <ReportMotif />
+        <div className="absolute inset-0 flex items-center justify-center px-8 pb-28">
+          <PreviewTour />
         </div>
         <div className="absolute right-8 bottom-8 left-8">
           <div className="cz-eyebrow text-[10px] tracking-[0.22em]" style={{ color: "var(--cz-accent)" }}>
-            —— What lands on Monday
+            —— Take a look around
           </div>
           <p className="mt-2 max-w-[440px] font-cz-serif text-[14px] text-cz-ink-2">
-            Every flagged risk cites a source record and passes a reviewer approval gate before it
-            reaches an Owner. You see problems before they become claims — source-cited, reviewer-approved, and never estimated.
+            Click through the menu above to see what lands on Monday. Every flagged risk cites a
+            source record and passes a reviewer approval gate before it reaches an Owner —
+            source-cited, reviewer-approved, and never estimated.
           </p>
         </div>
       </div>
