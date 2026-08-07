@@ -464,6 +464,7 @@ function ReportsBody({
     setNote(null);
     try {
       const revision = await nextRevision(project.id, def.report_key);
+      const finance = await fetchProjectFinance(project.id).catch(() => null);
       const generated = generateReport({
         definition: def,
         project,
@@ -471,7 +472,9 @@ function ReportsBody({
         rules,
         revision,
         stageNumber: stage,
+        finance,
       });
+
       if (!generated) {
         setNote("This report has no generator yet.");
         return;
