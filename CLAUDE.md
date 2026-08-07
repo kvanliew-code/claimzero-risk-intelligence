@@ -60,7 +60,9 @@ Every event and every piece of evidence needs **two** dates:
 - `occurred_at` — when it happened in the world
 - `known_at` — when ClaimZero could first have known it from a loaded source
 
-**Playback filters on `known_at`, never `occurred_at`.** The seed already depends on this: the 2/28/2019 Stop Work Order *happened* in February but only became knowable on 4/23/2019 when the monthly report disclosed it. A single-date implementation passes the 4/23 checkpoint by accident and is wrong everywhere else.
+**Playback filters on `known_at`, never `occurred_at`.** The CZ-001 case proves it against primary documents: the 2/28/2019 partial Stop Work Order *happened* on 28 February and became **knowable on 3/6/2019**, when the monthly report covering that period disclosed it — a **six-day gap**, verified in `2019-03-06_Monthy Report - 40 East 66th .docx`. A single-date implementation collapses that gap and is wrong at every checkpoint falling inside it.
+
+*(Correction of record: earlier versions of this file stated the SWO became knowable on 4/23/2019. That was wrong. The 6 March report discloses it twice, verbatim. See `CZ001_40E66_CALIBRATION_FINDINGS_v1.md` in the ClaimZero Egnyte folder.)*
 
 Enforce quarantine server-side, not with an application-level filter. One forgotten `.filter()` contaminates a report, and contamination is fatal for a product whose value is defensibility.
 
