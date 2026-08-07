@@ -198,7 +198,7 @@ function Intake() {
                     key={f.key}
                     className={f.kind === "multiselect" ? "sm:col-span-2" : undefined}
                   >
-                    <Field f={f} value={draft[f.key]} onChange={(v) => set(f.key, v)} />
+                    <Field f={f} value={draft[f.key] ?? ""} onChange={(v) => set(f.key, v)} />
                   </div>
                 ))}
               </div>
