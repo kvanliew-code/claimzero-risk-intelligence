@@ -1,5 +1,8 @@
-// ClaimZero — synthetic, deterministic portfolio data.
-// Concept data only: every figure here is illustrative, never estimated from a real record.
+// ClaimZero — portfolio data. Project records are read from public.projects;
+// the illustrative aspect/detail content below is concept data only.
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export type StatusName = "Critical" | "Serious" | "Watch" | "Stable";
 
