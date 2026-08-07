@@ -203,6 +203,7 @@ export type Database = {
           inherits_forward: boolean
           irreversibility: string
           min_tier: string
+          mitigation_template: string | null
           objective: string
           primary_owner_role: string
           requirement: string
@@ -234,7 +235,8 @@ export type Database = {
           id?: string
           inherits_forward?: boolean
           irreversibility?: string
-          min_tier?: string
+          min_tier: string
+          mitigation_template?: string | null
           objective?: string
           primary_owner_role?: string
           requirement?: string
@@ -267,6 +269,7 @@ export type Database = {
           inherits_forward?: boolean
           irreversibility?: string
           min_tier?: string
+          mitigation_template?: string | null
           objective?: string
           primary_owner_role?: string
           requirement?: string
@@ -381,6 +384,45 @@ export type Database = {
           severity?: string
           severity_floor?: string
           stages?: number[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      family_applicability_rules: {
+        Row: {
+          asset_classes: string[] | null
+          created_at: string
+          delivery_models: string[] | null
+          family_code: string
+          family_name: string
+          predicates: Json
+          reason_template: string | null
+          rule_source: string
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          asset_classes?: string[] | null
+          created_at?: string
+          delivery_models?: string[] | null
+          family_code: string
+          family_name?: string
+          predicates?: Json
+          reason_template?: string | null
+          rule_source?: string
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          asset_classes?: string[] | null
+          created_at?: string
+          delivery_models?: string[] | null
+          family_code?: string
+          family_name?: string
+          predicates?: Json
+          reason_template?: string | null
+          rule_source?: string
+          stage_number?: number
           updated_at?: string
         }
         Relationships: []
@@ -635,6 +677,147 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          architect_agreement: string
+          asset_class: string[]
+          below_grade_levels: number
+          building_height_stories: number
+          capital_structure: string[]
+          city: string
+          client_id: string | null
+          contract_form: string
+          contract_value_band: string
+          county_jurisdiction: string
+          created_at: string
+          current_stage: number
+          delivery_model: string
+          engagement_id: string | null
+          engagement_level: string
+          entitlement_status: string
+          exposure: number
+          ground_lease: boolean
+          historic_designation: boolean
+          hvhz: boolean
+          id: number
+          idx: number
+          labor_market: string
+          name: string
+          native_schedule_files_required: boolean
+          occupancy_phasing: string
+          project_tier: string
+          public_funding: boolean
+          sales_structure: string
+          schedule_software: string
+          site_condition: string
+          size_m: number
+          stage: string
+          state: string
+          threshold_building: boolean
+          top_aspect: string
+          top_risk: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          architect_agreement?: string
+          asset_class?: string[]
+          below_grade_levels?: number
+          building_height_stories?: number
+          capital_structure?: string[]
+          city?: string
+          client_id?: string | null
+          contract_form?: string
+          contract_value_band?: string
+          county_jurisdiction?: string
+          created_at?: string
+          current_stage?: number
+          delivery_model?: string
+          engagement_id?: string | null
+          engagement_level?: string
+          entitlement_status?: string
+          exposure?: number
+          ground_lease?: boolean
+          historic_designation?: boolean
+          hvhz?: boolean
+          id: number
+          idx?: number
+          labor_market?: string
+          name: string
+          native_schedule_files_required?: boolean
+          occupancy_phasing?: string
+          project_tier?: string
+          public_funding?: boolean
+          sales_structure?: string
+          schedule_software?: string
+          site_condition?: string
+          size_m?: number
+          stage?: string
+          state?: string
+          threshold_building?: boolean
+          top_aspect?: string
+          top_risk?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          architect_agreement?: string
+          asset_class?: string[]
+          below_grade_levels?: number
+          building_height_stories?: number
+          capital_structure?: string[]
+          city?: string
+          client_id?: string | null
+          contract_form?: string
+          contract_value_band?: string
+          county_jurisdiction?: string
+          created_at?: string
+          current_stage?: number
+          delivery_model?: string
+          engagement_id?: string | null
+          engagement_level?: string
+          entitlement_status?: string
+          exposure?: number
+          ground_lease?: boolean
+          historic_designation?: boolean
+          hvhz?: boolean
+          id?: number
+          idx?: number
+          labor_market?: string
+          name?: string
+          native_schedule_files_required?: boolean
+          occupancy_phasing?: string
+          project_tier?: string
+          public_funding?: boolean
+          sales_structure?: string
+          schedule_software?: string
+          site_condition?: string
+          size_m?: number
+          stage?: string
+          state?: string
+          threshold_building?: boolean
+          top_aspect?: string
+          top_risk?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_items: {
         Row: {
           aspect_id: string
@@ -799,7 +982,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      evaluate_predicate: {
+        Args: { predicate: Json; profile: Json }
+        Returns: boolean
+      }
+      family_applies: {
+        Args: { family_code: string; profile: Json }
+        Returns: boolean
+      }
+      get_applicable_families: { Args: { profile: Json }; Returns: string[] }
+      get_family_applicability_reasons: {
+        Args: { profile: Json }
+        Returns: {
+          applies: boolean
+          family_code: string
+          reason: string
+        }[]
+      }
+      project_profile_jsonb: {
+        Args: { p: Database["public"]["Tables"]["projects"]["Row"] }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "executive" | "project_manager" | "reviewer"
