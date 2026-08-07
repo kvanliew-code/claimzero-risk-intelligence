@@ -152,6 +152,47 @@ export type ReportSection =
       entries: { date: string; event: string; owner: string; source: string }[];
     }
   | {
+      /**
+       * The Development Control Report Card. Each aspect is a subject, credits
+       * are proportional to applicable control mass at the current stage, and
+       * the mark is 100 minus the aspect risk score — HIGH IS GOOD. This is the
+       * deliberate inverse of the risk index: owners read grades intuitively,
+       * risk indices they do not. Subjects with no applicable control at this
+       * stage are N/A and excluded from the term grade — never counted as
+       * passing.
+       */
+      type: "transcript";
+      title: string;
+      note: string | null;
+      subjects: {
+        aspect_id: string;
+        aspect_name: string;
+        owner_question: string;
+        /** null = N/A, excluded from the term grade. */
+        mark: number | null;
+        letter: string;
+        gradePoints: number | null;
+        credits: number;
+        controls: number;
+        verified: number;
+        confidence: number;
+        band: string;
+        tone: "good" | "warn" | "bad" | "neutral";
+        /** Required on every subject below the pass mark. */
+        remedy: Remedy | null;
+      }[];
+      termGrade: {
+        mark: number | null;
+        letter: string;
+        gpa: number | null;
+        credits: number;
+        subjectsGraded: number;
+        subjectsNotApplicable: number;
+        tone: "good" | "warn" | "bad" | "neutral";
+      };
+    }
+
+  | {
       type: "signature_block";
       title: string;
       statement: string;
