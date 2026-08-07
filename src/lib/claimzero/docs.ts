@@ -137,7 +137,7 @@ export interface Register {
 }
 
 export function registerFor(project: Project): Register {
-  const cut = STAGE_INDEX[project.stage] ?? 4;
+  const cut = stageCutFor(project);
   const rnd = seeded(project.id + 7);
   const items: DocItem[] = REGISTER.map((spec, i) => {
     const stageIdx = LIFECYCLE.indexOf(spec.stage);
