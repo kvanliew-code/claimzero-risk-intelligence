@@ -199,7 +199,7 @@ function AuthPage() {
           <p className="mt-6 font-cz-serif text-[12.5px] text-cz-ink-3">
             Access is issued by ClaimZero. There is no open signup.{" "}
             <a
-              href="mailto:access@claimzero.at?subject=ClaimZero%20access%20request"
+              href="mailto:access@claimzero.ai?subject=ClaimZero%20access%20request"
               className="underline"
               style={{ color: "var(--cz-accent)" }}
             >
