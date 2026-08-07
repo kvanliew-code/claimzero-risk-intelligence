@@ -72,7 +72,7 @@ function NavLink({ item, params }: { item: Item; params?: Record<string, string>
 export function CzSidebar() {
   const matchRoute = useMatchRoute();
   const navigate = useNavigate();
-  const { profile, role, signOut } = useAuth();
+  const { profile, role, signOut, session } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const inProject = Boolean(matchRoute({ to: "/project/$id", fuzzy: true }));
   const params = useParams({ strict: false }) as { id?: string };
