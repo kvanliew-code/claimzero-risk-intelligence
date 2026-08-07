@@ -814,6 +814,8 @@ const timeMoneyGenerator: Generator = (ctx) => {
 
 export const GENERATORS: Record<string, Generator> = {
   RISK_MITIGATION_PLAN: rmpGenerator,
+  TIME_AND_MONEY: timeMoneyGenerator,
+
   STAGE_GATE: stageGateGenerator,
 };
 
