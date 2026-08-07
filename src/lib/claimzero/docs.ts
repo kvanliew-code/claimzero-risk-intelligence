@@ -2,17 +2,17 @@
 // Synthetic and deterministic: the same project always produces the same register.
 
 import { projects, type Project } from "./data";
+import { STAGE_OPTIONS, stageNumberOf, type StageName } from "./stages";
 
-export const LIFECYCLE = [
-  "Owner Package",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Closeout",
-] as const;
+/**
+ * The document register runs on the same nine stages as the control engine.
+ * Stages with no expected documents of their own simply carry none — an empty
+ * column is honest, an invented one is not.
+ */
+export const LIFECYCLE = STAGE_OPTIONS;
 
-export type Lifecycle = (typeof LIFECYCLE)[number];
+export type Lifecycle = StageName;
+
 export type OwedBy = "Owner" | "Architect" | "CM" | "Counsel";
 export type DocStatus = "received" | "outstanding" | "not-yet-applicable";
 export type DocSource = "Owner upload" | "Egnyte" | "Procore" | "Autodesk";
