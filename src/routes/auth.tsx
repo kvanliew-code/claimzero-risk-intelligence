@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CzButton } from "@/components/cz/primitives";
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -24,8 +24,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const DEMO_EMAIL = "demo@claimzero.at";
-const DEMO_PASSWORD = "ClaimZero-Demo-2026!";
+
+
 
 function Motif() {
   return (
@@ -100,35 +100,6 @@ function AuthPage() {
   };
 
 
-  const demo = async () => {
-    setBusy(true);
-    setError(null);
-    let { error: err } = await supabase.auth.signInWithPassword({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-    });
-    if (err) {
-      const { error: signUpErr } = await supabase.auth.signUp({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { full_name: "Demo Principal", title: "Demonstration account" },
-        },
-      });
-      if (!signUpErr) {
-        ({ error: err } = await supabase.auth.signInWithPassword({
-          email: DEMO_EMAIL,
-          password: DEMO_PASSWORD,
-        }));
-      } else {
-        err = signUpErr;
-      }
-    }
-    setBusy(false);
-    if (err) setError(err.message);
-    else void finish();
-  };
 
   return (
     <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
@@ -222,15 +193,8 @@ function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-4 flex items-center gap-3">
-            <span className="h-px flex-1 bg-cz-grid" />
-            <span className="cz-eyebrow text-[9px]">or</span>
-            <span className="h-px flex-1 bg-cz-grid" />
-          </div>
 
-          <CzButton className="mt-4 w-full justify-center" onClick={demo} disabled={busy}>
-            ◐ Enter demo — synthetic portfolio
-          </CzButton>
+
 
           <p className="mt-6 font-cz-serif text-[12.5px] text-cz-ink-3">
             Access is issued by ClaimZero. There is no open signup.{" "}
