@@ -90,7 +90,9 @@ function AuthPage() {
 
 
   return (
-    <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
+    <ClientOnly fallback={<div className="min-h-screen" />}>
+      {() => (
+        <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
       {/* Left: the deliverable itself, lit — a Risk Mitigation Plan page with the
           Monday digest behind it, rather than generic construction imagery. */}
       <div
