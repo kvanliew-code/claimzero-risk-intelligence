@@ -1,10 +1,15 @@
 # Claim Zero Secure
 
-Claim Zero - https://Claimzero.at
+Claim Zero - https://claimzero.ai
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://claimzero-risk-intelligience.lovable.app
+**Live app (production, custom domain)**: https://claimzero-command-center.claimzero.ai
+
+**Live app (Lovable subdomain)**: https://claimzero-command-center.lovable.app
+
+Both are the same deployment. The previously listed `claimzero-risk-intelligience.lovable.app`
+never existed — it was misspelled and pointed at no project.
 
 ## Build with Lovable
 
@@ -21,6 +26,15 @@ Prefer working locally? You need Node.js and npm — [install with nvm](https://
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+
+# REQUIRED before installing outside Lovable.
+# bun.lock pins eleven tarballs to Lovable’s private npm proxy
+# (europe-west4-npm.pkg.dev/lovable-core-prod/…), which returns 403 to
+# everyone else, so a plain install fails. The packages are public on npmjs.
+# Repoint them locally — and NEVER commit the modified bun.lock, because
+# Lovable’s own sandbox needs the original URLs.
+sed -i 's#https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/#https://registry.npmjs.org/#g' bun.lock
+
+bun install
+bun run dev
 ```
