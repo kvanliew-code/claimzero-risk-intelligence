@@ -198,6 +198,7 @@ function Section({ s }: { s: ReportSection }) {
                 <p className="font-cz-serif text-[12px] text-cz-ink-3">
                   Consequence: {i.consequence}
                 </p>
+                <RemedyBlock remedy={i.remedy} />
               </div>
             ))
           ) : (
@@ -205,6 +206,93 @@ function Section({ s }: { s: ReportSection }) {
           )}
         </>
       );
+
+    case "transcript": {
+      const t = s.termGrade;
+      const toneColor = (tn: string) =>
+        tn === "good"
+          ? "var(--cz-good)"
+          : tn === "warn"
+            ? "var(--cz-warn, #b8860b)"
+            : tn === "bad"
+              ? "var(--cz-critical)"
+              : "var(--cz-ink-3, inherit)";
+      return (
+        <>
+          <H4>{s.title}</H4>
+          {s.note ? (
+            <p className="mb-2 font-cz-serif text-[12.5px] text-cz-ink-3">{s.note}</p>
+          ) : null}
+          <table className="my-2 w-full border-collapse text-[12.5px]">
+            <thead>
+              <tr>
+                {["Subject", "Owner question", "Credits", "Verified", "Mark", "Grade", "Points"].map(
+                  (hd) => (
+                    <th key={hd} className={thCls}>
+                      {hd}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {s.subjects.map((r) => (
+                <Fragment key={r.aspect_id}>
+                  <tr>
+                    <td className={`${tdCls} font-cz-sans`}>
+                      <span className="font-cz-mono text-[11px]">{r.aspect_id}</span>{" "}
+                      <span className="font-semibold">{r.aspect_name}</span>
+                    </td>
+                    <td className={`${tdCls} font-cz-serif`}>{r.owner_question}</td>
+                    <td className={`${tdCls} font-cz-mono`}>
+                      {r.mark === null ? "—" : r.credits.toFixed(1)}
+                    </td>
+                    <td className={`${tdCls} font-cz-mono`}>
+                      {r.verified}/{r.controls}
+                    </td>
+                    <td className={`${tdCls} font-cz-mono`}>
+                      {r.mark === null ? "N/A" : `${r.mark}%`}
+                    </td>
+                    <td
+                      className={`${tdCls} font-cz-sans text-[15px] font-bold`}
+                      style={{ color: toneColor(r.tone) }}
+                    >
+                      {r.letter}
+                    </td>
+                    <td className={`${tdCls} font-cz-mono`}>
+                      {r.gradePoints === null ? "—" : r.gradePoints.toFixed(2)}
+                    </td>
+                  </tr>
+                  {r.remedy ? (
+                    <tr>
+                      <td className={tdCls} colSpan={7}>
+                        <RemedyBlock remedy={r.remedy} />
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-3 border-t-2 border-cz-accent pt-2 font-cz-serif text-[12.5px]">
+            <span className="font-cz-mono text-[9.5px] tracking-[0.12em] uppercase text-cz-accent">
+              Term grade
+            </span>{" "}
+            <span
+              className="font-cz-sans text-[17px] font-bold"
+              style={{ color: toneColor(t.tone) }}
+            >
+              {t.letter}
+            </span>{" "}
+            <b>{t.mark === null ? "N/A" : `${t.mark}%`}</b> · Control GPA{" "}
+            <b>{t.gpa === null ? "—" : t.gpa.toFixed(2)}</b> / 4.00 · {t.credits.toFixed(1)} credits
+            across {t.subjectsGraded} graded subjects · {t.subjectsNotApplicable} not applicable and
+            excluded
+          </div>
+        </>
+      );
+    }
+
 
     case "chronology":
       return (
