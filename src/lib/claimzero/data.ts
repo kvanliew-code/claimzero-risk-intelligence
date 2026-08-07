@@ -219,23 +219,24 @@ let projectsPromise: Promise<Project[]> | null = null;
 /** Load (once) the portfolio from the database and hydrate `projects` in place. */
 export function loadProjects(): Promise<Project[]> {
   if (!projectsPromise) {
-    projectsPromise = supabase
-      .from("projects")
-      .select("id,name,city,type,stage,size_m,idx,exposure,top_risk,top_aspect")
-      .order("id")
-      .then(({ data, error }) => {
-        if (error) {
-          projectsPromise = null;
-          throw error;
-        }
-        const rows = (data ?? []).map((r) => toProject(r as ProjectRow));
-        projects.length = 0;
-        projects.push(...rows);
-        return projects;
-      });
+    projectsPromise = (async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id,name,city,type,stage,size_m,idx,exposure,top_risk,top_aspect")
+        .order("id");
+      if (error) {
+        projectsPromise = null;
+        throw error;
+      }
+      const rows = (data ?? []).map((r) => toProject(r as ProjectRow));
+      projects.length = 0;
+      projects.push(...rows);
+      return projects;
+    })();
   }
   return projectsPromise;
 }
+
 
 /** React hook: the hydrated portfolio. */
 export function useProjects(): Project[] {
