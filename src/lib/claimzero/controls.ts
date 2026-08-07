@@ -40,7 +40,16 @@ export const STATUS_LABEL: Record<ControlStatus, string> = {
 export const DOMAINS = ["cost", "schedule", "design", "quality", "people", "compliance"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
-export type Tier = "A" | "B" | "C";
+/** v4.0 §5 — control-side tiers. Ordinal, weakest first. */
+export const CONTROL_TIERS = ["CORE", "EXTENDED", "COMPREHENSIVE"] as const;
+export type ControlTier = (typeof CONTROL_TIERS)[number];
+
+/** v4.0 §5 — project-side tiers. ESSENTIAL sees CORE only; COMPREHENSIVE sees all. */
+export const PROJECT_TIERS = ["ESSENTIAL", "STANDARD", "COMPREHENSIVE"] as const;
+export type ProjectTier = (typeof PROJECT_TIERS)[number];
+
+/** Historic alias — project tier is the one the scoring engine takes. */
+export type Tier = ProjectTier;
 
 export const CRITICALITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
 export type Criticality = (typeof CRITICALITIES)[number];
