@@ -2,7 +2,9 @@
 // payload drives this and the server-side canonical HTML, so what a reviewer
 // approves is what a third party receives.
 
-import type { GeneratedReport, ReportSection } from "@/lib/claimzero/reports";
+import { Fragment } from "react";
+import type { GeneratedReport, Remedy, ReportSection } from "@/lib/claimzero/reports";
+
 
 const thCls =
   "border-b border-cz-ink-3/50 px-2 py-[7px] text-left font-cz-mono text-[9.5px] tracking-[0.12em] uppercase text-cz-ink-3";
