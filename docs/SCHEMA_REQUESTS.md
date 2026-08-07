@@ -81,11 +81,30 @@ parallel — leave `sections` empty rather than guessing at it.
 
 `20260807050542` created both by copying a neighbour's `domain_weights` with `exit_criteria = '[]'::jsonb`.
 **A project in either stage currently passes its gate by default because there is nothing to fail.**
-Load exit criteria and control families from
-`docs/registers/ClaimZero_Schematic_and_Takeout_Register_v2_T30.csv`
-(47 controls: 19 Schematic, 28 Takeout) — **committed 7 Aug 2026, commit `6f0dd11`.** Aspect ids in that file are
-already remapped to the thirty-aspect taxonomy (REQ-006); `legacy_aspect_id` is preserved in the file for audit.
-**If that CSV is not in the repo, say so and stop — do not invent controls.**
+### ⛔ DO NOT LOAD YET — PROVENANCE HOLD (added 7 Aug 2026)
+
+`docs/registers/ClaimZero_Schematic_and_Takeout_Register_v2_T30.csv` (commit `6f0dd11`) is in the repo, but it is
+**NOT approved methodology.** Provenance, stated plainly:
+
+- The 47 controls (19 Schematic, 28 Takeout) were **authored by Claude on 7 Aug 2026 from domain reasoning.**
+- They are **not** extracted from the 891-control register, **not** from any source document Ken supplied, and
+  **not** produced by Lovable or any other collaborator.
+- `v1` of the file was written at 04:55 UTC and `v2_T30` at 09:55 UTC, both in a Claude sandbox. Neither existed
+  anywhere else. That is why nobody can find an upstream copy — there is none.
+- The `v1 → v2_T30` step is a pure aspect-id remap to the thirty-aspect taxonomy (REQ-006). Control ids and
+  requirement text are byte-identical between the two; `legacy_aspect_id` preserves the old ids for audit.
+- The file carries **no source citation column.** No control in it traces to a document.
+
+**Lovable: do not load this file into `exit_criteria`, `control_register`, or `family_applicability_rules`.**
+Seeding it would make Claude-authored content the published methodology for two of the nine stages, which
+breaks the doctrine this product is sold on. It is a **draft for Ken’s review**, nothing more.
+
+**The underlying defect is still real and still open:** stages 3 and 7 have `exit_criteria = '[]'::jsonb`, so
+they cannot be assessed. The correct fix is either (a) Ken reviews and approves the drafted 47, or (b) the
+content comes from the 891-control register. Until one of those happens, the honest engine behaviour is to
+return **INSUFFICIENT BASIS TO ASSESS** for those stages — not to pass, and not to fail on a generic reason.
+
+**Do not invent controls, and do not treat the committed CSV as a source.**
 
 ## REQ-012 — Engagement billing
 
