@@ -103,9 +103,13 @@ function Foot({ left }: { left: string }) {
   );
 }
 
+const EMPTY_PROJECT_HINT = "Loading portfolio…";
+
 function Weekly() {
   const project = useProjects()[0];
   const scoring = useProjectScoring(project);
+  if (!project)
+    return <div className="p-6 font-cz-mono text-[12px] text-cz-ink-3">{EMPTY_PROJECT_HINT}</div>;
   const top = scoring.scores
     .filter((a) => a.score !== null)
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
