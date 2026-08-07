@@ -13,13 +13,13 @@ const api = getRouteApi("/_authenticated/project/$id");
 export const Route = createFileRoute("/_authenticated/project/$id/aspects")({
   head: () => ({
     meta: [
-      { title: "Fifteen Aspects — ClaimZero Project Risk" },
+      { title: "Thirty Aspects — ClaimZero Project Risk" },
       {
         name: "description",
         content:
           "Every aspect scored from verified control evidence: weighted score, confidence band, penalties and the controls that produced the number.",
       },
-      { property: "og:title", content: "Fifteen Aspects — ClaimZero Project Risk" },
+      { property: "og:title", content: "Thirty Aspects — ClaimZero Project Risk" },
       {
         property: "og:description",
         content: "Aspect scores computed from the control register — never hand-entered.",
@@ -63,7 +63,7 @@ function Aspects() {
       <ProjectHeaderStrip />
       <div className="px-5 pt-3.5 pb-10">
         <div className="mb-2 flex flex-wrap items-baseline gap-2.5">
-          <h2 className="font-cz-sans text-[16px] font-bold">The Fifteen Aspects</h2>
+          <h2 className="font-cz-sans text-[16px] font-bold">The Thirty Aspects</h2>
           <span className="text-[12px] text-cz-ink-3">
             0–100, higher is worse · weighted by criticality · only{" "}
             <b>Complete — Verified</b> earns credit · never shown without its confidence ·{" "}

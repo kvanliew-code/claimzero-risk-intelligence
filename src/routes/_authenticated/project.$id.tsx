@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/project/$id")({
       };
     const p = loaderData.project;
     const title = `${p.name} — ClaimZero Project Risk`;
-    const description = `${p.city} · $${p.sizeM}M ${p.type}. Twelve aspect panels, the stage-aware document register and cited risk flags for ${p.name}.`;
+    const description = `${p.city} · $${p.sizeM}M ${p.type}. Thirty aspect panels, the stage-aware document register and cited risk flags for ${p.name}.`;
     return {
       meta: [
         { title },

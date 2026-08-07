@@ -35,7 +35,7 @@ const PORTFOLIO_GROUPS: Group[] = [
 
 const PROJECT_ITEMS: Item[] = [
   { to: "/project/$id", icon: "◐", label: "Overview" },
-  { to: "/project/$id/aspects", icon: "▦", label: "The Twelve Aspects" },
+  { to: "/project/$id/aspects", icon: "▦", label: "The Thirty Aspects" },
   { to: "/project/$id/controls", icon: "▣", label: "Control Register" },
   { to: "/project/$id/documents", icon: "▤", label: "Documents" },
   { to: "/project/$id/reports", icon: "✎", label: "Reports" },
