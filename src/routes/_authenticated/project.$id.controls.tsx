@@ -24,6 +24,9 @@ import {
   fetchStages,
   stageNumberFor,
   tierFor,
+  fetchFamilyApplicability,
+  familyApplies,
+  type FamilyApplicability,
   weightsFor,
   type ControlInstance,
   type ControlSpec,
@@ -159,6 +162,7 @@ function Controls() {
   const [criteria, setCriteria] = useState<ExitCriterion[]>([]);
   const [aspectDefs, setAspectDefs] = useState<AspectDef[]>([]);
   const [evidence, setEvidence] = useState<ControlEvidence[]>([]);
+  const [famApp, setFamApp] = useState<FamilyApplicability>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fStatus, setFStatus] = useState<ControlStatus | "All">("All");
@@ -184,6 +188,9 @@ function Controls() {
           fetchAspects(),
           fetchEvidence(project.id).catch(() => [] as ControlEvidence[]),
         ]);
+        const fam = await fetchFamilyApplicability(project.id).catch(
+          () => new Map() as FamilyApplicability,
+        );
         const inst = await ensureInstances(project, reg);
         if (cancelled) return;
         setRegister(reg);
@@ -192,6 +199,7 @@ function Controls() {
         setCriteria(crit);
         setAspectDefs(asp);
         setEvidence(ev);
+        setFamApp(fam);
         setInstances(inst);
         setError(null);
       } catch (e) {
@@ -225,8 +233,11 @@ function Controls() {
 
   const instMap = useMemo(() => new Map(instances.map((i) => [i.control_id, i])), [instances]);
   const applicable = useMemo(
-    () => register.filter((c) => appliesTo(c, stageNumber, tier)),
-    [register, stageNumber, tier],
+    () =>
+      register.filter(
+        (c) => appliesTo(c, stageNumber, tier) && familyApplies(famApp, c.family_code),
+      ),
+    [register, stageNumber, tier, famApp],
   );
 
   const owners = useMemo(
@@ -237,15 +248,26 @@ function Controls() {
   const currentStage = stages.find((s) => s.stage_number === stageNumber);
   const aspectScores = useMemo(
     () =>
-      aspectDefs.length ? scoreAspects(aspectDefs, register, instMap, stageNumber, tier) : [],
-    [aspectDefs, register, instMap, stageNumber, tier],
+      aspectDefs.length
+        ? scoreAspects(aspectDefs, register, instMap, stageNumber, tier, undefined, famApp)
+        : [],
+    [aspectDefs, register, instMap, stageNumber, tier, famApp],
   );
   const gate = useMemo(
     () =>
       register.length
-        ? evaluateStageGate(stageNumber, register, instMap, criteria, tier, aspectScores)
+        ? evaluateStageGate(
+            stageNumber,
+            register,
+            instMap,
+            criteria,
+            tier,
+            aspectScores,
+            undefined,
+            famApp,
+          )
         : undefined,
-    [register, instMap, criteria, stageNumber, tier, aspectScores],
+    [register, instMap, criteria, stageNumber, tier, aspectScores, famApp],
   );
   const escalations = useMemo(
     () => evaluateEscalations(rules, applicable, instMap, gate?.completeness ?? 0),
@@ -271,6 +293,25 @@ function Controls() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [shown]);
 
+  /** Suppression is always visible — never a silent absence. */
+  const suppressed = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of register) {
+      if (c.stage_number > stageNumber) continue;
+      if (familyApplies(famApp, c.family_code)) continue;
+      counts.set(c.family_code, (counts.get(c.family_code) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([code, count]) => ({
+        code,
+        count,
+        name: register.find((c) => c.family_code === code)?.family_name ?? code,
+        reason:
+          famApp.get(code)?.reason ?? "Family does not apply to this project profile",
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [register, famApp, stageNumber]);
+
   const update = async (controlId: string, patch: Partial<ControlInstance>) => {
     setInstances((prev) =>
       prev.map((i) => (i.control_id === controlId ? { ...i, ...patch } : i)),
@@ -293,13 +334,31 @@ function Controls() {
             <div className="cz-eyebrow">Control Register</div>
             <h1 className="font-cz-sans text-[19px] font-bold">
               Stage {stageNumber} · {currentStage?.stage_name ?? "—"}{" "}
-              <span className="font-cz-mono text-[11px] text-cz-ink-3">Tier {tier}</span>
+              <span className="font-cz-mono text-[11px] text-cz-ink-3">{tier}</span>
             </h1>
           </div>
           <div className="font-cz-mono text-[10.5px] text-cz-ink-3">
             {applicable.length} controls applicable · {instances.length} instances generated
+            {suppressed.length > 0 &&
+              ` · ${suppressed.reduce((a, s2) => a + s2.count, 0)} suppressed`}
           </div>
         </div>
+
+        {suppressed.length > 0 && (
+          <section className="cz-card mt-4 p-3.5">
+            <div className="cz-eyebrow">Suppressed families — excluded from scoring</div>
+            <ul className="mt-2 space-y-1.5">
+              {suppressed.map((f) => (
+                <li key={f.code} className="font-cz-mono text-[11px] text-cz-ink-2">
+                  <span className="text-cz-ink-1">
+                    {f.code} · {f.name}
+                  </span>{" "}
+                  — {f.count} control{f.count === 1 ? "" : "s"} · {f.reason}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {loading && <p className="mt-4 font-cz-serif text-cz-ink-2">Generating control instances…</p>}
         {error && (
