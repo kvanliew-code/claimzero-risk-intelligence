@@ -637,6 +637,15 @@ const stageGateGenerator: Generator = (ctx) => {
           severity: "Critical",
           consequence:
             "Irreversibility VERY_HIGH — once the stage releases, this cannot be recovered without rework or claim.",
+          remedy: spec
+            ? remedyForControl(spec, stageNumber)
+            : {
+                work: `Locate control ${id} in the register and restore its specification — the gate cannot be decided against a control the register cannot describe.`,
+                seat: NO_SEAT,
+                cost: NOT_QUOTED,
+                requiredBy: gateDeadline(stageNumber, true),
+              },
+
         };
       }),
     },
