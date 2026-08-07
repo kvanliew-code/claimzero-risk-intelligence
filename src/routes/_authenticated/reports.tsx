@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
@@ -284,6 +284,7 @@ function Monthly() {
 }
 
 function Reports() {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<"none" | "weekly" | "monthly">("none");
 
   return (
@@ -317,10 +318,11 @@ function Reports() {
           />
           <RCard
             title="Stakeholder Packages"
-            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR — issued only from reviewed risks."
-            action="In platform build"
-            onClick={() => setDoc("none")}
+            body="Audience-scoped evidence packages — lender, insurance, permitting, ADR. Issued only from reviewed risks, so each package is assembled per project from its own Reports tab."
+            action="Open a project → Reports"
+            onClick={() => navigate({ to: "/portfolio" })}
           />
+
         </div>
       </div>
 
