@@ -31,21 +31,85 @@ function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const hash = new URLSearchParams(window.location.hash.slice(1));
     const query = new URLSearchParams(window.location.search);
-    const recoveryLink = hash.get("type") === "recovery" || query.has("code");
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || (recoveryLink && session)) setReady(true);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && !cancelled) {
+        setReady(true);
+        setError(null);
+      }
     });
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (recoveryLink && data.session) setReady(true);
-      else if (!recoveryLink) setError("This reset link is invalid or has expired. Request a new one.");
-    });
+    const linkError = hash.get("error_description") ?? query.get("error_description");
 
-    return () => listener.subscription.unsubscribe();
+    const run = async () => {
+      if (linkError) {
+        setError(decodeURIComponent(linkError.replace(/\+/g, " ")));
+        return;
+      }
+
+      // 1. Already have a session (supabase-js may have consumed the link already)
+      const existing = await supabase.auth.getSession();
+      if (existing.data.session) {
+        if (!cancelled) setReady(true);
+        return;
+      }
+
+      // 2. Implicit flow: tokens in the URL hash
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!cancelled) {
+          if (sessionError) setError(sessionError.message);
+          else setReady(true);
+        }
+        return;
+      }
+
+      // 3. PKCE flow: ?code=...
+      const code = query.get("code");
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (!cancelled) {
+          if (exchangeError) setError("This reset link is invalid or has expired. Request a new one.");
+          else setReady(true);
+        }
+        return;
+      }
+
+      // 4. Legacy token_hash / OTP link
+      const tokenHash = query.get("token_hash") ?? hash.get("token_hash");
+      if (tokenHash) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        });
+        if (!cancelled) {
+          if (otpError) setError(otpError.message);
+          else setReady(true);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setError("This reset link is invalid or has expired. Request a new one.");
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      listener.subscription.unsubscribe();
+    };
   }, []);
+
 
   const updatePassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
