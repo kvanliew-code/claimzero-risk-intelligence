@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ReportMotif } from "@/components/cz/report-motif";
+
 
 
 export const Route = createFileRoute("/auth")({
