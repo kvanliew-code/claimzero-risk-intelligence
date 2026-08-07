@@ -36,16 +36,16 @@ const ROWS: Row[] = [
     tone: "warn",
   },
   {
-    control: "S4-DSN-007",
-    family: "DSN",
-    label: "Design freeze memo countersigned by architect",
-    status: "NOT LOCATED",
+    control: "S4-SUB-018",
+    family: "SUB",
+    label: "Shop drawing returns tracking 19 days late",
+    status: "SLIPPING",
     tone: "serious",
   },
   {
     control: "S4-PRC-022",
     family: "PRC",
-    label: "Long-lead procurement release dated & signed",
+    label: "Long-lead procurement release unsigned",
     status: "BLOCKING",
     tone: "critical",
   },
@@ -277,7 +277,7 @@ export function ReportMotif({ className = "" }: { className?: string }) {
       aria-hidden="true"
       className={`pointer-events-none relative flex items-center justify-center select-none ${className}`}
     >
-      <div className="relative">
+      <div className="relative scale-[0.88]">
         <div className="absolute -top-28 -right-36 rotate-[7deg]">
           <DigestSheet />
         </div>
