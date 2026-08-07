@@ -90,6 +90,28 @@ function sectionHtml(s: ReportSection): string {
               .join("")
           : rows(["—", "No dated entries", "—", "—"])
       }</tbody></table>`;
+    case "metric_grid":
+      return (
+        h +
+        (s.note ? `<p class="withheld">${esc(s.note)}</p>` : "") +
+        `<div class="metrics">${s.metrics
+          .map(
+            (m) =>
+              `<div class="metric"><span class="mlabel">${esc(m.label)}</span><span class="mval t-${esc(m.tone)}">${esc(m.value)}</span><span class="msub">${esc(m.sub)}</span></div>`,
+          )
+          .join("")}</div>`
+      );
+    case "grade_card":
+      return (
+        h +
+        (s.note ? `<p class="cons">${esc(s.note)}</p>` : "") +
+        `<table><thead>${rows(["Stage", "Phase", "State", "KPI", "Verified", "Complete", "Grade"], "th")}</thead><tbody>${s.rows
+          .map(
+            (r) =>
+              `<tr><td>${esc(r.stage)}</td><td><b>${esc(r.phase)}</b></td><td>${esc(r.state)}</td><td>${esc(r.kpi)}</td><td>${esc(r.verified)}/${esc(r.applicable)}</td><td>${esc(r.completeness)}%</td><td class="grade t-${esc(r.tone)}">${esc(r.grade)}</td></tr>`,
+          )
+          .join("")}</tbody></table>`
+      );
     case "signature_block":
       return `${h}<p>${esc(s.statement)}</p>${s.signatories
         .map(
@@ -97,6 +119,7 @@ function sectionHtml(s: ReportSection): string {
             `<div class="sig"><span class="line"></span><span class="role">${esc(r)} — name, signature, date</span></div>`,
         )
         .join("")}`;
+
     default:
       return h;
   }
