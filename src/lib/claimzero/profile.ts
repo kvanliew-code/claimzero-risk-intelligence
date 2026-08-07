@@ -24,15 +24,8 @@ const opt = (...vals: string[]) =>
       .replace(/\b\w/g, (c) => c.toUpperCase()),
   }));
 
-export const STAGE_NAMES = [
-  "Pre-Acquisition",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Closeout",
-  "Sellout",
-] as const;
+export { STAGE_OPTIONS as STAGE_NAMES } from "./stages";
+
 
 export const PROFILE_FIELDS: ProfileField[] = [
   { key: "name", label: "Project name", kind: "text", group: "Identity" },
