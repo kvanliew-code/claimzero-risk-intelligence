@@ -1,0 +1,17 @@
+ALTER TABLE public.projects
+  ADD COLUMN IF NOT EXISTS contract_sum_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS land_cost_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS hard_cost_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS soft_cost_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS contingency_total_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS contingency_drawn_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS change_orders_approved_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS change_orders_pending_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS equity_committed_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS debt_committed_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS ld_per_day_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS carry_cost_per_day_usd numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS baseline_start date,
+  ADD COLUMN IF NOT EXISTS baseline_substantial_completion date,
+  ADD COLUMN IF NOT EXISTS forecast_substantial_completion date,
+  ADD COLUMN IF NOT EXISTS loan_maturity date;
