@@ -9,7 +9,16 @@ import type { Project } from "./data";
 import type { ControlInstance, ControlSpec } from "./controls";
 import { STATUS_LABEL } from "./controls";
 import { fetchSpecRules, severityOf, type SpecEscalationRule } from "./escalation";
+import {
+  deriveFinance,
+  hasFinance,
+  pct,
+  usd,
+  type FinanceDerived,
+  type ProjectFinance,
+} from "./finance";
 import type { ProjectScoring } from "./useProjectScoring";
+
 
 /* ------------------------------------------------------------------ types */
 
