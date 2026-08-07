@@ -549,7 +549,268 @@ const stageGateGenerator: Generator = (ctx) => {
   };
 };
 
+/* ------------------------------------ generator 10 — time, money & grades */
+
+const gradeFor = (
+  completeness: number,
+): { grade: string; tone: "good" | "warn" | "bad" | "neutral" } =>
+  completeness >= 90
+    ? { grade: "A", tone: "good" }
+    : completeness >= 80
+      ? { grade: "B", tone: "good" }
+      : completeness >= 70
+        ? { grade: "C", tone: "warn" }
+        : completeness >= 60
+          ? { grade: "D", tone: "warn" }
+          : { grade: "F", tone: "bad" };
+
+const STAGE_KPI: Record<number, string> = {
+  1: "Basis of cost — land, entitlement assumptions and underwriting inputs evidenced before close",
+  2: "Conditions of approval priced and scheduled before they become a cost event",
+  3: "Design completeness against the budget the equity was raised on",
+  4: "GMP integrity — scope gaps, allowances and contingency sized to the risk carried",
+  5: "Cost and schedule growth controlled and evidenced as it happens",
+  6: "Closeout evidence secured while the trades are still on site and payable",
+  7: "Sellout and turnover exposure closed out of the record",
+};
+
+const timeMoneyGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber, project } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+  const fin = ctx.finance ?? null;
+  const d: FinanceDerived | null = deriveFinance(fin);
+  const funded = hasFinance(fin);
+
+  if (!funded)
+    unresolved.push(
+      "No budget or schedule facts have been captured for this project — every money figure below is withheld rather than estimated. Enter contract sum, contingency, committed capital and the baseline and forecast completion dates on the project record.",
+    );
+
+  /* --- phase report card ------------------------------------------------ */
+  const phaseRows = [1, 2, 3, 4, 5, 6, 7].map((s) => {
+    const specs = scoring.register.filter(
+      (c) => (c.continuous ? c.stage_number <= s : c.stage_number === s) &&
+        instStatus(scoring, c.control_id) !== "N/A",
+    );
+    const verified = specs.filter(
+      (c) => instStatus(scoring, c.control_id) === "COMPLETE_VERIFIED",
+    ).length;
+    const completeness = specs.length ? Math.round((verified / specs.length) * 100) : 0;
+    const state = s < stageNumber ? "PASSED" : s === stageNumber ? "IN PROGRESS" : "NOT STARTED";
+    const g =
+      specs.length === 0
+        ? { grade: "—", tone: "neutral" as const }
+        : s > stageNumber
+          ? { grade: "NOT RATED", tone: "neutral" as const }
+          : gradeFor(completeness);
+    return {
+      stage: s,
+      phase: stageName(s),
+      state,
+      applicable: specs.length,
+      verified,
+      completeness,
+      grade: g.grade,
+      tone: g.tone,
+      kpi: STAGE_KPI[s] ?? "",
+    };
+  });
+
+  const rated = phaseRows.filter((r) => r.grade !== "—" && r.grade !== "NOT RATED");
+  const overall = rated.length
+    ? Math.round(rated.reduce((a, r) => a + r.completeness, 0) / rated.length)
+    : 0;
+  const overallGrade = rated.length ? gradeFor(overall).grade : "NOT RATED";
+
+  /* --- money and time metrics ------------------------------------------ */
+  const withheld = "WITHHELD — not captured";
+  const money: {
+    label: string;
+    value: string;
+    sub: string;
+    tone: "good" | "warn" | "bad" | "neutral";
+  }[] = [
+    {
+      label: "Contract sum",
+      value: fin && fin.contract_sum_usd > 0 ? usd(fin.contract_sum_usd) : withheld,
+      sub: "Executed construction contract at this revision",
+      tone: "neutral",
+    },
+    {
+      label: "Total project cost",
+      value: d && d.totalCost > 0 ? usd(d.totalCost) : withheld,
+      sub: "Land plus hard plus soft cost as captured",
+      tone: "neutral",
+    },
+    {
+      label: "Change orders",
+      value: d?.coPct === null || !d ? withheld : `${usd((fin?.change_orders_approved_usd ?? 0) + (fin?.change_orders_pending_usd ?? 0))} · ${pct(d.coPct)}`,
+      sub: "Approved plus pending, as a share of contract sum",
+      tone: (d?.coPct ?? 0) >= 10 ? "bad" : (d?.coPct ?? 0) >= 5 ? "warn" : "good",
+    },
+    {
+      label: "Contingency remaining",
+      value:
+        d && fin && fin.contingency_total_usd > 0
+          ? `${usd(d.contingencyRemaining)} of ${usd(fin.contingency_total_usd)}`
+          : withheld,
+      sub: d?.contingencyBurnPct === null || !d ? "No contingency captured" : `${pct(d.contingencyBurnPct)} drawn`,
+      tone:
+        (d?.contingencyBurnPct ?? 0) >= 75 ? "bad" : (d?.contingencyBurnPct ?? 0) >= 50 ? "warn" : "good",
+    },
+    {
+      label: "Schedule position",
+      value: d?.slipDays === null || !d ? withheld : `${d.slipDays > 0 ? "+" : ""}${d.slipDays} days`,
+      sub: "Forecast substantial completion against baseline",
+      tone: (d?.slipDays ?? 0) > 60 ? "bad" : (d?.slipDays ?? 0) > 0 ? "warn" : "good",
+    },
+    {
+      label: "Cost of the slip",
+      value: d?.slipCostUsd === null || !d ? withheld : usd(d.slipCostUsd),
+      sub: "Liquidated damages plus carry across the delayed days",
+      tone: (d?.slipCostUsd ?? 0) > 0 ? "warn" : "good",
+    },
+    {
+      label: "Capital committed",
+      value: d && d.capitalCommitted > 0 ? usd(d.capitalCommitted) : withheld,
+      sub: "Equity plus debt on the record",
+      tone: "neutral",
+    },
+    {
+      label: "Funding headroom",
+      value: d?.fundingGapUsd === null || !d ? withheld : usd(d.fundingGapUsd),
+      sub:
+        (d?.fundingGapUsd ?? 0) < 0
+          ? "Committed capital does not cover cost plus pending exposure — a capital call is indicated"
+          : "Committed capital less cost, pending change orders and delay cost",
+      tone: (d?.fundingGapUsd ?? 1) < 0 ? "bad" : "good",
+    },
+    {
+      label: "Loan maturity headroom",
+      value:
+        d?.maturityHeadroomDays === null || !d ? withheld : `${d.maturityHeadroomDays} days`,
+      sub: "Forecast completion against the stated maturity date",
+      tone:
+        (d?.maturityHeadroomDays ?? 999) < 0
+          ? "bad"
+          : (d?.maturityHeadroomDays ?? 999) < 90
+            ? "warn"
+            : "good",
+    },
+  ];
+
+  /* --- exposure carried in the register, not yet in the budget ---------- */
+  const openCritical = scoring.register.filter(
+    (c) =>
+      (c.continuous ? c.stage_number <= stageNumber : c.stage_number === stageNumber) &&
+      (c.criticality === "CRITICAL" || c.criticality === "HIGH") &&
+      instStatus(scoring, c.control_id) !== "COMPLETE_VERIFIED" &&
+      instStatus(scoring, c.control_id) !== "N/A",
+  );
+
+  const findings = openCritical.slice(0, 20).map((c) => ({
+    headline: `${c.control_id} · ${c.title || c.requirement}`,
+    detail:
+      c.downstream_exposure ||
+      c.objective ||
+      "No downstream cost or schedule consequence recorded against this control.",
+    severity: c.criticality === "CRITICAL" ? "Critical" : "High",
+    consequence:
+      c.irreversibility === "VERY_HIGH" || c.irreversibility === "HIGH"
+        ? "Irreversible at this stage — the cost of closing it later is recovered through change order or claim, not through management."
+        : "Recoverable now; cost grows with every week it stays open.",
+  }));
+
+  if (openCritical.length)
+    unresolved.push(
+      `${openCritical.length} critical or high controls at this stage are not Complete — Verified. Their cost consequence is stated qualitatively above and is NOT included in the money figures, which report only captured facts.`,
+    );
+
+  const sections: ReportSection[] = [
+    {
+      type: "narrative",
+      title: "What this report answers",
+      body: [
+        `${project.name} — a partner-facing read on the two questions capital actually asks: is this project going to cost more than we committed, and is it going to take longer than we underwrote.`,
+        "Every figure below is a captured fact from the project record or a straight arithmetic consequence of one. Nothing is modelled, forecast or smoothed. Where an input has not been captured, the figure is withheld and named in the unresolved inputs at the end rather than filled with a plausible number.",
+        `Overall position at stage ${stageNumber} (${stageName(stageNumber)}): grade ${overallGrade} across ${rated.length} rated phases, composite confidence ${scoring.composite?.confidence ?? 0}%.`,
+      ],
+    },
+    {
+      type: "metric_grid",
+      title: "Time and money position",
+      note: funded
+        ? null
+        : "No budget or schedule facts captured — all money figures withheld.",
+      metrics: money,
+    },
+    {
+      type: "grade_card",
+      title: "Phase report card",
+      note: `One grade per phase, measured as verified controls over applicable controls. Phases ahead of the current stage are NOT RATED — an unstarted phase is not a failing phase, and unknown is never scored as green. Overall grade ${overallGrade} (${overall}%).`,
+      rows: phaseRows,
+    },
+    {
+      type: "aspect_summary",
+      title: "Where the exposure sits by aspect",
+      index: scoring.composite?.index ?? null,
+      confidence: scoring.composite?.confidence ?? 0,
+      band: scoring.composite?.band ?? "INSUFFICIENT",
+      withheldReason:
+        scoring.composite && scoring.composite.index === null
+          ? `Composite index withheld: confidence is ${scoring.composite.confidence}%, below the 60% publication floor. The gaps are published in its place.`
+          : null,
+      rows: scoring.scores.map((s) => ({
+        aspect_id: s.aspect_id,
+        aspect_name: s.aspect_name,
+        score: s.score,
+        band: s.band,
+        verified: s.verified,
+        controls: s.controls,
+        weighted: false,
+      })),
+    },
+    {
+      type: "finding_list",
+      title: "Open items with a cost or schedule consequence",
+      items: findings,
+    },
+    {
+      type: "narrative",
+      title: "Capital call position",
+      body: [
+        d && d.fundingGapUsd !== null && d.fundingGapUsd < 0
+          ? `Committed capital is short of captured cost plus pending change orders and delay cost by ${usd(Math.abs(d.fundingGapUsd))}. On the record as it stands, a capital call is indicated and should be raised with partners before the shortfall is absorbed by contingency.`
+          : d && d.fundingGapUsd !== null
+            ? `Committed capital currently covers captured cost plus pending change orders and delay cost with ${usd(d.fundingGapUsd)} of headroom. That headroom is not a reserve — it is what remains before a call becomes necessary.`
+            : "A capital call position cannot be stated: committed equity and debt have not been captured on the project record.",
+        (d?.contingencyBurnPct ?? 0) >= 50
+          ? `Contingency is ${pct(d?.contingencyBurnPct ?? null)} drawn at stage ${stageNumber}. Contingency drawn ahead of the work it was carried for is the earliest reliable indicator of a later call.`
+          : "Contingency draw is within the range expected for this stage on the figures captured.",
+        `${openCritical.length} critical or high controls remain open at this stage. Each is a cost event that has not yet been priced; they are listed above with the consequence of leaving them open.`,
+      ],
+    },
+    {
+      type: "signature_block",
+      title: "Issued to partners",
+      statement:
+        "This report is issued to the ownership group, its equity partners and its lender. The figures are drawn from the project record at the revision stated; any figure marked withheld reflects an input that has not been captured, not a figure that is zero.",
+      signatories: ["Sponsor / Managing member", "Equity partner representative", "Lender"],
+    },
+  ];
+
+  return {
+    meta,
+    sections,
+    citations: citationsFor(openCritical, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
 /* --------------------------------------------------------- generator map */
+
 
 export const GENERATORS: Record<string, Generator> = {
   RISK_MITIGATION_PLAN: rmpGenerator,
