@@ -89,6 +89,7 @@ interface Person {
 }
 
 function Assignments() {
+  const projects = useProjects();
   const [people, setPeople] = useState<Person[]>([]);
   const [assigned, setAssigned] = useState<Record<string, number[]>>({});
   const [selected, setSelected] = useState<string>("");

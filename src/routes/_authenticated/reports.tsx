@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, StatusPill } from "@/components/cz/primitives";
-import { statusOf, useProjects } from "@/lib/claimzero/data";
+import { statusOf, useProjects, type Project } from "@/lib/claimzero/data";
 import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
 
 export const Route = createFileRoute("/_authenticated/reports")({
@@ -107,7 +107,7 @@ const EMPTY_PROJECT_HINT = "Loading portfolio…";
 
 function Weekly() {
   const project = useProjects()[0];
-  const scoring = useProjectScoring(project);
+  const scoring = useProjectScoring(project as Project);
   if (!project)
     return <div className="p-6 font-cz-mono text-[12px] text-cz-ink-3">{EMPTY_PROJECT_HINT}</div>;
   const top = scoring.scores
