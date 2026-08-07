@@ -1023,6 +1023,14 @@ export type Database = {
           reason: string
         }[]
       }
+      get_project_family_applicability: {
+        Args: { p_project_id: number }
+        Returns: {
+          applies: boolean
+          family_code: string
+          reason: string
+        }[]
+      }
       project_profile_jsonb: {
         Args: { p: Database["public"]["Tables"]["projects"]["Row"] }
         Returns: Json
