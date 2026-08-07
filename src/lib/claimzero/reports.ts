@@ -32,6 +32,12 @@ export const SECTION_TYPES = [
   "signature_block",
   "metric_grid",
   "grade_card",
+  // The Development Control Report Card section. Present in the rendered
+  // section union (see `type: "transcript"` below) and handled by both
+  // renderers (report-doc.tsx, report-html.ts) since inception, but it was
+  // missing here — so a stored report_definitions.sections entry of this type
+  // was untypable. Defect D-03.
+  "transcript",
 ] as const;
 
 export type SectionType = (typeof SECTION_TYPES)[number];
