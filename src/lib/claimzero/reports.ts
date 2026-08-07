@@ -449,6 +449,7 @@ const rmpGenerator: Generator = (ctx) => {
     detail: r.conditions || r.description,
     severity: severityOf(r.severity_floor),
     consequence: r.action || "Escalates to the reviewer queue and is reported to the owner.",
+    remedy: remedyForRule(r, stageNumber),
   }));
   if (!findings.length) unresolved.push("No escalation rules are configured for this stage");
 
@@ -830,6 +831,7 @@ const timeMoneyGenerator: Generator = (ctx) => {
       c.irreversibility === "VERY_HIGH" || c.irreversibility === "HIGH"
         ? "Irreversible at this stage — the cost of closing it later is recovered through change order or claim, not through management."
         : "Recoverable now; cost grows with every week it stays open.",
+    remedy: remedyForControl(c, stageNumber),
   }));
 
   if (openCritical.length)
