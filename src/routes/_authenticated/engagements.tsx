@@ -49,7 +49,7 @@ export function feeTier(sizeM: number) {
 }
 
 const DEFAULT_SCOPE =
-  "Independent development risk intelligence: the twelve-aspect scoring model, the daily watch telemetry layer, a reviewed Weekly Top 10 issued Monday, an end-of-month executive report, and a maintained document register sufficient to produce the record if a claim arises.";
+  "Independent development risk intelligence: the thirty-aspect scoring model, the daily watch telemetry layer, a reviewed Weekly Top 10 issued Monday, an end-of-month executive report, and a maintained document register sufficient to produce the record if a claim arises.";
 
 const STATUS_COLOR: Record<Status, string> = {
   draft: "var(--cz-ink-3)",

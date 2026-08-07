@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/portfolio")({
       {
         name: "description",
         content:
-          "Development risk intelligence for owners: a live risk index across the portfolio, twelve aspect panels per project, and a reviewer-gated Weekly Top 10.",
+          "Development risk intelligence for owners: a live risk index across the portfolio, thirty aspect panels per project, and a reviewer-gated Weekly Top 10.",
       },
       { property: "og:title", content: "ClaimZero — Portfolio Command Center" },
       {

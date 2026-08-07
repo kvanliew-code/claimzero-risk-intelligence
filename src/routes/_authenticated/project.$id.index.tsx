@@ -170,7 +170,7 @@ function Overview() {
               className="mt-2 inline-block font-cz-mono text-[10.5px] uppercase"
               style={{ color: "var(--cz-accent)" }}
             >
-              Open the fifteen aspects →
+              Open the thirty aspects →
             </Link>
           </div>
 
