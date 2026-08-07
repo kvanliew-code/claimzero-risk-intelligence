@@ -302,7 +302,11 @@ export async function ensureInstances(
     const rows = missing.map((c) => ({
       project_id: project.id,
       control_id: c.control_id,
-      status: seededStatus(project.id, c.control_id, c.stage_number, stageNumber),
+      // Doctrine: unknown is not green. Only the scripted demo project carries a
+      // history; every other project starts with the evidence genuinely unlocated.
+      status: isDemoProject(project.id)
+        ? seededStatus(project.id, c.control_id, c.stage_number, stageNumber)
+        : ("EVIDENCE_NOT_LOCATED" as ControlStatus),
     }));
     const { error: insErr } = await supabase
       .from("project_controls")
