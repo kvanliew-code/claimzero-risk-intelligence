@@ -298,6 +298,48 @@ export { stageName };
 const today = () =>
   new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
+/* ------------------------------------------- NO FINDING WITHOUT A REMEDY */
+
+const NO_SEAT = "— NO NAMED SEAT — assign before this report is issued";
+const NOT_QUOTED = "Not yet quoted — obtain a figure from the responsible seat";
+
+const gateDeadline = (stageNumber: number, urgent: boolean) =>
+  urgent
+    ? `Immediately — irreversible at this stage; every week compounds the cost`
+    : `Before the Stage ${stageNumber} · ${stageName(stageNumber)} gate`;
+
+/** The specific work that closes an open control, tied to a seat and a date. */
+function remedyForControl(c: ControlSpec, stageNumber: number): Remedy {
+  const spec = c as ControlSpec & { mitigation_template?: string | null };
+  const urgent =
+    c.irreversibility === "VERY_HIGH" ||
+    c.irreversibility === "HIGH" ||
+    c.criticality === "CRITICAL";
+  return {
+    work:
+      (spec.mitigation_template || "").trim() ||
+      (c.objective || "").trim() ||
+      `Produce ${c.expected_evidence || "the required evidence"} and have it verified against ${c.control_id}.`,
+    seat: (c.responsible_seat || c.primary_owner_role || "").trim() || NO_SEAT,
+    cost: NOT_QUOTED,
+    requiredBy: gateDeadline(stageNumber, urgent),
+  };
+}
+
+/** The specific work that clears an escalation trigger before it fires. */
+function remedyForRule(r: SpecEscalationRule, stageNumber: number): Remedy {
+  const urgent = /CRITICAL|SEVERE/i.test(r.severity_floor || "");
+  return {
+    work:
+      (r.action || "").trim() ||
+      `Close the conditions that trigger ${r.rule_id || r.name} and record the evidence against the controls it watches.`,
+    seat: NO_SEAT,
+    cost: NOT_QUOTED,
+    requiredBy: gateDeadline(stageNumber, urgent),
+  };
+}
+
+
 const docNumber = (key: string, projectId: number, stage: number) =>
   `CZ-${key.split("_").map((w) => w.slice(0, 3)).join("").toUpperCase()}-${String(projectId).padStart(4, "0")}-S${stage}`;
 
