@@ -24,7 +24,11 @@ const opt = (...vals: string[]) =>
       .replace(/\b\w/g, (c) => c.toUpperCase()),
   }));
 
-export { STAGE_OPTIONS as STAGE_NAMES } from "./stages";
+import { STAGE_OPTIONS, stageNumberOf } from "./stages";
+
+/** The nine canonical stages. Defined once, in ./stages. */
+export const STAGE_NAMES = STAGE_OPTIONS;
+
 
 
 export const PROFILE_FIELDS: ProfileField[] = [
