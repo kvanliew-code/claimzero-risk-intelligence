@@ -582,3 +582,45 @@ export function controlsToCsv(rows: ControlSpec[]): string {
     ),
   ].join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Family applicability (v1.0 rules). The predicate grammar is evaluated by the
+// database function get_project_family_applicability — one implementation, on
+// the server, used by every consumer. Nothing re-implements it client-side.
+// ---------------------------------------------------------------------------
+
+export interface FamilyVerdict {
+  family_code: string;
+  applies: boolean;
+  reason: string;
+}
+
+export type FamilyApplicability = Map<string, FamilyVerdict>;
+
+export async function fetchFamilyApplicability(projectId: number): Promise<FamilyApplicability> {
+  const { data, error } = await supabase.rpc("get_project_family_applicability", {
+    p_project_id: projectId,
+  });
+  if (error) throw error;
+  const out: FamilyApplicability = new Map();
+  for (const row of (data ?? []) as FamilyVerdict[]) {
+    out.set(row.family_code, {
+      family_code: row.family_code,
+      applies: row.applies !== false,
+      reason: row.reason ?? "Family does not apply to this project profile",
+    });
+  }
+  return out;
+}
+
+/** A family is suppressed only when the engine says so; unknown families apply. */
+export const familyApplies = (fa: FamilyApplicability | undefined, code: string): boolean =>
+  fa ? (fa.get(code)?.applies ?? true) : true;
+
+export const suppressionReason = (
+  fa: FamilyApplicability | undefined,
+  code: string,
+): string | null => {
+  const v = fa?.get(code);
+  return v && !v.applies ? v.reason : null;
+};
