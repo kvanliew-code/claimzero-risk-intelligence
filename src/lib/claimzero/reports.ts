@@ -539,6 +539,9 @@ export interface ReportRow {
   created_at: string;
 }
 
+/** Supabase's generated Json type is structural; serialise through it. */
+const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as never;
+
 const toRow = (r: Record<string, unknown>): ReportRow => ({
   id: String(r["id"]),
   project_id: Number(r["project_id"]),
@@ -584,7 +587,7 @@ export async function saveDraft(report: GeneratedReport): Promise<ReportRow> {
       revision: report.meta.revision,
       status: "DRAFT",
       generated_by: auth.user?.id ?? null,
-      payload: report as unknown as Record<string, unknown>,
+      payload: json(report),
     })
     .select("*")
     .single();
@@ -597,8 +600,8 @@ export async function advanceStatus(
   status: Exclude<ReportStatus, "PUBLISHED">,
 ): Promise<ReportRow> {
   const { data: auth } = await supabase.auth.getUser();
-  const patch: Record<string, unknown> = { status };
-  if (status === "APPROVED") patch["approved_by"] = auth.user?.id ?? null;
+  const patch: { status: ReportStatus; approved_by?: string | null } = { status };
+  if (status === "APPROVED") patch.approved_by = auth.user?.id ?? null;
   const { data, error } = await supabase
     .from("reports")
     .update(patch)
@@ -618,7 +621,7 @@ export async function publishReport(row: ReportRow): Promise<ReportRow> {
       report_id: row.id,
       project_id: row.project_id,
       captured_by: auth.user?.id ?? null,
-      payload: row.payload as unknown as Record<string, unknown>,
+      payload: json(row.payload),
       content_hash: "pending",
     })
     .select("id, content_hash, prev_hash")
