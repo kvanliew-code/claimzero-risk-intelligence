@@ -1,7 +1,7 @@
 import { Link, useMatchRoute, useParams, useRouterState } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { ROLE_LABEL, useAuth } from "@/hooks/useAuth";
-import { projects } from "@/lib/claimzero/data";
+import { useProjects } from "@/lib/claimzero/data";
 
 type Item = { to: string; icon: string; label: string; params?: Record<string, string> };
 type Group = { label: string; items: Item[] };
@@ -76,7 +76,11 @@ export function CzSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const inProject = Boolean(matchRoute({ to: "/project/$id", fuzzy: true }));
   const params = useParams({ strict: false }) as { id?: string };
-  const project = inProject && params.id ? projects[Number(params.id)] : undefined;
+  const allProjects = useProjects();
+  const project =
+    inProject && params.id
+      ? allProjects.find((p) => p.id === Number(params.id))
+      : undefined;
 
   if (pathname === "/auth") return null;
 

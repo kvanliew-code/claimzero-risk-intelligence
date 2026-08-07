@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, notFound } from "@tanstack/react-router";
 import { CzHeader } from "@/components/cz/header";
 import { CzButton, Dial } from "@/components/cz/primitives";
-import { projects } from "@/lib/claimzero/data";
+import { loadProjects } from "@/lib/claimzero/data";
 import {
   DEMO_CONFIDENCE,
   DEMO_INPUTS_OUTSTANDING,
@@ -14,8 +14,9 @@ import { useProjectScoring } from "@/lib/claimzero/useProjectScoring";
 
 
 export const Route = createFileRoute("/_authenticated/project/$id")({
-  loader: ({ params }) => {
-    const project = projects[Number(params.id)];
+  loader: async ({ params }) => {
+    const all = await loadProjects();
+    const project = all.find((p) => p.id === Number(params.id));
     if (!project) throw notFound();
     return { project };
   },

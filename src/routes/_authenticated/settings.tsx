@@ -5,7 +5,7 @@ import { SHead } from "@/components/cz/shead";
 import { CzButton } from "@/components/cz/primitives";
 import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { projects } from "@/lib/claimzero/data";
+import { useProjects } from "@/lib/claimzero/data";
 import { ControlRegisterAdmin } from "@/components/cz/register-admin";
 import {
   fetchReviewerDaysPerMonth,

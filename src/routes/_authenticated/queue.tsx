@@ -23,6 +23,7 @@ import {
 } from "@/lib/claimzero/escalation";
 import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
 import { visibleProjects } from "@/lib/claimzero/access";
+import { useProjects } from "@/lib/claimzero/data";
 
 export const Route = createFileRoute("/_authenticated/queue")({
   head: () => ({
@@ -223,9 +224,10 @@ function HitCard({
 
 function Queue() {
   const { user, role, assignedProjectIds } = useAuth();
+  const allProjects = useProjects();
   const scope = useMemo(
-    () => visibleProjects(role, assignedProjectIds),
-    [role, assignedProjectIds],
+    () => visibleProjects(role, assignedProjectIds, allProjects),
+    [role, assignedProjectIds, allProjects],
   );
   const scoring = usePortfolioScoring(scope);
   const [rules, setRules] = useState<SpecEscalationRule[]>([]);
