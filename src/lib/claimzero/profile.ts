@@ -266,7 +266,7 @@ export const EMPTY_DRAFT: ProfileDraft = {
   state: "",
   county_jurisdiction: "",
   size_m: 0,
-  stage: "Pre-Acquisition",
+  stage: "Acquisition",
   asset_class: [],
   delivery_model: "CM_AT_RISK_GMP",
   contract_form: "AIA_A133",
@@ -352,7 +352,7 @@ export async function createProjectFromDraft(draft: ProfileDraft) {
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase())
       : "Mixed-Use",
-    current_stage: STAGE_NUMBER[stage] ?? 1,
+    current_stage: stageNumberOf(stage),
     engagement_level: String(draft["project_tier"]),
   };
 
