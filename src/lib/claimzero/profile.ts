@@ -254,15 +254,9 @@ export function tierFromValueBand(band: string): "ESSENTIAL" | "STANDARD" | "COM
   return "ESSENTIAL";
 }
 
-export const STAGE_NUMBER: Record<string, number> = {
-  "Pre-Acquisition": 1,
-  Entitlement: 2,
-  Design: 3,
-  Preconstruction: 4,
-  Construction: 5,
-  Closeout: 6,
-  Sellout: 7,
-};
+/** Stage label -> number. Resolves legacy labels too. See ./stages. */
+export const stageNumberForLabel = stageNumberOf;
+
 
 export type ProfileDraft = Record<string, string | number | boolean | string[]>;
 
