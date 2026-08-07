@@ -26,6 +26,7 @@ import {
   type ReportRow,
 } from "@/lib/claimzero/reports";
 import type { SpecEscalationRule } from "@/lib/claimzero/escalation";
+import { STAGE_NUMBERS } from "@/lib/claimzero/stages";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
