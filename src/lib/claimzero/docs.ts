@@ -239,8 +239,8 @@ export const CONFIDENCE_COLOR: Record<Register["confidence"], string> = {
 };
 
 /** Portfolio-wide owner-disclosure flags for the Daily Digest. */
-export function disclosureFlags(limit = 6) {
-  return projects
+export function disclosureFlags(limit = 6, list: Project[] = projects) {
+  return list
     .map((p) => ({ project: p, reg: registerFor(p) }))
     .filter((x) => x.reg.disclosureIncomplete)
     .sort((a, b) => b.reg.ownerStaleDays - a.reg.ownerStaleDays)

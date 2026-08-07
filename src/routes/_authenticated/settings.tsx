@@ -5,7 +5,7 @@ import { SHead } from "@/components/cz/shead";
 import { CzButton } from "@/components/cz/primitives";
 import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { projects } from "@/lib/claimzero/data";
+import { useProjects } from "@/lib/claimzero/data";
 import { ControlRegisterAdmin } from "@/components/cz/register-admin";
 import {
   fetchReviewerDaysPerMonth,
@@ -89,6 +89,7 @@ interface Person {
 }
 
 function Assignments() {
+  const projects = useProjects();
   const [people, setPeople] = useState<Person[]>([]);
   const [assigned, setAssigned] = useState<Record<string, number[]>>({});
   const [selected, setSelected] = useState<string>("");

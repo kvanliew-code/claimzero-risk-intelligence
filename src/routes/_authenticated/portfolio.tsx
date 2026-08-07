@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CzHeader } from "@/components/cz/header";
 import { Sparkline, StatusPill, TrendTag, scoreColor } from "@/components/cz/primitives";
-import { STAGE_OPTIONS, statusOf } from "@/lib/claimzero/data";
+import { STAGE_OPTIONS, statusOf, useProjects } from "@/lib/claimzero/data";
 import { visibleProjects } from "@/lib/claimzero/access";
 import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,9 +40,10 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
 function Portfolio() {
   const navigate = useNavigate();
   const { role, assignedProjectIds } = useAuth();
+  const allProjects = useProjects();
   const scope = useMemo(
-    () => visibleProjects(role, assignedProjectIds),
-    [role, assignedProjectIds],
+    () => visibleProjects(role, assignedProjectIds, allProjects),
+    [role, assignedProjectIds, allProjects],
   );
   const scoring = usePortfolioScoring(scope);
   const indexOf = (id: number, fallback: number) => {

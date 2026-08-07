@@ -1,5 +1,8 @@
-// ClaimZero — synthetic, deterministic portfolio data.
-// Concept data only: every figure here is illustrative, never estimated from a real record.
+// ClaimZero — portfolio data. Project records are read from public.projects;
+// the illustrative aspect/detail content below is concept data only.
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export type StatusName = "Critical" | "Serious" | "Watch" | "Stable";
 
@@ -18,33 +21,7 @@ function makeRnd(start: number) {
   return () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 }
 
-const CITIES = [
-  "New York, NY",
-  "Brooklyn, NY",
-  "Miami, FL",
-  "Jersey City, NJ",
-  "Boston, MA",
-  "Philadelphia, PA",
-  "Austin, TX",
-  "Nashville, TN",
-  "Charlotte, NC",
-  "Tampa, FL",
-  "Long Island City, NY",
-  "Stamford, CT",
-];
 
-const TYPES = [
-  "Condo Tower",
-  "Multifamily Rental",
-  "Mixed-Use",
-  "Office-Anchor",
-  "Life Science",
-  "Hotel",
-  "Adaptive Reuse",
-  "Student Housing",
-  "Senior Housing",
-  "Campus Program",
-];
 
 export const STAGE_OPTIONS = [
   "Pre-Acquisition",
@@ -56,98 +33,8 @@ export const STAGE_OPTIONS = [
   "Sellout",
 ] as const;
 
-const STAGES = [
-  "Pre-Acquisition",
-  "Entitlement",
-  "Design",
-  "Preconstruction",
-  "Construction",
-  "Construction",
-  "Construction",
-  "Closeout",
-  "Sellout",
-];
 
-const RISK_LINES: [string, string][] = [
-  ["Curtain wall submittal loop stalling critical path", "Design & Shop Drawings"],
-  ["Contingency burn rate exceeds schedule progress", "Budget & Change Orders"],
-  ["Requisition vs. schedule-of-values divergence widening", "Loan, Draws & Covenants"],
-  ["DOB objection unanswered 21 days — filing at risk", "Zoning, Permits & City"],
-  ["Steel long-lead delivery slipping past need date", "Procurement & Long-Lead"],
-  ["RFI aging spike concentrated on one responder", "RFIs & Coordination"],
-  ["Notice-language detected in CM correspondence", "Communications Watch"],
-  ["Interest reserve adequacy trending below covenant", "Carry & Interest Burn"],
-  ["Failed inspections repeating on same subcontractor", "Quality & Safety"],
-  ["Deposit velocity behind pro forma absorption pace", "Sales & Takeout"],
-  ["Special inspection sign-offs lagging TCO path", "Legal & Compliance"],
-  ["Float erosion on hoist removal sequence", "Schedule Critical Path"],
-];
 
-const NAMES = [
-  "1428 Brickell",
-  "40 E 66th Residences",
-  "Gowanus Yards B2",
-  "Hudson Point Tower",
-  "Warren Street Lofts",
-  "The Meridian",
-  "Palmetto Bay Commons",
-  "Riverline Phase II",
-  "Beacon Exchange",
-  "South End Labs",
-  "Cortland House",
-  "The Wexford",
-  "Union Square North",
-  "Paramount Plaza",
-  "Kingsland Commons",
-  "Atlantic Wharf West",
-  "Halsey & 5th",
-  "Monarch on Main",
-  "The Calloway",
-  "Ironworks District",
-  "Summit Ridge",
-  "Harborview Senior Living",
-  "Midtown Innovation Hub",
-  "The Lenox",
-  "Foundry Row",
-  "Cascade Terrace",
-  "Ellison Yards",
-  "Port & Market",
-  "The Ashford",
-  "Granite Park III",
-  "Delancey Commons",
-  "Marina Del Sol",
-  "The Whitfield",
-  "Oakline Crossing",
-  "Sterling Square",
-  "Bayfront Medical Pavilion",
-  "The Rockwell",
-  "Cypress Green",
-  "Liberty Landing",
-  "The Montrose",
-  "Fulton Works",
-  "Regatta Pointe",
-  "The Ainsley",
-  "Copper Ridge Flats",
-  "Vanguard Tower",
-  "The Bellamy",
-  "Cedar & Vine",
-  "Northgate Yards",
-  "The Priory",
-  "Silverline Lofts",
-  "Eastbank Promenade",
-  "The Kensington",
-  "Quarry House",
-  "Tradewinds Plaza",
-  "The Marlowe",
-  "Highline West",
-  "Anchor Point",
-  "The Halstead",
-  "Brookfield Commons",
-  "Verdant Park North",
-  "The Sinclair",
-  "Waterline 88",
-  "The Aldridge",
-];
 
 export interface Project {
   id: number;
@@ -164,48 +51,87 @@ export interface Project {
   delta: number;
 }
 
-const rnd = makeRnd(42);
+/**
+ * Projects are read from public.projects — the table is the source of truth and
+ * the FK target for project_controls / project_assignments. `projects` is a live
+ * array reference that is filled in place by loadProjects(), so existing
+ * synchronous consumers keep working once the list has been hydrated.
+ */
+export const projects: Project[] = [];
 
-const pick = <T,>(arr: T[], r: number): T => arr[Math.floor(r * arr.length)] as T;
-
-export const projects: Project[] = NAMES.map((n, i) => {
-  const size = Math.round((20 + rnd() * 730) / 5) * 5;
-  const idx = Math.round(28 + rnd() * 62);
-  const trend = Array.from({ length: 8 }, (_, k) =>
-    Math.max(5, Math.min(98, idx + (rnd() - 0.55) * 26 - k * 1.5)),
+/** Deterministic 8-point trend derived from the stored index (charts only). */
+function trendFor(id: number, idx: number): number[] {
+  const r = makeRnd(1000 + id * 7919);
+  return Array.from({ length: 8 }, (_, k) =>
+    Math.round(Math.max(5, Math.min(98, idx + (r() - 0.55) * 26 - k * 1.5))),
   ).reverse();
-  const rl = pick(RISK_LINES, rnd());
+}
+
+type ProjectRow = {
+  id: number;
+  name: string;
+  city: string;
+  type: string;
+  stage: string;
+  size_m: number | string;
+  idx: number;
+  exposure: number | string;
+  top_risk: string;
+  top_aspect: string;
+};
+
+export function toProject(row: ProjectRow): Project {
+  const trend = trendFor(row.id, row.idx);
   return {
-    id: i,
-    name: n,
-    city: pick(CITIES, rnd()),
-    type: pick(TYPES, rnd()),
-    stage: i === 0 ? "Construction" : pick(STAGES, rnd()),
-    sizeM: size,
-    idx,
+    id: row.id,
+    name: row.name,
+    city: row.city,
+    type: row.type,
+    stage: row.stage,
+    sizeM: Number(row.size_m),
+    idx: row.idx,
     trend,
-    exposure: Math.round(size * (0.5 + rnd() * 4)) / 100,
-    topRisk: rl[0],
-    topAspect: rl[1],
+    exposure: Number(row.exposure),
+    topRisk: row.top_risk,
+    topAspect: row.top_aspect,
     delta: Math.round((trend[7] as number) - (trend[4] as number)),
   };
-});
+}
 
-// The demo project — synthetic, composite, and fully built out.
-projects[0] = {
-  ...(projects[0] as Project),
-  name: "Harbor Point Residences",
-  city: "Jersey City, NJ",
-  type: "Mixed-Use Rental — 18 st / 312 units",
-  stage: "Construction",
-  sizeM: 184,
-  idx: 47,
-  trend: [31, 33, 36, 38, 40, 42, 44, 47],
-  exposure: 0.99,
-  topRisk: "Approval Condition 7 expires in 61 days — no extension on file",
-  topAspect: "Entitlement & Development Rights",
-  delta: 5,
-};
+let projectsPromise: Promise<Project[]> | null = null;
+
+/** Load (once) the portfolio from the database and hydrate `projects` in place. */
+export function loadProjects(): Promise<Project[]> {
+  if (!projectsPromise) {
+    projectsPromise = (async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id,name,city,type,stage,size_m,idx,exposure,top_risk,top_aspect")
+        .order("id");
+      if (error) {
+        projectsPromise = null;
+        throw error;
+      }
+      const rows = (data ?? []).map((r) => toProject(r as ProjectRow));
+      projects.length = 0;
+      projects.push(...rows);
+      return projects;
+    })();
+  }
+  return projectsPromise;
+}
+
+
+/** React hook: the hydrated portfolio. */
+export function useProjects(): Project[] {
+  const { data } = useQuery({
+    queryKey: ["cz-projects"],
+    queryFn: loadProjects,
+    staleTime: 5 * 60_000,
+  });
+  return data ?? projects;
+}
+
 
 export interface AspectFlag {
   sev: StatusName;

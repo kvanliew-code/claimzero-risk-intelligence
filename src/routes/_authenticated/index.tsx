@@ -10,7 +10,7 @@ import { disclosureFlags } from "@/lib/claimzero/docs";
 import { usePortfolioScoring } from "@/lib/claimzero/usePortfolioScoring";
 import { visibleProjects } from "@/lib/claimzero/access";
 import { useAuth } from "@/hooks/useAuth";
-import { statusOf } from "@/lib/claimzero/data";
+import { statusOf, useProjects } from "@/lib/claimzero/data";
 
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -139,9 +139,10 @@ function ColdOpen() {
 
 function Digest() {
   const { role, assignedProjectIds } = useAuth();
+  const allProjects = useProjects();
   const scope = useMemo(
-    () => visibleProjects(role, assignedProjectIds),
-    [role, assignedProjectIds],
+    () => visibleProjects(role, assignedProjectIds, allProjects),
+    [role, assignedProjectIds, allProjects],
   );
   const scoring = usePortfolioScoring(scope);
   const criticals = scoring.rollups.filter(
@@ -247,7 +248,7 @@ function Digest() {
             or more are outstanding at once
           </span>
         </div>
-        {disclosureFlags().map(({ project, reg }) => (
+        {disclosureFlags(6, allProjects).map(({ project, reg }) => (
           <div
             key={project.id}
             className="mb-2 rounded-[10px] border border-cz-rule bg-cz-surface px-3.5 py-3"
