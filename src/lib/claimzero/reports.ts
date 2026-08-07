@@ -116,7 +116,35 @@ export type ReportSection =
       title: string;
       statement: string;
       signatories: string[];
+    }
+  | {
+      type: "metric_grid";
+      title: string;
+      note: string | null;
+      metrics: {
+        label: string;
+        value: string;
+        sub: string;
+        tone: "good" | "warn" | "bad" | "neutral";
+      }[];
+    }
+  | {
+      type: "grade_card";
+      title: string;
+      note: string | null;
+      rows: {
+        stage: number;
+        phase: string;
+        state: string;
+        applicable: number;
+        verified: number;
+        completeness: number;
+        grade: string;
+        tone: "good" | "warn" | "bad" | "neutral";
+        kpi: string;
+      }[];
     };
+
 
 export interface ReportMeta {
   report_key: string;
