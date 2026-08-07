@@ -204,6 +204,12 @@
   --color-cz-warn: var(--cz-warn);
   --color-cz-serious: var(--cz-serious);
   --color-cz-critical: var(--cz-critical);
+  --color-cz-paper: var(--cz-paper);
+  --color-cz-paper-2: var(--cz-paper-2);
+  --color-cz-paper-ink: var(--cz-paper-ink);
+  --color-cz-paper-ink-2: var(--cz-paper-ink-2);
+  --color-cz-paper-rule: var(--cz-paper-rule);
+
   --font-cz-sans: var(--cz-sans);
   --font-cz-serif: var(--cz-serif);
   --font-cz-mono: var(--cz-mono);
