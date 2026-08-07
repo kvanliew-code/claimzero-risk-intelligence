@@ -43,7 +43,7 @@ function Label({ f }: { f: ProfileField }) {
 }
 
 const inputCls =
-  "w-full rounded border border-cz-rule bg-cz-bg px-2.5 py-1.5 text-[13px] text-cz-ink-1 outline-none focus:border-cz-accent";
+  "w-full rounded border border-cz-rule bg-cz-page px-2.5 py-1.5 text-[13px] text-cz-ink-1 outline-none focus:border-cz-accent";
 
 function Field({
   f,
@@ -56,7 +56,7 @@ function Field({
 }) {
   if (f.kind === "boolean") {
     return (
-      <label className="flex cursor-pointer items-start gap-2.5 rounded border border-cz-rule bg-cz-bg px-2.5 py-2">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded border border-cz-rule bg-cz-page px-2.5 py-2">
         <input
           type="checkbox"
           className="mt-0.5 accent-cz-accent"
@@ -241,7 +241,7 @@ function Intake() {
               Tier <b className="text-cz-ink-1">{String(draft["project_tier"])}</b>, seeded from the
               contract value band.
             </div>
-            {err ? <div className="mt-2 text-[12px] text-cz-bad">{err}</div> : null}
+            {err ? <div className="mt-2 text-[12px] text-cz-critical">{err}</div> : null}
             <div className="mt-3">
               <CzButton primary onClick={submit} disabled={!ready || busy}>
                 {busy ? "Creating…" : "Create project →"}
