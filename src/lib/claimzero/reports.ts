@@ -113,8 +113,15 @@ export type ReportSection =
   | {
       type: "finding_list";
       title: string;
-      items: { headline: string; detail: string; severity: string; consequence: string }[];
+      items: {
+        headline: string;
+        detail: string;
+        severity: string;
+        consequence: string;
+        remedy: Remedy;
+      }[];
     }
+
   | {
       type: "chronology";
       title: string;
