@@ -163,9 +163,17 @@
   --cz-serious: #ec835a;
   --cz-critical: #d03b3b;
   --cz-warn-ink: #fab219;
+  /* "Paper" — the printed-artifact surface used by report snapshots. Held
+     constant across themes: a ClaimZero report always reads as ink on stock. */
+  --cz-paper: #f6f1e7;
+  --cz-paper-2: #ece5d7;
+  --cz-paper-ink: #1a2431;
+  --cz-paper-ink-2: #55606f;
+  --cz-paper-rule: rgba(26, 36, 49, 0.14);
   --cz-sans: "Poppins", ui-rounded, system-ui, sans-serif;
   --cz-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
   --cz-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
 }
 
 :root[data-theme="light"] {
