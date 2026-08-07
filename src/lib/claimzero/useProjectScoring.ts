@@ -5,12 +5,14 @@
 import { useEffect, useState } from "react";
 import {
   ensureInstances,
+  fetchFamilyApplicability,
   fetchRegister,
   stageNumberFor,
   tierFor,
   type ProjectTier,
   type ControlInstance,
   type ControlSpec,
+  type FamilyApplicability,
 } from "./controls";
 import {
   composite,
@@ -38,6 +40,7 @@ export interface ProjectScoring {
   composite: Composite | null;
   gate: SpecStageGate | null;
   exitCriteria: ExitCriterion[];
+  familyApplicability: FamilyApplicability;
   stageNumber: number;
   tier: ProjectTier;
 }
@@ -51,6 +54,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
     aspects: AspectDef[];
     exitCriteria: ExitCriterion[];
     overrides: Record<string, number>;
+    familyApplicability: FamilyApplicability;
   }>({
     loading: true,
     error: null,
@@ -59,21 +63,35 @@ export function useProjectScoring(project: Project): ProjectScoring {
     aspects: [],
     exitCriteria: [],
     overrides: {},
+    familyApplicability: new Map(),
   });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [register, aspects, exitCriteria, overrides] = await Promise.all([
-          fetchRegister(),
-          fetchAspects(),
-          fetchExitCriteria(),
-          fetchWeightOverrides(),
-        ]);
+        const [register, aspects, exitCriteria, overrides, familyApplicability] =
+          await Promise.all([
+            fetchRegister(),
+            fetchAspects(),
+            fetchExitCriteria(),
+            fetchWeightOverrides(),
+            fetchFamilyApplicability(project.id).catch(
+              () => new Map() as FamilyApplicability,
+            ),
+          ]);
         const instances = await ensureInstances(project, register);
         if (cancelled) return;
-        setState({ loading: false, error: null, register, instances, aspects, exitCriteria, overrides });
+        setState({
+          loading: false,
+          error: null,
+          register,
+          instances,
+          aspects,
+          exitCriteria,
+          overrides,
+          familyApplicability,
+        });
       } catch (e) {
         if (!cancelled)
           setState((s) => ({
@@ -92,7 +110,15 @@ export function useProjectScoring(project: Project): ProjectScoring {
   const tier = tierFor(project);
   const instanceMap = new Map(state.instances.map((i) => [i.control_id, i]));
   const scores = state.aspects.length
-    ? scoreAspects(state.aspects, state.register, instanceMap, stageNumber, tier)
+    ? scoreAspects(
+        state.aspects,
+        state.register,
+        instanceMap,
+        stageNumber,
+        tier,
+        undefined,
+        state.familyApplicability,
+      )
     : [];
   const comp = scores.length ? composite(scores, stageNumber, state.overrides) : null;
   const gate = state.register.length
@@ -103,6 +129,8 @@ export function useProjectScoring(project: Project): ProjectScoring {
         state.exitCriteria,
         tier,
         scores,
+        undefined,
+        state.familyApplicability,
       )
     : null;
 
@@ -117,6 +145,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
     composite: comp,
     gate,
     exitCriteria: state.exitCriteria,
+    familyApplicability: state.familyApplicability,
     stageNumber,
     tier,
   };

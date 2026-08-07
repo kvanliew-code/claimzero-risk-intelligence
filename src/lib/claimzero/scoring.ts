@@ -6,6 +6,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   appliesTo,
+  familyApplies,
+  type FamilyApplicability,
   type ControlInstance,
   type ControlSpec,
   type ControlStatus,
@@ -77,14 +79,21 @@ export async function fetchWeightOverrides(): Promise<Record<string, number>> {
   return out;
 }
 
-/** §3 Applicability — stage reached, tier met, delivery model allowed. */
+/**
+ * §3 Applicability — stage reached, tier met, delivery model allowed, and the
+ * control's family not suppressed by the server-side applicability engine.
+ * A suppressed control leaves both the numerator and the denominator, exactly
+ * like N/A.
+ */
 export function isApplicable(
   spec: ControlSpec,
   stageNumber: number,
   tier: Tier,
   deliveryModel?: string,
+  familyApplicability?: FamilyApplicability,
 ): boolean {
   if (!appliesTo(spec, stageNumber, tier)) return false;
+  if (!familyApplies(familyApplicability, spec.family_code)) return false;
   const models = (spec.applicable_delivery_models ?? "").trim();
   if (!models || !deliveryModel) return true;
   return models
@@ -132,8 +141,11 @@ export function scoreAspects(
   stageNumber: number,
   tier: Tier,
   deliveryModel?: string,
+  familyApplicability?: FamilyApplicability,
 ): AspectScore[] {
-  const applicable = register.filter((c) => isApplicable(c, stageNumber, tier, deliveryModel));
+  const applicable = register.filter((c) =>
+    isApplicable(c, stageNumber, tier, deliveryModel, familyApplicability),
+  );
   const byAspect = new Map<string, ControlSpec[]>();
   for (const c of applicable) {
     const key = c.aspect_id ?? "";
@@ -324,10 +336,11 @@ export function evaluateStageGate(
   tier: Tier,
   aspectScores: AspectScore[],
   deliveryModel?: string,
+  familyApplicability?: FamilyApplicability,
 ): SpecStageGate {
   const specs = register.filter(
     (c) =>
-      isApplicable(c, stageNumber, tier, deliveryModel) &&
+      isApplicable(c, stageNumber, tier, deliveryModel, familyApplicability) &&
       (c.continuous ? c.stage_number <= stageNumber : c.stage_number === stageNumber),
   );
   const scored = specs.filter((c) => instances.get(c.control_id)?.status !== "N/A");
