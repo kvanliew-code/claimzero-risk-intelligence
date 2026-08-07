@@ -834,6 +834,159 @@ export type Database = {
           },
         ]
       }
+      report_definitions: {
+        Row: {
+          active: boolean
+          applicable_stages: number[]
+          audience: string
+          cadence: string
+          created_at: string
+          decision: string
+          report_key: string
+          sections: Json
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applicable_stages?: number[]
+          audience?: string
+          cadence?: string
+          created_at?: string
+          decision?: string
+          report_key: string
+          sections?: Json
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applicable_stages?: number[]
+          audience?: string
+          cadence?: string
+          created_at?: string
+          decision?: string
+          report_key?: string
+          sections?: Json
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      report_snapshots: {
+        Row: {
+          captured_at: string
+          captured_by: string | null
+          content_hash: string
+          id: string
+          payload: Json
+          prev_hash: string | null
+          project_id: number
+          report_id: string
+        }
+        Insert: {
+          captured_at?: string
+          captured_by?: string | null
+          content_hash: string
+          id?: string
+          payload: Json
+          prev_hash?: string | null
+          project_id: number
+          report_id: string
+        }
+        Update: {
+          captured_at?: string
+          captured_by?: string | null
+          content_hash?: string
+          id?: string
+          payload?: Json
+          prev_hash?: string | null
+          project_id?: number
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_snapshots_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          doc_number: string
+          generated_by: string | null
+          id: string
+          payload: Json
+          project_id: number
+          published_at: string | null
+          report_key: string
+          revision: number
+          snapshot_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          doc_number?: string
+          generated_by?: string | null
+          id?: string
+          payload?: Json
+          project_id: number
+          published_at?: string | null
+          report_key: string
+          revision?: number
+          snapshot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          doc_number?: string
+          generated_by?: string | null
+          id?: string
+          payload?: Json
+          project_id?: number
+          published_at?: string | null
+          report_key?: string
+          revision?: number
+          snapshot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_report_key_fkey"
+            columns: ["report_key"]
+            isOneToOne: false
+            referencedRelation: "report_definitions"
+            referencedColumns: ["report_key"]
+          },
+        ]
+      }
       review_items: {
         Row: {
           aspect_id: string
