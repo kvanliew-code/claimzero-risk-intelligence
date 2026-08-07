@@ -299,33 +299,36 @@ export const EMPTY_DRAFT: ProfileDraft = {
   occupancy_phasing: "SINGLE_TCO",
 };
 
+const PREDICATE_KEYS = [
+  "asset_class",
+  "delivery_model",
+  "contract_form",
+  "architect_agreement",
+  "project_tier",
+  "contract_value_band",
+  "state",
+  "county_jurisdiction",
+  "hvhz",
+  "threshold_building",
+  "building_height_stories",
+  "below_grade_levels",
+  "site_condition",
+  "entitlement_status",
+  "capital_structure",
+  "sales_structure",
+  "schedule_software",
+  "native_schedule_files_required",
+  "labor_market",
+  "occupancy_phasing",
+  "public_funding",
+  "historic_designation",
+  "ground_lease",
+];
+
 /** Applicable / suppressed family counts for a draft profile, evaluated server-side. */
 export async function previewApplicability(draft: ProfileDraft) {
-  const profile = {
-    asset_class: draft.asset_class,
-    delivery_model: draft.delivery_model,
-    contract_form: draft.contract_form,
-    architect_agreement: draft.architect_agreement,
-    project_tier: draft.project_tier,
-    contract_value_band: draft.contract_value_band,
-    state: draft.state,
-    county_jurisdiction: draft.county_jurisdiction,
-    hvhz: draft.hvhz,
-    threshold_building: draft.threshold_building,
-    building_height_stories: draft.building_height_stories,
-    below_grade_levels: draft.below_grade_levels,
-    site_condition: draft.site_condition,
-    entitlement_status: draft.entitlement_status,
-    capital_structure: draft.capital_structure,
-    sales_structure: draft.sales_structure,
-    schedule_software: draft.schedule_software,
-    native_schedule_files_required: draft.native_schedule_files_required,
-    labor_market: draft.labor_market,
-    occupancy_phasing: draft.occupancy_phasing,
-    public_funding: draft.public_funding,
-    historic_designation: draft.historic_designation,
-    ground_lease: draft.ground_lease,
-  };
+  const profile: Record<string, unknown> = {};
+  for (const k of PREDICATE_KEYS) profile[k] = draft[k];
   const { data, error } = await supabase.rpc("get_family_applicability_reasons", {
     profile: profile as never,
   });
@@ -347,19 +350,21 @@ export async function createProjectFromDraft(draft: ProfileDraft) {
     .limit(1)
     .maybeSingle();
   const id = ((maxRow?.id as number | undefined) ?? -1) + 1;
-  const stage = String(draft.stage);
+  const stage = String(draft["stage"]);
+  const assets = (draft["asset_class"] as string[]) ?? [];
   const row = {
     ...draft,
     id,
-    type: (draft.asset_class as string[])[0]
-      ? String((draft.asset_class as string[])[0])
+    type: assets[0]
+      ? assets[0]
           .toLowerCase()
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase())
       : "Mixed-Use",
     current_stage: STAGE_NUMBER[stage] ?? 1,
-    engagement_level: String(draft.project_tier),
+    engagement_level: String(draft["project_tier"]),
   };
+
   const { error } = await supabase.from("projects").insert(row as never);
   if (error) throw error;
   return id;
