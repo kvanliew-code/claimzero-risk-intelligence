@@ -218,7 +218,7 @@ export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
   });
 }
 
-import { stageName } from "./stages";
+import { stageName, STAGE_NUMBERS } from "./stages";
 export { stageName };
 
 
@@ -584,7 +584,7 @@ const timeMoneyGenerator: Generator = (ctx) => {
     );
 
   /* --- phase report card ------------------------------------------------ */
-  const phaseRows = [1, 2, 3, 4, 5, 6, 7].map((s) => {
+  const phaseRows = STAGE_NUMBERS.map((s) => {
     const specs = scoring.register.filter(
       (c) => (c.continuous ? c.stage_number <= s : c.stage_number === s) &&
         instStatus(scoring, c.control_id) !== "N/A",

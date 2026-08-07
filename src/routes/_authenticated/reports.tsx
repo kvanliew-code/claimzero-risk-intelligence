@@ -593,7 +593,7 @@ function ReportsBody({
             value={stage}
             onChange={(e) => setStagePick(Number(e.target.value))}
           >
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            {STAGE_NUMBERS.map((n) => (
               <option key={n} value={n}>
                 {n} · {stageName(n)}
               </option>
