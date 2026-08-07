@@ -1207,6 +1207,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cz_stage_name: { Args: { n: number }; Returns: string }
       evaluate_predicate: {
         Args: { predicate: Json; profile: Json }
         Returns: boolean
