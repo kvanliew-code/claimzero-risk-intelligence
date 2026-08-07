@@ -218,17 +218,8 @@ export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
   });
 }
 
-const STAGE_NAME: Record<number, string> = {
-  1: "Pre-Acquisition",
-  2: "Entitlement",
-  3: "Design",
-  4: "Preconstruction",
-  5: "Construction",
-  6: "Closeout",
-  7: "Sellout",
-};
+export { stageName } from "./stages";
 
-export const stageName = (n: number) => STAGE_NAME[n] ?? `Stage ${n}`;
 
 const today = () =>
   new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
