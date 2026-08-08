@@ -323,10 +323,10 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
   },
 
   /* ---------------------------------------------------------------------
-     The commercial spine (§7.1) and the operator manual (§10). No generator
-     is implemented for these yet — they are authored here so REQ-010 can seed
-     the rows, and they stay `active: false` until a generator exists. An
-     inactive definition never renders an empty report.
+     The commercial spine (§7.1) and the operator manual (§10). Generators are
+     implemented for all fourteen definitions, so every row is active. An
+     active definition without a generator would render an empty report — the
+     coverage test in __tests__/report-definitions.test.ts blocks that.
      --------------------------------------------------------------------- */
   {
     report_key: "PROPOSAL",
