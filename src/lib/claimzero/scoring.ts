@@ -337,6 +337,12 @@ export function evaluateStageGate(
   aspectScores: AspectScore[],
   deliveryModel?: string,
   familyApplicability?: FamilyApplicability,
+  /**
+   * True only when a frozen evidence snapshot exists for this stage. Absent a
+   * snapshot the gate cannot return READY — but a snapshot that DOES exist must
+   * not be treated as missing, which is what an unconditional reason did.
+   */
+  frozenSnapshotExists = false,
 ): SpecStageGate {
   const specs = register.filter(
     (c) =>
