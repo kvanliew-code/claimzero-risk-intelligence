@@ -29,6 +29,9 @@ retroactively.
 | `4be3c39` | **Provenance hold** on REQ-011 — the 47 controls are Claude-authored, not methodology | Claude |
 | `003be5c` | **D-16 fixed** — Portfolio index no longer fabricates `COMPLETE_VERIFIED` | Claude |
 | `c6b266e` | **REQ-015** — bitemporality stated as columns, derived from the CZ-001 seed | Claude |
+| `4d76447` | This file created — lanes, commit log, corrections, blocked items | Claude |
+| `0e6a753` | SWO `known_at` settled at 2019-03-06; REQ-015 backfill hold lifted | Claude |
+| `2189095` | **Stage gate fixed** — verdict now keyed off substantive findings, so READY is reachable | Claude |
 
 ---
 
@@ -93,7 +96,7 @@ Full log: `CZ_VERIFIED_DEFECT_MEMO_2026-08-07.md` in `/Shared/11 - ClaimZero/Dev
 | D-19 | `report_definitions.sections` read from the DB and never used | Open |
 | D-20 | Four generators against nine claimed report types | Open |
 | D-21 | `first_active_stage` contradicts the brief ordering claim | Open |
-| NEW | **Stage gate can never return READY** — `scoring.ts:415` pushes a reason unconditionally | Open |
+| NEW | **Stage gate could never return READY** — `scoring.ts` pushed the frozen-snapshot reason unconditionally and keyed the verdict off `reasons.length` | **Fixed** `2189095` |
 | NEW | **Auth session does not hold** — bounces to `/auth` while the shell reads "Signed in" | Open |
 | NEW | **Seed contamination** — `RISK-40E-REG-SITEPROTECT.first_signal_date = 2019-02-28` is the occurrence date | Open |
 
