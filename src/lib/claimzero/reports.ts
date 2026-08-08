@@ -1157,15 +1157,906 @@ const reportCardGenerator: Generator = (ctx) => {
   };
 };
 
+/* ================================================================= shared
+   Section builders used by the remaining ten generators. Every one of them
+   reads the same live register, scoring and escalation inputs the four
+   original generators read — nothing here is bespoke narrative dressed as
+   data, and nothing is estimated. Where an input is absent the section says
+   so in unresolvedInputs rather than filling the gap.
+   ========================================================================= */
+
+const isOpen = (scoring: ProjectScoring, id: string) => {
+  const s = instStatus(scoring, id);
+  return s !== "COMPLETE_VERIFIED" && s !== "N/A";
+};
+
+/** Applicable, non-N/A controls at a stage (or an explicit list of stages). */
+function specsFor(
+  scoring: ProjectScoring,
+  stageNumber: number,
+  stages?: number[],
+): ControlSpec[] {
+  const wanted = stages && stages.length ? stages : [stageNumber];
+  return scoring.register.filter(
+    (c) =>
+      (c.continuous ? c.stage_number <= Math.max(...wanted) : wanted.includes(c.stage_number)) &&
+      instStatus(scoring, c.control_id) !== "N/A",
+  );
+}
+
+const CONTROL_COLUMNS: Column[] = [
+  { key: "control_id", label: "Control" },
+  { key: "title", label: "Requirement" },
+  { key: "responsible_seat", label: "Responsible seat" },
+  { key: "evidence_class", label: "Evidence class" },
+  { key: "status", label: "Status" },
+];
+
+function controlRow(c: ControlSpec, scoring: ProjectScoring): Record<string, string> {
+  const inst = scoring.instanceMap.get(c.control_id);
+  return {
+    control_id: c.control_id,
+    title: c.title || c.requirement,
+    responsible_seat: c.responsible_seat || c.primary_owner_role || "— NO NAMED SEAT —",
+    evidence_class: c.evidence_class || "—",
+    verification_method: c.verification_method || "—",
+    criticality: c.criticality || "—",
+    evidence_ref: inst?.evidence_ref?.trim() || "EVIDENCE NOT LOCATED",
+    status: statusLabel(instStatus(scoring, c.control_id)),
+  };
+}
+
+function controlTable(
+  title: string,
+  specs: ControlSpec[],
+  scoring: ProjectScoring,
+  groupLabel: string,
+  columns: Column[] = CONTROL_COLUMNS,
+): ReportSection {
+  return {
+    type: "control_table",
+    title,
+    columns,
+    groups: [{ label: groupLabel, rows: specs.map((c) => controlRow(c, scoring)) }],
+  };
+}
+
+function aspectSummary(title: string, scoring: ProjectScoring): ReportSection {
+  return {
+    type: "aspect_summary",
+    title,
+    index: scoring.composite?.index ?? null,
+    confidence: scoring.composite?.confidence ?? 0,
+    band: scoring.composite?.band ?? "INSUFFICIENT",
+    withheldReason:
+      scoring.composite && scoring.composite.index === null
+        ? `Composite index withheld: confidence is ${scoring.composite.confidence}%, below the 60% publication floor. The gaps below are published in its place.`
+        : null,
+    rows: scoring.scores.map((s) => ({
+      aspect_id: s.aspect_id,
+      aspect_name: s.aspect_name,
+      score: s.score,
+      band: s.band,
+      verified: s.verified,
+      controls: s.controls,
+      weighted: false,
+    })),
+  };
+}
+
+function exitCriteriaSection(title: string, scoring: ProjectScoring): ReportSection {
+  const gate = scoring.gate;
+  const row = (c: { criterion_id: string; exit_criterion: string; evidence_required: string }) => {
+    const hit = gate?.unsatisfiedCriteria.find((u) => u.criterion.criterion_id === c.criterion_id);
+    return {
+      criterion_id: c.criterion_id,
+      exit_criterion: c.exit_criterion,
+      evidence_required: c.evidence_required,
+      satisfied: !hit,
+      open: hit?.open ?? [],
+    };
+  };
+  return {
+    type: "exit_criteria_status",
+    title,
+    hard: (gate?.hardCriteria ?? []).map(row),
+    soft: (gate?.softCriteria ?? []).map(row),
+  };
+}
+
+/** Open controls, worst first, each carrying a remedy. */
+function openFindings(
+  title: string,
+  specs: ControlSpec[],
+  scoring: ProjectScoring,
+  stageNumber: number,
+  limit = 20,
+): ReportSection {
+  const rank = (c: ControlSpec) =>
+    (c.criticality === "CRITICAL" ? 3 : c.criticality === "HIGH" ? 2 : 1) +
+    (c.irreversibility === "VERY_HIGH" ? 3 : c.irreversibility === "HIGH" ? 2 : 0);
+  const open = specs
+    .filter((c) => isOpen(scoring, c.control_id))
+    .sort((a, b) => rank(b) - rank(a))
+    .slice(0, limit);
+  return {
+    type: "finding_list",
+    title,
+    items: open.map((c) => ({
+      headline: `${c.control_id} · ${c.title || c.requirement}`,
+      detail:
+        c.downstream_exposure ||
+        c.objective ||
+        "No downstream consequence is recorded against this control.",
+      severity: c.criticality === "CRITICAL" ? "Critical" : c.criticality === "HIGH" ? "High" : "Moderate",
+      consequence:
+        c.irreversibility === "VERY_HIGH" || c.irreversibility === "HIGH"
+          ? "Irreversible at this stage — closing it later is recovered by change order or claim, not by management."
+          : "Recoverable now; the cost of closing it grows with every week it stays open.",
+      remedy: remedyForControl(c, stageNumber),
+    })),
+  };
+}
+
+/**
+ * What was knowable, and when. Built only from dated verification events on the
+ * record. An undated control is not given a date — it is reported as undated.
+ */
+function chronologySection(
+  title: string,
+  specs: ControlSpec[],
+  scoring: ProjectScoring,
+): { section: ReportSection; undated: number } {
+  const entries: { date: string; event: string; owner: string; source: string }[] = [];
+  let undated = 0;
+  for (const c of specs) {
+    const inst = scoring.instanceMap.get(c.control_id);
+    if (!inst) continue;
+    if (!inst.verified_date) {
+      if (instStatus(scoring, c.control_id) === "COMPLETE_VERIFIED") undated += 1;
+      continue;
+    }
+    entries.push({
+      date: inst.verified_date,
+      event: `${c.control_id} · ${c.title || c.requirement} — ${statusLabel(inst.status)}`,
+      owner: inst.verified_by || c.responsible_seat || c.primary_owner_role || "— NO NAMED SEAT —",
+      source: inst.evidence_ref?.trim() || "EVIDENCE NOT LOCATED — claim not citable",
+    });
+  }
+  entries.sort((a, b) => a.date.localeCompare(b.date));
+  return { section: { type: "chronology", title, entries }, undated };
+}
+
+function seatlessNote(specs: ControlSpec[]): string | null {
+  const n = specs.filter((c) => !(c.responsible_seat || c.primary_owner_role || "").trim()).length;
+  return n
+    ? `${n} controls in this issue carry no named responsible seat — accountability is missing, and the report states that rather than implying it is covered`
+    : null;
+}
+
+function completeness(specs: ControlSpec[], scoring: ProjectScoring) {
+  const verified = specs.filter(
+    (c) => instStatus(scoring, c.control_id) === "COMPLETE_VERIFIED",
+  ).length;
+  return {
+    verified,
+    applicable: specs.length,
+    pct: specs.length ? Math.round((verified / specs.length) * 100) : 0,
+  };
+}
+
+/* -------------------------------- generator 1 — due diligence & feasibility */
+
+const dueDiligenceGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, false);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber, [1]);
+  const cm = completeness(specs, scoring);
+  const blockers = specs.filter(
+    (c) =>
+      isOpen(scoring, c.control_id) &&
+      (c.criticality === "CRITICAL" || c.irreversibility === "VERY_HIGH"),
+  );
+
+  if (!specs.length)
+    unresolved.push("No Stage 1 controls are applicable under this project profile");
+  const seat = seatlessNote(specs);
+  if (seat) unresolved.push(seat);
+  if (blockers.length)
+    unresolved.push(
+      `${blockers.length} acquisition controls are critical or irreversible and remain open — a recommendation to proceed cannot be made clean while they stand`,
+    );
+
+  const recommendation = blockers.length
+    ? `CONDITION OR REPRICE. ${blockers.length} critical or irreversible diligence controls are open. Proceeding without closing them prices unknown risk into the basis rather than into the purchase.`
+    : cm.pct >= 80
+      ? `PURSUE. ${cm.verified} of ${cm.applicable} diligence controls are verified at ${cm.pct}% completeness with no critical item open on the record.`
+      : `NOT YET DECIDABLE. Completeness is ${cm.pct}% — the record is too thin for a proceed recommendation. The gaps below are the diligence still owed, not a negative finding.`;
+
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "Feasibility position",
+        body: [
+          `${ctx.project.name} — ${ctx.project.city} · ${ctx.project.type} · $${ctx.project.sizeM}M. This report answers one question for the principal and the equity: pursue, acquire, reprice, condition or walk away.`,
+          `Basis: ${cm.applicable} applicable Stage 1 controls, ${cm.verified} verified (${cm.pct}% completeness), composite confidence ${scoring.composite?.confidence ?? 0}%.`,
+          recommendation,
+        ],
+      },
+      controlTable(
+        "Diligence controls",
+        specs,
+        scoring,
+        `${cm.applicable} applicable acquisition controls`,
+      ),
+      openFindings("Deal-breakers and conditions", blockers.length ? blockers : specs, scoring, stageNumber, 15),
+      exitCriteriaSection("Close readiness", scoring),
+      {
+        type: "signature_block",
+        title: "Recommendation",
+        statement: recommendation,
+        signatories: ["Principal", "Equity"],
+      },
+    ],
+    citations: citationsFor(specs, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* --------------------------------- generator 2 — entitlement & conditions */
+
+const entitlementGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, false);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber, [2]);
+  const cm = completeness(specs, scoring);
+  const { section: chrono, undated } = chronologySection(
+    "Conditions of approval register",
+    specs,
+    scoring,
+  );
+
+  if (!specs.length)
+    unresolved.push("No Stage 2 controls are applicable under this project profile");
+  if (undated)
+    unresolved.push(
+      `${undated} verified entitlement controls carry no verification date — they cannot be placed on the conditions chronology, and an undated approval cannot be relied on in a later dispute`,
+    );
+  const seat = seatlessNote(specs);
+  if (seat) unresolved.push(seat);
+
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "Entitlement position",
+        body: [
+          `Approvals carried by ${ctx.project.name} are only as durable as the conditions attached to them. This report states what must occur, by whom and by when, to preserve them.`,
+          `Basis: ${cm.applicable} applicable Stage 2 controls, ${cm.verified} verified (${cm.pct}% completeness).`,
+          "A closed regulatory item does not close the underlying obligation. Conditions that survive approval are tracked here until the evidence that discharges them is on the record.",
+        ],
+      },
+      chrono,
+      controlTable("Entitlement controls", specs, scoring, `${cm.applicable} applicable entitlement controls`),
+      exitCriteriaSection("Entitlement gate", scoring),
+      openFindings("Conditions not yet discharged", specs, scoring, stageNumber, 20),
+      {
+        type: "signature_block",
+        title: "Acknowledgment",
+        statement:
+          "The undersigned acknowledge the conditions of approval recorded above and the seat accountable for discharging each one.",
+        signatories: ["Principal", "Land-use counsel"],
+      },
+    ],
+    citations: citationsFor(specs, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* -------------------------- generator 3 — project assessment for financing */
+
+const financingGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber, [3, 4, 5].filter((s) => s <= stageNumber).length ? [3, 4, 5] : [stageNumber]);
+  const cm = completeness(specs, scoring);
+  const d = deriveFinance(ctx.finance ?? null);
+  const uncited = specs.filter((c) => !scoring.instanceMap.get(c.control_id)?.evidence_ref?.trim());
+
+  if (uncited.length)
+    unresolved.push(
+      `${uncited.length} of ${specs.length} controls in the evidence base carry no locatable citation — credit committee may not rely on them`,
+    );
+  if (!hasFinance(ctx.finance ?? null))
+    unresolved.push(
+      "No budget or schedule facts captured — funding headroom and maturity headroom are withheld rather than estimated",
+    );
+
+  const verdict =
+    (scoring.composite?.confidence ?? 0) < 60
+      ? "NOT READY TO FINANCE ON THIS RECORD. Confidence is below the 60% publication floor; the committee would be underwriting the absence of evidence."
+      : cm.pct >= 80
+        ? "READY TO FINANCE, SUBJECT TO THE CONDITIONS BELOW."
+        : "READY TO FINANCE ONLY WITH CONDITIONS. Completeness is below 80% at the assessed stages.";
+
+  return {
+    meta,
+    sections: [
+      aspectSummary("Composite index and confidence band", scoring),
+      {
+        type: "metric_grid",
+        title: "Capital position",
+        note: hasFinance(ctx.finance ?? null) ? null : "No budget facts captured — figures withheld.",
+        metrics: [
+          {
+            label: "Committed capital",
+            value: d && d.capitalCommitted > 0 ? usd(d.capitalCommitted) : "WITHHELD — not captured",
+            sub: "Equity plus debt on the record",
+            tone: "neutral",
+          },
+          {
+            label: "Funding headroom",
+            value: d?.fundingGapUsd == null ? "WITHHELD — not captured" : usd(d.fundingGapUsd),
+            sub: "Committed capital less captured cost and pending exposure",
+            tone: (d?.fundingGapUsd ?? 1) < 0 ? "bad" : "good",
+          },
+          {
+            label: "Maturity headroom",
+            value:
+              d?.maturityHeadroomDays == null
+                ? "WITHHELD — not captured"
+                : `${d.maturityHeadroomDays} days`,
+            sub: "Forecast completion against stated loan maturity",
+            tone: (d?.maturityHeadroomDays ?? 999) < 0 ? "bad" : (d?.maturityHeadroomDays ?? 999) < 90 ? "warn" : "good",
+          },
+          {
+            label: "Evidence completeness",
+            value: `${cm.pct}%`,
+            sub: `${cm.verified} of ${cm.applicable} controls verified`,
+            tone: cm.pct >= 80 ? "good" : cm.pct >= 60 ? "warn" : "bad",
+          },
+        ],
+      },
+      controlTable(
+        "Evidence base",
+        specs,
+        scoring,
+        `${cm.applicable} controls relied on, ${uncited.length} without a locatable citation`,
+        [...CONTROL_COLUMNS, { key: "evidence_ref", label: "Citation" }],
+      ),
+      openFindings("Credit conditions", specs, scoring, stageNumber, 25),
+      exitCriteriaSection("Financing gate", scoring),
+      {
+        type: "signature_block",
+        title: "Credit committee",
+        statement: verdict,
+        signatories: ["Credit officer"],
+      },
+    ],
+    citations: citationsFor(specs, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* --------------------------------- generator 5 — weekly intelligence */
+
+const TOP_N = 10;
+
+const weeklyGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, false);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber);
+  const open = specs.filter((c) => isOpen(scoring, c.control_id));
+  const rank = (c: ControlSpec) =>
+    (c.criticality === "CRITICAL" ? 3 : c.criticality === "HIGH" ? 2 : 1) +
+    (c.irreversibility === "VERY_HIGH" ? 3 : c.irreversibility === "HIGH" ? 2 : 0);
+  const top = open.slice().sort((a, b) => rank(b) - rank(a)).slice(0, TOP_N);
+
+  // NO SILENT CAPS.
+  if (open.length > TOP_N)
+    unresolved.push(
+      `This week's report shows the top ${TOP_N} of ${open.length} open controls at this stage. ${open.length - TOP_N} open controls are held back from this view — they are not closed, and they remain on the project Controls tab.`,
+    );
+  const seat = seatlessNote(top);
+  if (seat) unresolved.push(seat);
+
+  const cm = completeness(specs, scoring);
+
+  return {
+    meta,
+    sections: [
+      aspectSummary("Project Risk Index", scoring),
+      controlTable(
+        "The Top Ten",
+        top,
+        scoring,
+        open.length > TOP_N
+          ? `Top ${TOP_N} of ${open.length} open controls — ${open.length - TOP_N} held back, not closed`
+          : `${open.length} open controls at this stage`,
+        [
+          { key: "control_id", label: "Control" },
+          { key: "title", label: "What is open" },
+          { key: "responsible_seat", label: "Responsible seat" },
+          { key: "criticality", label: "Criticality" },
+          { key: "status", label: "Status" },
+        ],
+      ),
+      openFindings("What to do about it this week", top, scoring, stageNumber, TOP_N),
+      {
+        type: "narrative",
+        title: "Commentary",
+        body: [
+          `Stage ${stageNumber} · ${stageName(stageNumber)}. ${cm.verified} of ${cm.applicable} applicable controls are verified — ${cm.pct}% complete, confidence ${scoring.composite?.confidence ?? 0}%.`,
+          open.length
+            ? `${open.length} controls are open. The ten above are ranked by criticality and irreversibility: the ones where waiting a week costs the most.`
+            : "No applicable control is open at this stage on the record as loaded.",
+          "Nothing in this report is estimated. Where the record is silent, the silence is reported as a gap and not scored as green.",
+        ],
+      },
+    ],
+    citations: citationsFor(top, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* ---------------------------------- generator 6 — monthly executive */
+
+const monthlyGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber);
+  const cm = completeness(specs, scoring);
+  const fin = ctx.finance ?? null;
+  const d = deriveFinance(fin);
+  const funded = hasFinance(fin);
+  const withheld = "WITHHELD — not captured";
+
+  if (!funded)
+    unresolved.push(
+      "No budget or schedule facts captured for this project — the cost and schedule tables report withheld rather than zero",
+    );
+
+  const verifiedThisMonth = specs.filter((c) => {
+    const dt = scoring.instanceMap.get(c.control_id)?.verified_date;
+    if (!dt) return false;
+    const then = new Date(dt);
+    const now = new Date();
+    return (now.getTime() - then.getTime()) / 86400000 <= 31;
+  });
+
+  const costRows = [
+    { item: "Contract sum", value: fin && fin.contract_sum_usd > 0 ? usd(fin.contract_sum_usd) : withheld },
+    {
+      item: "Change orders approved",
+      value: fin && fin.change_orders_approved_usd > 0 ? usd(fin.change_orders_approved_usd) : withheld,
+    },
+    {
+      item: "Change orders pending",
+      value: fin && fin.change_orders_pending_usd > 0 ? usd(fin.change_orders_pending_usd) : withheld,
+    },
+    {
+      item: "Contingency remaining",
+      value: d && fin && fin.contingency_total_usd > 0 ? usd(d.contingencyRemaining) : withheld,
+    },
+    { item: "Contingency drawn", value: d?.contingencyBurnPct == null ? withheld : pct(d.contingencyBurnPct) },
+  ].map((r) => ({ item: r.item, value: r.value }));
+
+  const scheduleRows = [
+    {
+      item: "Baseline substantial completion",
+      value: fin?.baseline_substantial_completion ?? withheld,
+    },
+    {
+      item: "Forecast substantial completion",
+      value: fin?.forecast_substantial_completion ?? withheld,
+    },
+    { item: "Slip against baseline", value: d?.slipDays == null ? withheld : `${d.slipDays} days` },
+    { item: "Cost of the slip", value: d?.slipCostUsd == null ? withheld : usd(d.slipCostUsd) },
+    { item: "Loan maturity", value: fin?.loan_maturity ?? withheld },
+  ];
+
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "The month in one paragraph",
+        body: [
+          `${ctx.project.name} closed the month at ${cm.pct}% control completeness — ${cm.verified} of ${cm.applicable} applicable controls verified at Stage ${stageNumber} · ${stageName(stageNumber)}, on ${scoring.composite?.confidence ?? 0}% confidence. ${verifiedThisMonth.length} controls were verified in the last thirty-one days.`,
+          d?.slipDays != null && d.slipDays > 0
+            ? `Schedule is ${d.slipDays} days behind the baseline, carrying ${d.slipCostUsd == null ? "an unquantified" : usd(d.slipCostUsd)} cost in liquidated damages and carry.`
+            : "No schedule slip is recorded against the captured baseline.",
+        ],
+      },
+      {
+        type: "control_table",
+        title: "Cost & draws",
+        columns: [
+          { key: "item", label: "Item" },
+          { key: "value", label: "Position" },
+        ],
+        groups: [{ label: funded ? "Captured cost facts" : "No cost facts captured", rows: costRows }],
+      },
+      {
+        type: "control_table",
+        title: "Schedule",
+        columns: [
+          { key: "item", label: "Item" },
+          { key: "value", label: "Position" },
+        ],
+        groups: [
+          { label: funded ? "Captured schedule facts" : "No schedule facts captured", rows: scheduleRows },
+        ],
+      },
+      openFindings("Risks carried into next month", specs, scoring, stageNumber, 15),
+      {
+        type: "narrative",
+        title: "Risks opened and retired",
+        body: [
+          `Retired this month: ${verifiedThisMonth.length} controls moved to Complete — Verified. ${verifiedThisMonth.slice(0, 8).map((c) => c.control_id).join(", ") || "None on the record."}`,
+          `Still open: ${specs.filter((c) => isOpen(scoring, c.control_id)).length} applicable controls. A risk is retired only by verified evidence; nothing here is retired by the passage of time.`,
+        ],
+      },
+      {
+        type: "signature_block",
+        title: "Issued to the board",
+        statement:
+          "This report reconciles the month against the project record at the revision stated. Withheld figures reflect inputs not captured, not figures that are zero.",
+        signatories: ["Owner", "Board representative"],
+      },
+    ],
+    citations: citationsFor(specs.filter((c) => isOpen(scoring, c.control_id)).slice(0, 30), scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* --------------------------------- generator 8 — closeout & turnover */
+
+const closeoutGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber, [7, 8]);
+  const cm = completeness(specs, scoring);
+  const open = specs.filter((c) => isOpen(scoring, c.control_id));
+  const criticalOpen = open.filter((c) => c.criticality === "CRITICAL");
+
+  if (!specs.length)
+    unresolved.push("No Stage 7 or Stage 8 controls are applicable under this project profile");
+  if (criticalOpen.length)
+    unresolved.push(
+      `${criticalOpen.length} critical closeout controls are open — accepting turnover now transfers each of them to the owner's balance sheet`,
+    );
+
+  const position = criticalOpen.length
+    ? `DO NOT ACCEPT TURNOVER YET. ${criticalOpen.length} critical closeout controls are open. Acceptance converts contractor obligations into owner cost.`
+    : cm.pct >= 90
+      ? `TURNOVER CAN BE ACCEPTED. ${cm.verified} of ${cm.applicable} closeout controls are verified (${cm.pct}%).`
+      : `ACCEPT ONLY WITH A PUNCH AND RETENTION POSITION. Completeness is ${cm.pct}%.`;
+
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "Turnover position",
+        body: [
+          `${ctx.project.name} — turnover readiness measured against the closeout control set, not against a certificate. A certificate closes a regulatory obligation; it does not close the underlying risk.`,
+          `Basis: ${cm.applicable} applicable closeout controls, ${cm.verified} verified (${cm.pct}%).`,
+          position,
+        ],
+      },
+      controlTable("Closeout controls", specs, scoring, `${cm.applicable} applicable closeout controls`),
+      exitCriteriaSection("Turnover gate", scoring),
+      openFindings("Open items at turnover", specs, scoring, stageNumber, 25),
+      {
+        type: "signature_block",
+        title: "Acceptance",
+        statement: position,
+        signatories: ["Owner", "Facilities"],
+      },
+    ],
+    citations: citationsFor(specs, scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* -------------------------------- generator 9 — claim exposure & dispute */
+
+const claimExposureGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber } = ctx;
+  const meta = baseMeta(ctx, true);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber, STAGE_NUMBERS.filter((s) => s <= stageNumber));
+  const { section: chrono, undated } = chronologySection(
+    "What did we know and when",
+    specs,
+    scoring,
+  );
+  const uncited = specs.filter((c) => !scoring.instanceMap.get(c.control_id)?.evidence_ref?.trim());
+  const open = specs.filter((c) => isOpen(scoring, c.control_id));
+
+  if (undated)
+    unresolved.push(
+      `${undated} verified controls carry no verification date. A record without a date cannot establish what was knowable when, which is the question a tribunal asks first.`,
+    );
+  if (uncited.length)
+    unresolved.push(
+      `${uncited.length} of ${specs.length} controls have no locatable citation — those positions are not defensible as pleaded facts`,
+    );
+
+  return {
+    meta,
+    sections: [
+      chrono,
+      openFindings("Notices and reservations", open, scoring, stageNumber, 25),
+      controlTable(
+        "Controls bearing on the dispute",
+        specs.slice(0, 200),
+        scoring,
+        `${specs.length} controls in scope up to Stage ${stageNumber}, ${uncited.length} without a citation`,
+        [...CONTROL_COLUMNS, { key: "evidence_ref", label: "Citation" }],
+      ),
+      {
+        type: "narrative",
+        title: "State of the record",
+        body: [
+          `The record supporting ${ctx.project.name} runs to ${specs.length} controls through Stage ${stageNumber} · ${stageName(stageNumber)}. Of these, ${specs.length - uncited.length} carry a locatable citation and ${uncited.length} do not.`,
+          "Chronology is built only from dated verification events. No date is inferred, and no event is placed on the timeline earlier than the date the record could first have shown it.",
+          `${open.length} controls remain open. Each is a live exposure, not a historical one, and each carries the remedy that closes it above.`,
+        ],
+      },
+      {
+        type: "signature_block",
+        title: "Counsel review",
+        statement:
+          "This report states the record as loaded. It is not a legal opinion and does not assert liability; it establishes what the record shows and when it showed it.",
+        signatories: ["Counsel", "Insurer"],
+      },
+    ],
+    citations: citationsFor(specs.slice(0, 60), scoring),
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* ------------------------------------------ generator 12 — the proposal */
+
+const proposalGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber, project } = ctx;
+  const meta = baseMeta(ctx, false);
+  const unresolved: string[] = [];
+  const specs = specsFor(scoring, stageNumber);
+  const forward = scoring.register.filter((c) => c.stage_number >= stageNumber);
+  const families = new Set(specs.map((c) => c.family_code));
+
+  unresolved.push(
+    "Fee figures are not stated by the engine. The fee basis below describes how a fee is constructed; the number is set by the engagement and entered on the engagement letter.",
+  );
+
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "What we would be engaged to do",
+        body: [
+          `ClaimZero would run the control register against ${project.name} — ${project.city} · ${project.type} · $${project.sizeM}M — from Stage ${stageNumber} · ${stageName(stageNumber)} through completion.`,
+          "The work is evidence verification, not advice. Every control has a named responsible seat, a defined artefact that satisfies it, and a verification method a reviewer applies before it is allowed to count. Nothing is scored on assertion.",
+          "You are buying two things: knowing what is open before it becomes a claim, and a record that holds up when someone later asks what was knowable and when.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Scope at this stage",
+        body: [
+          `${specs.length} controls are applicable at Stage ${stageNumber} under this project profile, across ${families.size} control families.`,
+          `${forward.length} controls apply across the remaining stages of the project as it advances.`,
+          "Controls that do not apply to this delivery model, asset class or jurisdiction are excluded by the applicability engine and are named as excluded rather than silently dropped.",
+        ],
+      },
+      controlTable(
+        "Applicable control families under the project profile",
+        specs.slice(0, 60),
+        scoring,
+        specs.length > 60
+          ? `First 60 of ${specs.length} applicable controls shown — the remaining ${specs.length - 60} are in scope and are not omitted from the engagement`
+          : `${specs.length} applicable controls`,
+        [
+          { key: "control_id", label: "Control" },
+          { key: "title", label: "Requirement" },
+          { key: "responsible_seat", label: "Responsible seat" },
+          { key: "evidence_class", label: "Evidence class" },
+        ],
+      ),
+      {
+        type: "narrative",
+        title: "Cadence, deliverables and reviewer gate",
+        body: [
+          "Weekly: Weekly Development Intelligence — what matters this week, ranked, with the work that closes it.",
+          "Monthly: End-of-Month Executive Report, Time & Money, and the Development Control Report Card.",
+          "On demand: Stage Gate at every phase transition, and the Risk Mitigation Plan issued to the CM, design team and subcontractors.",
+          "Every client-facing report passes a human reviewer before issue. A published report is frozen and hash-chained; revisions are issued, never edited.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Fee basis",
+        body: [
+          "Fee is constructed from applicable control mass and reviewer days, not from project value. A larger project only costs more where it carries more controls or more evidence to verify.",
+          `On this profile: ${specs.length} controls in scope now, ${forward.length} across the remaining programme.`,
+          "The fee figure is stated on the engagement letter. No figure is invented here.",
+        ],
+      },
+      {
+        type: "signature_block",
+        title: "Acceptance",
+        statement:
+          "Acceptance of this proposal authorises intake and provisioning. It does not commence the engagement — the engagement letter does.",
+        signatories: ["Owner / Principal", "ClaimZero"],
+      },
+    ],
+    citations: [],
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: unresolved,
+  };
+};
+
+/* --------------------------------- generator 13 — the engagement letter */
+
+const engagementLetterGenerator: Generator = (ctx) => {
+  const { scoring, stageNumber, project } = ctx;
+  const meta = baseMeta(ctx, true);
+  const specs = specsFor(scoring, stageNumber);
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "Parties and project",
+        body: [
+          `This letter is between the Client and ClaimZero in respect of ${project.name}, ${project.city} — ${project.type}, $${project.sizeM}M, at Stage ${stageNumber} · ${stageName(stageNumber)} on the date of execution.`,
+          "Execution opens intake and starts the Day 0 clock. Intake is complete when the project profile is entered, the register is instantiated and the client's named seats hold provisioned accounts.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Services and deliverables",
+        body: [
+          `ClaimZero will instantiate and maintain the control register for this project — ${specs.length} controls applicable at the current stage — and verify evidence against it.`,
+          "Deliverables: Weekly Development Intelligence; End-of-Month Executive Report; Time & Money; Development Control Report Card; Stage Gate at each phase transition; and the Risk Mitigation Plan issued to third parties.",
+          "Every client-facing report is reviewed by a named ClaimZero reviewer before issue. Published reports are frozen and hash-chained.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Information the client must supply",
+        body: [
+          "Named seats for each control, held by individuals and not shared mailboxes.",
+          "Access to the project record: contracts, schedules in native format, cost reports, correspondence, approvals and their conditions.",
+          "Budget and schedule facts — contract sum, contingency, committed equity and debt, baseline and forecast completion, and loan maturity. Where these are not supplied, the reports withhold the figures rather than estimating them.",
+          "Timely response to escalations. A control cannot be closed by ClaimZero on the client's behalf.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Limitations — what this engagement is not",
+        body: [
+          "This is not legal advice, not design review, not a cost estimate and not a schedule forecast. ClaimZero verifies evidence against controls; it does not warrant the underlying work.",
+          "ClaimZero reports what the loaded record shows. Where the record is silent, the silence is reported as a gap. Absence of a finding is not a finding of absence.",
+          "No dollar value and no delay day is asserted without a verified basis in the record.",
+        ],
+      },
+      {
+        type: "signature_block",
+        title: "Execution",
+        statement:
+          "Executed by the parties below. The Day 0 clock starts on the later of the two execution dates.",
+        signatories: ["Client", "ClaimZero"],
+      },
+    ],
+    citations: [],
+    confidence: scoring.composite?.confidence ?? 0,
+    unresolvedInputs: [
+      "Commercial terms — fee, term and notice period — are set by the engagement and are not generated by the platform.",
+    ],
+  };
+};
+
+/* --------------------------------- generator 14 — the operator manual */
+
+const operatorManualGenerator: Generator = (ctx) => {
+  const meta = baseMeta(ctx, true);
+  return {
+    meta,
+    sections: [
+      {
+        type: "narrative",
+        title: "Doctrine — null is not zero",
+        body: [
+          "Null is not zero. Missing is not stable. Unknown is not green. A control with no evidence is EVIDENCE_NOT_LOCATED, and it is never scored as satisfied.",
+          "Regulatory closure is not causal closure. A closed RFI, a signed certificate or a released permit closes a process; it does not close the underlying risk.",
+          "Future evidence cannot enter an earlier historical playback. Playback filters on when a fact became knowable, never on when it occurred.",
+          "No invented dollar values. No invented delay days. Where the basis is not in the record, the figure is withheld and the withholding is itself reported.",
+          "No finding without a remedy. Every failing line carries the work, the seat, the cost and the date. A mark without a remedy is a complaint, not intelligence.",
+          "No silent caps. Where a view is truncated — a top ten, a sample, a weekly budget — the report states what was held back.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "The queue, the session and the weekly budget",
+        body: [
+          "Work reaches an operator through the reviewer queue. Items are ranked by severity, irreversibility and age; they are never dequeued by time alone.",
+          "A session is opened before work begins and closed when it ends. Items worked and minutes spent are recorded against the session — that is how reviewer capacity is measured and forecast.",
+          "The weekly budget bounds how much a reviewer is asked to carry. When the budget bounds the queue, the shortfall is reported to the owner, not absorbed silently.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "The reviewer gate and the four approval levels",
+        body: [
+          "A control moves to Complete — Verified only when a reviewer has applied the verification method stated in the control row. Self-certification by the responsible seat does not close a control.",
+          "Draft — generated from the record, not yet reviewed. In review — a named reviewer holds it. Approved — the reviewer accepts the findings and remedies. Published — frozen, hash-chained and issued; never edited, only superseded by a new revision.",
+          "Any operator may generate. Only a reviewer may approve. Publishing requires an approved revision.",
+        ],
+      },
+      {
+        type: "narrative",
+        title: "Escalation and SLA",
+        body: [
+          "Escalation rules are configuration, not code. Each rule states its conditions, its severity floor, the action it forces and the false-positive checks the operator must run before it is acted on.",
+          "A fired escalation is answered within 24 hours on a critical or irreversible control, and within five working days otherwise.",
+          "Failure to provision, upload on cadence or answer an escalation is recorded against the responsible seat and is reportable to the owner.",
+        ],
+      },
+      {
+        type: "signature_block",
+        title: "Read and understood",
+        statement:
+          "The operator confirms they have read this manual and accept the doctrine, the reviewer gate and the escalation SLA as binding on their work.",
+        signatories: ["Operator", "ClaimZero reviewer"],
+      },
+    ],
+    citations: [],
+    confidence: 100,
+    unresolvedInputs: [],
+  };
+};
+
 /* --------------------------------------------------------- generator map */
 
 
 export const GENERATORS: Record<string, Generator> = {
+  DUE_DILIGENCE_FEASIBILITY: dueDiligenceGenerator,
+  ENTITLEMENT_CONDITIONS: entitlementGenerator,
+  PROJECT_ASSESSMENT_FINANCING: financingGenerator,
   RISK_MITIGATION_PLAN: rmpGenerator,
+  WEEKLY_INTELLIGENCE: weeklyGenerator,
+  MONTHLY_EXECUTIVE: monthlyGenerator,
+  STAGE_GATE: stageGateGenerator,
+  CLOSEOUT_TURNOVER: closeoutGenerator,
+  CLAIM_EXPOSURE: claimExposureGenerator,
   TIME_AND_MONEY: timeMoneyGenerator,
   DEVELOPMENT_CONTROL_REPORT_CARD: reportCardGenerator,
-  STAGE_GATE: stageGateGenerator,
+  PROPOSAL: proposalGenerator,
+  ENGAGEMENT_LETTER: engagementLetterGenerator,
+  OPERATOR_MANUAL: operatorManualGenerator,
 };
+
 
 
 export const isImplemented = (key: string) => Boolean(GENERATORS[key]);
