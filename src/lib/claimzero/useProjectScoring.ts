@@ -145,6 +145,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
         scores,
         undefined,
         state.familyApplicability,
+        state.snapshotExists,
       )
     : null;
 
