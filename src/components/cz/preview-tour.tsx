@@ -252,21 +252,21 @@ const SCREENS: Record<string, React.ReactNode> = {
       />
     </Sheet>
   ),
-  pipeline: (
+  queue: (
     <Sheet
-      kicker="PIPELINE"
-      docref={"CZ-PIP-0207\nQ3 FORECAST"}
-      title="Engagements ahead of capacity"
-      sub="ILLUSTRATIVE NAMES · CAPACITY-AWARE"
-      footL="7 OPPORTUNITIES"
-      footR="2 OVER REVIEWER CAPACITY"
+      kicker="REVIEWER QUEUE"
+      docref={"CZ-RVW-0207\nOPEN"}
+      title="Nothing reaches an Owner unreviewed"
+      sub="34 ITEMS PENDING · 3 REVIEWERS"
+      footL="MEDIAN TURNAROUND 6H"
+      footR="0 AUTO-PUBLISHED"
     >
       <Rows
         rows={[
-          { a: "PROPOSAL · MERIDIAN CAPITAL", b: "Two-tower residential, Stage 2", chip: "70%", tone: "good" },
-          { a: "QUALIFYING · NORTHGATE UNIV.", b: "Science building fit-out", chip: "40%", tone: "warn" },
-          { a: "ENGAGED · ATLAS DEVELOPMENT", b: "Mixed-use, Stage 4 mid-build", chip: "SIGNED", tone: "good" },
-          { a: "AT RISK · CEDAR & VINE", b: "Start date slipped a quarter", chip: "HOLD", tone: "serious" },
+          { a: "RISK · HARBOR POINT", b: "Procurement slip — exposure declared", chip: "PENDING", tone: "warn" },
+          { a: "EXPOSURE · THE LENOX", b: "$412K rework estimate awaiting sign-off", chip: "PENDING", tone: "warn" },
+          { a: "RISK · ASHFORD", b: "DOB objection 22 days unanswered", chip: "ESCALATED", tone: "critical" },
+          { a: "RISK · SUMMIT RIDGE", b: "Re-forecast accepted", chip: "APPROVED", tone: "good" },
         ]}
       />
     </Sheet>
@@ -278,7 +278,6 @@ const NAV: { key: keyof typeof SCREENS; icon: string; label: string; group: stri
   { key: "portfolio", icon: "▦", label: "Portfolio", group: "Command Center" },
   { key: "reports", icon: "▤", label: "Reports", group: "Command Center" },
   { key: "queue", icon: "✓", label: "Reviewer Queue", group: "Operations" },
-  { key: "pipeline", icon: "⤢", label: "Pipeline", group: "Pipeline" },
 ];
 
 export function PreviewTour({ className = "" }: { className?: string }) {
