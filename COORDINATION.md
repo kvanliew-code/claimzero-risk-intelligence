@@ -93,7 +93,7 @@ Full log: `CZ_VERIFIED_DEFECT_MEMO_2026-08-07.md` in `/Shared/11 - ClaimZero/Dev
 | D-19 | `report_definitions.sections` read from the DB and never used | Open |
 | D-20 | Four generators against nine claimed report types | Open |
 | D-21 | `first_active_stage` contradicts the brief ordering claim | Open |
-| NEW | **Stage gate can never return READY** — `scoring.ts:415` pushes a reason unconditionally | Open |
+| NEW | **Stage gate can never return READY** — `scoring.ts` pushed a reason unconditionally | **Fixed** — gate now takes `frozenSnapshotExists`, wired to `report_snapshots` in `useProjectScoring` |
 | NEW | **Auth session does not hold** — bounces to `/auth` while the shell reads "Signed in" | Open |
 | NEW | **Seed contamination** — `RISK-40E-REG-SITEPROTECT.first_signal_date = 2019-02-28` is the occurrence date | Open |
 
@@ -107,3 +107,5 @@ ordering: **Wave 0** correctness/security · **Wave 1** shared report engine · 
 **Wave 5** remaining library · **Wave 6** third case.
 
 The demo acceptance bar is **§29 — fifteen conditions**, not any list invented elsewhere.
+
+| REQ-011 | Stages 3 (Schematic) / 7 (Takeout) content | **Done** — 47 controls loaded from `docs/registers/ClaimZero_Schematic_and_Takeout_Register_v2_T30.csv`; stage 3 = 19, stage 7 = 28, register total 938. `irreversibility` Y/N mapped to VERY_HIGH/MEDIUM; CSV `domain` (SCHEMATIC/TAKEOUT) mapped to the existing domain check constraint by family. |

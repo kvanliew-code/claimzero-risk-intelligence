@@ -28,6 +28,16 @@ import {
   type SpecStageGate,
 } from "./scoring";
 import type { Project } from "./data";
+import { supabase } from "@/integrations/supabase/client";
+
+/** True only when a frozen report snapshot exists for this project. */
+async function stageSnapshotExists(projectId: number): Promise<boolean> {
+  const { count } = await supabase
+    .from("report_snapshots")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+  return (count ?? 0) > 0;
+}
 
 export interface ProjectScoring {
   loading: boolean;
@@ -55,6 +65,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
     exitCriteria: ExitCriterion[];
     overrides: Record<string, number>;
     familyApplicability: FamilyApplicability;
+    snapshotExists: boolean;
   }>({
     loading: true,
     error: null,
@@ -64,13 +75,14 @@ export function useProjectScoring(project: Project): ProjectScoring {
     exitCriteria: [],
     overrides: {},
     familyApplicability: new Map(),
+    snapshotExists: false,
   });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [register, aspects, exitCriteria, overrides, familyApplicability] =
+        const [register, aspects, exitCriteria, overrides, familyApplicability, snapshotExists] =
           await Promise.all([
             fetchRegister(),
             fetchAspects(),
@@ -79,6 +91,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
             fetchFamilyApplicability(project.id).catch(
               () => new Map() as FamilyApplicability,
             ),
+            stageSnapshotExists(project.id).catch(() => false),
           ]);
         const instances = await ensureInstances(project, register);
         if (cancelled) return;
@@ -91,6 +104,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
           exitCriteria,
           overrides,
           familyApplicability,
+          snapshotExists,
         });
       } catch (e) {
         if (!cancelled)
@@ -131,6 +145,7 @@ export function useProjectScoring(project: Project): ProjectScoring {
         scores,
         undefined,
         state.familyApplicability,
+        state.snapshotExists,
       )
     : null;
 
