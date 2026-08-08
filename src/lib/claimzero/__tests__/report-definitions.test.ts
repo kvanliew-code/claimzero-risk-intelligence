@@ -22,6 +22,14 @@ describe("report definitions", () => {
     }
   });
 
+  it("has no definition without a generator — one generator per definition", () => {
+    const missing = REPORT_DEFINITIONS.filter((d) => !GENERATORS[d.report_key]).map(
+      (d) => d.report_key,
+    );
+    expect(missing, `definitions without a generator: ${missing.join(", ")}`).toHaveLength(0);
+    expect(Object.keys(GENERATORS).length).toBe(REPORT_DEFINITIONS.length);
+  });
+
   it("validates every section type against SECTION_TYPES", () => {
     const allowed = new Set<string>(SECTION_TYPES);
     for (const d of REPORT_DEFINITIONS) {

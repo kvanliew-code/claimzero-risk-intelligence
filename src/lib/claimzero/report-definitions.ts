@@ -27,7 +27,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "Should the owner pursue, acquire, reprice, condition or walk away?",
     applicable_stages: [1],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 1,
     sections: [
       { type: "narrative", title: "Feasibility position", config: { source: "stage_summary" } },
@@ -59,7 +59,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "What must occur to preserve approvals?",
     applicable_stages: [2],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 2,
     sections: [
       { type: "narrative", title: "Entitlement position", config: { source: "stage_summary" } },
@@ -84,7 +84,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "Is this project ready to finance and proceed?",
     applicable_stages: [3, 4, 5],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 3,
     sections: [
       {
@@ -155,7 +155,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "What matters this week?",
     applicable_stages: [6],
     cadence: "WEEKLY",
-    active: false,
+    active: true,
     sort_order: 5,
     sections: [
       { type: "aspect_summary", title: "Project Risk Index", config: {} },
@@ -170,7 +170,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "How did the month reconcile?",
     applicable_stages: [6],
     cadence: "MONTHLY",
-    active: false,
+    active: true,
     sort_order: 6,
     sections: [
       { type: "narrative", title: "The month in one paragraph", config: {} },
@@ -219,7 +219,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "Should the owner accept turnover?",
     applicable_stages: [7, 8],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 8,
     sections: [
       { type: "narrative", title: "Turnover position", config: {} },
@@ -240,7 +240,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "What happened, what was knowable, what exposure remains?",
     applicable_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 9,
     sections: [
       { type: "chronology", title: "What did we know and when", config: { dated: true } },
@@ -323,10 +323,10 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
   },
 
   /* ---------------------------------------------------------------------
-     The commercial spine (§7.1) and the operator manual (§10). No generator
-     is implemented for these yet — they are authored here so REQ-010 can seed
-     the rows, and they stay `active: false` until a generator exists. An
-     inactive definition never renders an empty report.
+     The commercial spine (§7.1) and the operator manual (§10). Generators are
+     implemented for all fourteen definitions, so every row is active. An
+     active definition without a generator would render an empty report — the
+     coverage test in __tests__/report-definitions.test.ts blocks that.
      --------------------------------------------------------------------- */
   {
     report_key: "PROPOSAL",
@@ -335,7 +335,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "Should the owner engage ClaimZero, at what engagement level, and for how long?",
     applicable_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 12,
     sections: [
       { type: "narrative", title: "What we would be engaged to do", config: {} },
@@ -361,7 +361,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "Executing this letter opens intake and starts the Day 0 clock.",
     applicable_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 13,
     sections: [
       { type: "narrative", title: "Parties and project", config: {} },
@@ -382,7 +382,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
     decision: "How the platform is operated, and what an operator is accountable for.",
     applicable_stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     cadence: "ON_DEMAND",
-    active: false,
+    active: true,
     sort_order: 14,
     sections: [
       { type: "narrative", title: "Doctrine — null is not zero", config: {} },

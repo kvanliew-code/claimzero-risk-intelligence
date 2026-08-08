@@ -5,6 +5,7 @@ import { SourceDrawer } from "@/components/cz/source-drawer";
 import { EvidencePanel } from "@/components/cz/evidence-panel";
 import { fetchEvidence, type ControlEvidence } from "@/lib/claimzero/evidence";
 import { findingFor } from "@/lib/claimzero/demo";
+import { useAuth } from "@/hooks/useAuth";
 import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -155,6 +156,7 @@ function ControlSource({ controlId }: { controlId: string }) {
 
 function Controls() {
   const { project } = api.useLoaderData();
+  const { user, profile } = useAuth();
   const [register, setRegister] = useState<ControlSpec[]>([]);
   const [stages, setStages] = useState<StageConfig[]>([]);
   const [rules, setRules] = useState<EscalationRule[]>([]);
@@ -680,6 +682,8 @@ function Controls() {
                                   update(s.control_id, {
                                     status: "COMPLETE_VERIFIED",
                                     evidence_ref: ref,
+                                    verified_by:
+                                      profile?.full_name || user?.email || "Unattributed reviewer",
                                     verified_date: new Date().toISOString().slice(0, 10),
                                   })
                                 }
