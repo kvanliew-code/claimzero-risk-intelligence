@@ -252,25 +252,6 @@ const SCREENS: Record<string, React.ReactNode> = {
       />
     </Sheet>
   ),
-  queue: (
-    <Sheet
-      kicker="REVIEWER QUEUE"
-      docref={"CZ-RVW-0207\nOPEN"}
-      title="Nothing reaches an Owner unreviewed"
-      sub="34 ITEMS PENDING · 3 REVIEWERS"
-      footL="MEDIAN TURNAROUND 6H"
-      footR="0 AUTO-PUBLISHED"
-    >
-      <Rows
-        rows={[
-          { a: "RISK · HARBOR POINT", b: "Procurement slip — exposure declared", chip: "PENDING", tone: "warn" },
-          { a: "EXPOSURE · THE LENOX", b: "$412K rework estimate awaiting sign-off", chip: "PENDING", tone: "warn" },
-          { a: "RISK · ASHFORD", b: "DOB objection 22 days unanswered", chip: "ESCALATED", tone: "critical" },
-          { a: "RISK · SUMMIT RIDGE", b: "Re-forecast accepted", chip: "APPROVED", tone: "good" },
-        ]}
-      />
-    </Sheet>
-  ),
 };
 
 const NAV: { key: keyof typeof SCREENS; icon: string; label: string; group: string }[] = [
