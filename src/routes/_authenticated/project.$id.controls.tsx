@@ -155,6 +155,7 @@ function ControlSource({ controlId }: { controlId: string }) {
 
 function Controls() {
   const { project } = api.useLoaderData();
+  const { user, profile } = useAuth();
   const [register, setRegister] = useState<ControlSpec[]>([]);
   const [stages, setStages] = useState<StageConfig[]>([]);
   const [rules, setRules] = useState<EscalationRule[]>([]);
