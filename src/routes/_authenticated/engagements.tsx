@@ -5,6 +5,7 @@ import { SHead } from "@/components/cz/shead";
 import { CzButton, Gate, Modal, ReportH, ReportShell } from "@/components/cz/primitives";
 import { supabase } from "@/integrations/supabase/client";
 import type { ClientRow } from "./clients";
+import { CommercialOnly } from "@/components/cz/commercial-only";
 
 export const Route = createFileRoute("/_authenticated/engagements")({
   head: () => ({
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/engagements")({
       },
     ],
   }),
-  component: Engagements,
+  component: GuardedEngagements,
 });
 
 type Status = "draft" | "sent" | "signed";
@@ -292,5 +293,13 @@ function Engagements() {
         ) : null}
       </Modal>
     </div>
+  );
+}
+
+function GuardedEngagements() {
+  return (
+    <CommercialOnly>
+      <Engagements />
+    </CommercialOnly>
   );
 }

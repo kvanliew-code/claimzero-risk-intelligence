@@ -29,6 +29,7 @@ import {
   type Opportunity,
 } from "@/lib/claimzero/pipeline";
 import { parseCsv } from "@/lib/claimzero/controls";
+import { CommercialOnly } from "@/components/cz/commercial-only";
 
 export const Route = createFileRoute("/_authenticated/pipeline")({
   head: () => ({
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/pipeline")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Pipeline,
+  component: GuardedPipeline,
 });
 
 const STAGE_TINT: Record<OppStage, string> = {
@@ -782,5 +783,13 @@ function Pipeline() {
         ) : null}
       </Modal>
     </div>
+  );
+}
+
+function GuardedPipeline() {
+  return (
+    <CommercialOnly>
+      <Pipeline />
+    </CommercialOnly>
   );
 }
