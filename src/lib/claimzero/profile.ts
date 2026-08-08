@@ -238,6 +238,15 @@ export const PROFILE_FIELDS: ProfileField[] = [
   },
 ];
 
+/**
+ * The number of intake profile fields, derived from the configuration above.
+ * Defect D-07: the count was written into copy as "23" and would drift the
+ * moment a field was added. Never hardcode it — read it from here.
+ */
+export const PROFILE_FIELD_COUNT = PROFILE_FIELDS.length;
+
+
+
 export const FIELD_GROUPS = [
   "Identity",
   "Delivery & contract",
