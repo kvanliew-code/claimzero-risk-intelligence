@@ -117,11 +117,8 @@ function seeded(seed: number) {
   return () => (s = (s * 16807) % 2147483647) / 2147483647;
 }
 
-const TODAY = new Date("2026-08-06T00:00:00Z");
-
 function dateMinus(days: number): string {
-  const d = new Date(TODAY.getTime() - days * 86400000);
-  return d.toISOString().slice(0, 10);
+  return isoDaysAgo(days);
 }
 
 export interface Register {
