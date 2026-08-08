@@ -5,6 +5,7 @@ import { SourceDrawer } from "@/components/cz/source-drawer";
 import { EvidencePanel } from "@/components/cz/evidence-panel";
 import { fetchEvidence, type ControlEvidence } from "@/lib/claimzero/evidence";
 import { findingFor } from "@/lib/claimzero/demo";
+import { useAuth } from "@/hooks/useAuth";
 import { ProjectHeaderStrip } from "./project.$id";
 import { supabase } from "@/integrations/supabase/client";
 import {
