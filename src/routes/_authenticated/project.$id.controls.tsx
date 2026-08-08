@@ -682,6 +682,8 @@ function Controls() {
                                   update(s.control_id, {
                                     status: "COMPLETE_VERIFIED",
                                     evidence_ref: ref,
+                                    verified_by:
+                                      profile?.full_name || user?.email || "Unattributed reviewer",
                                     verified_date: new Date().toISOString().slice(0, 10),
                                   })
                                 }
