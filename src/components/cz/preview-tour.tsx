@@ -252,25 +252,6 @@ const SCREENS: Record<string, React.ReactNode> = {
       />
     </Sheet>
   ),
-  pipeline: (
-    <Sheet
-      kicker="PIPELINE"
-      docref={"CZ-PIP-0207\nQ3 FORECAST"}
-      title="Engagements ahead of capacity"
-      sub="ILLUSTRATIVE NAMES · CAPACITY-AWARE"
-      footL="7 OPPORTUNITIES"
-      footR="2 OVER REVIEWER CAPACITY"
-    >
-      <Rows
-        rows={[
-          { a: "PROPOSAL · MERIDIAN CAPITAL", b: "Two-tower residential, Stage 2", chip: "70%", tone: "good" },
-          { a: "QUALIFYING · NORTHGATE UNIV.", b: "Science building fit-out", chip: "40%", tone: "warn" },
-          { a: "ENGAGED · ATLAS DEVELOPMENT", b: "Mixed-use, Stage 4 mid-build", chip: "SIGNED", tone: "good" },
-          { a: "AT RISK · CEDAR & VINE", b: "Start date slipped a quarter", chip: "HOLD", tone: "serious" },
-        ]}
-      />
-    </Sheet>
-  ),
 };
 
 const NAV: { key: keyof typeof SCREENS; icon: string; label: string; group: string }[] = [
@@ -278,7 +259,6 @@ const NAV: { key: keyof typeof SCREENS; icon: string; label: string; group: stri
   { key: "portfolio", icon: "▦", label: "Portfolio", group: "Command Center" },
   { key: "reports", icon: "▤", label: "Reports", group: "Command Center" },
   { key: "queue", icon: "✓", label: "Reviewer Queue", group: "Operations" },
-  { key: "pipeline", icon: "⤢", label: "Pipeline", group: "Pipeline" },
 ];
 
 export function PreviewTour({ className = "" }: { className?: string }) {
