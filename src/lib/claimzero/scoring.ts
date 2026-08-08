@@ -418,7 +418,8 @@ export function evaluateStageGate(
   if (criticalWithoutSeat.length)
     reasons.push(`${criticalWithoutSeat.length} CRITICAL controls have no named responsible seat`);
   if (stageConfidence < 60) reasons.push(`Stage confidence is ${stageConfidence}% — below 60`);
-  reasons.push("No frozen evidence snapshot exists for this stage");
+  if (!frozenSnapshotExists)
+    reasons.push("No frozen evidence snapshot exists for this stage");
 
   let verdict: GateVerdict = "READY";
   if (reasons.length > 0) verdict = "CONDITIONAL — NOT READY";
