@@ -138,7 +138,7 @@ function WeeklyBody({ project }: { project: Project }) {
     <>
       <RdHead
         title="Weekly Development Intelligence Report"
-        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · Mon ${TODAY}`}
+        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · issued ${TODAY}`}
       />
       <H4>Project Risk Index</H4>
       <div className="flex flex-wrap items-center gap-3.5">
