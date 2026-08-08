@@ -27,6 +27,7 @@ import {
 } from "@/lib/claimzero/reports";
 import type { SpecEscalationRule } from "@/lib/claimzero/escalation";
 import { STAGE_NUMBERS } from "@/lib/claimzero/stages";
+import { TODAY_LONG, TODAY_MONTH_YEAR } from "@/lib/claimzero/today";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/reports")({
   component: Reports,
 });
 
-const TODAY = "August 6, 2026";
+const TODAY = TODAY_LONG;
 const strip = (s: string) => s.replace(/<\/?b>/g, "");
 
 function RCard({
@@ -137,7 +138,7 @@ function WeeklyBody({ project }: { project: Project }) {
     <>
       <RdHead
         title="Weekly Development Intelligence Report"
-        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · Mon ${TODAY}`}
+        meta={`${project.name} · ${project.city} · ${project.type} · $${project.sizeM}M · ${project.stage} · issued ${TODAY}`}
       />
       <H4>Project Risk Index</H4>
       <div className="flex flex-wrap items-center gap-3.5">
@@ -213,7 +214,7 @@ function Monthly({ project }: { project: Project }) {
     <>
       <RdHead
         title="End-of-Month Executive Report"
-        meta={`${project.name} · ${project.city} · July 2026 · issued ${TODAY}`}
+        meta={`${project.name} · ${project.city} · ${TODAY_MONTH_YEAR} · issued ${TODAY}`}
       />
       <H4>The month in one paragraph</H4>
       <Commentary>

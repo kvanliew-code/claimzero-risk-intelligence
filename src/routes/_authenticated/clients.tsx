@@ -4,6 +4,7 @@ import { CzHeader } from "@/components/cz/header";
 import { SHead } from "@/components/cz/shead";
 import { CzButton, Modal } from "@/components/cz/primitives";
 import { supabase } from "@/integrations/supabase/client";
+import { CommercialOnly } from "@/components/cz/commercial-only";
 
 export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/clients")({
       },
     ],
   }),
-  component: Clients,
+  component: GuardedClients,
 });
 
 export interface ClientRow {
@@ -176,5 +177,13 @@ function Clients() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+function GuardedClients() {
+  return (
+    <CommercialOnly>
+      <Clients />
+    </CommercialOnly>
   );
 }

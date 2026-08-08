@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION private.is_commercial(uuid) TO authenticated, service_role;
