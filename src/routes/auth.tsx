@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, ClientOnly } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PreviewTour } from "@/components/cz/preview-tour";
@@ -121,7 +121,6 @@ function AuthPage() {
 
 
   return (
-    <ClientOnly fallback={<div className="min-h-screen" />}>
       <div className="grid min-h-screen grid-cols-1 sm:grid-cols-[1.05fr_1fr]">
       {/* Left: the deliverable itself, lit — a Risk Mitigation Plan page with the
           Monday digest behind it, rather than generic construction imagery. */}
@@ -303,6 +302,5 @@ function AuthPage() {
         </div>
       </div>
     </div>
-    </ClientOnly>
   );
 }
