@@ -15,6 +15,7 @@ import {
   type ControlSpec,
   type ControlStatus,
 } from "./controls";
+import { isDemoProject } from "./demo";
 import {
   composite,
   fetchAspects,
@@ -51,8 +52,21 @@ export interface PortfolioScoring {
 
 /**
  * Instances stored in Lovable Cloud win. Where a project has not been opened
- * yet, the same deterministic generator the Controls tab persists is applied
- * in memory, so the portfolio card and the control register never disagree.
+ * yet, the control is UNKNOWN — and unknown is not green.
+ *
+ * Defect D-16 (fixed 8 Aug 2026). This function used to fill every unstored
+ * control with seededStatus() and no demo guard. That generator returns
+ * COMPLETE_VERIFIED for roughly 30% of current-stage controls and ~90% of
+ * controls two or more stages behind, so the Composite Project Risk Index on
+ * the Portfolio page was computed partly from controls marked "verified" that
+ * had no evidence, no verifier and no date. ensureInstances() in ./controls
+ * persists the same controls as EVIDENCE_NOT_LOCATED, so the Portfolio page
+ * and the Controls page reported different states for the same control — the
+ * exact disagreement the old comment here claimed to prevent.
+ *
+ * This path now mirrors ensureInstances() exactly: seeded history only for the
+ * scripted demo project, EVIDENCE_NOT_LOCATED for every real one. A real
+ * project with nothing loaded reads INSUFFICIENT confidence, which is true.
  */
 function instanceMapFor(
   project: Project,
@@ -72,12 +86,11 @@ function instanceMapFor(
       id: `virtual:${project.id}:${spec.control_id}`,
       project_id: project.id,
       control_id: spec.control_id,
-      status: seededStatus(
-        project.id,
-        spec.control_id,
-        spec.stage_number,
-        stageNumber,
-      ) as ControlStatus,
+      // Doctrine: unknown is not green. Only the scripted demo project carries
+      // a synthetic history; every real project starts genuinely unlocated.
+      status: (isDemoProject(project.id)
+        ? seededStatus(project.id, spec.control_id, spec.stage_number, stageNumber)
+        : "EVIDENCE_NOT_LOCATED") as ControlStatus,
       evidence_ref: "",
       verified_by: "",
       verified_date: null,
