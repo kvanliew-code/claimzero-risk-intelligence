@@ -33,14 +33,50 @@ export interface RequiredInput {
 
 export const DEMO_REQUIRED_INPUTS: RequiredInput[] = [
   { name: "Adopted approval resolution + conditions", owed: "Counsel", status: "received" },
-  { name: "Condition compliance register (dated, named owner)", owed: "Owner", status: "outstanding", control_id: "PAV-CND-002", daysOutstanding: 34 },
-  { name: "Approval validity / extension filings", owed: "Counsel", status: "outstanding", control_id: "PAV-CND-003", daysOutstanding: 34 },
+  {
+    name: "Condition compliance register (dated, named owner)",
+    owed: "Owner",
+    status: "outstanding",
+    control_id: "PAV-CND-002",
+    daysOutstanding: 34,
+  },
+  {
+    name: "Approval validity / extension filings",
+    owed: "Counsel",
+    status: "outstanding",
+    control_id: "PAV-CND-003",
+    daysOutstanding: 34,
+  },
   { name: "Executed loan agreement", owed: "Owner", status: "received" },
   { name: "Interest reserve schedule", owed: "Owner", status: "received" },
-  { name: "Owner requisition reconciliation (July)", owed: "Owner", status: "outstanding", control_id: "CON-PAY-003", daysOutstanding: 22 },
-  { name: "Lien & docket search — major trades", owed: "Counsel", status: "outstanding", control_id: "CON-SUB-002", daysOutstanding: 47 },
-  { name: "Permanent power service agreement", owed: "Owner", status: "outstanding", control_id: "CON-UTL-002", daysOutstanding: 61 },
-  { name: "Written utility capacity confirmation", owed: "Architect", status: "outstanding", control_id: "DES-UTL-001", daysOutstanding: 88 },
+  {
+    name: "Owner requisition reconciliation (July)",
+    owed: "Owner",
+    status: "outstanding",
+    control_id: "CON-PAY-003",
+    daysOutstanding: 22,
+  },
+  {
+    name: "Lien & docket search — major trades",
+    owed: "Counsel",
+    status: "outstanding",
+    control_id: "CON-SUB-002",
+    daysOutstanding: 47,
+  },
+  {
+    name: "Permanent power service agreement",
+    owed: "Owner",
+    status: "outstanding",
+    control_id: "CON-UTL-002",
+    daysOutstanding: 61,
+  },
+  {
+    name: "Written utility capacity confirmation",
+    owed: "Architect",
+    status: "outstanding",
+    control_id: "DES-UTL-001",
+    daysOutstanding: 88,
+  },
   { name: "GMP contract and exhibits", owed: "CM", status: "received" },
   { name: "Baseline CPM schedule (accepted)", owed: "CM", status: "received" },
   { name: "Monthly schedule update — July", owed: "CM", status: "received" },
@@ -101,7 +137,7 @@ export const DEMO_FINDINGS: DemoFinding[] = [
     id: "F1",
     rule: "CZ-RULE-ENT-001",
     control_id: "PAV-CND-002",
-    aspect_id: "A01",
+    aspect_id: "A03",
     aspect_name: "Entitlement & Development Rights",
     headline:
       "Approval Condition 7 — traffic signal warrant study — expires in 61 days. No extension on file.",
@@ -118,12 +154,16 @@ export const DEMO_FINDINGS: DemoFinding[] = [
       sourceClass: "CONTEMPORANEOUS_PROJECT_RECORD",
       confidence: "FULL",
       lines: [
-        { text: "6.  The applicant shall dedicate the 12-foot sidewalk easement along Harbor Way prior to issuance of any foundation permit." },
+        {
+          text: "6.  The applicant shall dedicate the 12-foot sidewalk easement along Harbor Way prior to issuance of any foundation permit.",
+        },
         {
           text: "7.  The applicant shall complete a traffic signal warrant study for the Harbor Way / Third Street intersection, and shall install any warranted signalization, within twenty-four (24) months of the date of this resolution. Failure to satisfy this condition within the stated period shall render the site plan approval void unless an extension is granted by the Board upon written application filed prior to expiration.",
           highlight: true,
         },
-        { text: "8.  All off-site drainage improvements shall be bonded in an amount approved by the Township Engineer." },
+        {
+          text: "8.  All off-site drainage improvements shall be bonded in an amount approved by the Township Engineer.",
+        },
       ],
     },
   },
@@ -131,8 +171,8 @@ export const DEMO_FINDINGS: DemoFinding[] = [
     id: "F2",
     rule: "CZ-RULE-SCH-001",
     control_id: "CON-SCH-001",
-    aspect_id: "A11",
-    aspect_name: "Schedule & Critical Path",
+    aspect_id: "A24",
+    aspect_name: "Schedule Integrity & Critical Path",
     headline:
       "Independent delay position diverges 24 days from the CM's update, which holds the completion date.",
     detail:
@@ -149,12 +189,16 @@ export const DEMO_FINDINGS: DemoFinding[] = [
       sourceClass: "CONTEMPORANEOUS_PROJECT_RECORD",
       confidence: "FULL",
       lines: [
-        { text: "The project remains on schedule for substantial completion on 12 June 2027. No time extension is requested in this update." },
+        {
+          text: "The project remains on schedule for substantial completion on 12 June 2027. No time extension is requested in this update.",
+        },
         {
           text: "Level 7–12 interior rough-in durations have been compressed from 34 to 21 working days to hold the milestone; no added manpower or shift is identified in support.",
           highlight: true,
         },
-        { text: "Curtain wall installation start remains as previously reported notwithstanding outstanding submittal 08-4400-003." },
+        {
+          text: "Curtain wall installation start remains as previously reported notwithstanding outstanding submittal 08-4400-003.",
+        },
       ],
     },
   },
@@ -162,10 +206,11 @@ export const DEMO_FINDINGS: DemoFinding[] = [
     id: "F3",
     rule: "CZ-RULE-SCH-004",
     control_id: "CON-PRC-001",
-    aspect_id: "A09",
-    aspect_name: "Procurement & Long-Lead",
+    aspect_id: "A21",
+    aspect_name: "Procurement, Buyout & Long Lead",
     headline: "Switchgear release date passed 11 days ago. No purchase order issued.",
-    detail: "The activity sits on the critical path; 38-week lead time against a 34-week float position.",
+    detail:
+      "The activity sits on the critical path; 38-week lead time against a 34-week float position.",
     detected: "Derived from the long-lead log and the accepted baseline. Confidence: FULL.",
     severity: "CRITICAL",
     status: "ADVERSE",
@@ -178,7 +223,9 @@ export const DEMO_FINDINGS: DemoFinding[] = [
       sourceClass: "CONTEMPORANEOUS_PROJECT_RECORD",
       confidence: "FULL",
       lines: [
-        { text: "Item 13 — Elevator machines · released 04 Mar 2026 · delivery confirmed 19 Nov 2026." },
+        {
+          text: "Item 13 — Elevator machines · released 04 Mar 2026 · delivery confirmed 19 Nov 2026.",
+        },
         {
           text: "Item 14 — Main switchgear (3,000A) · release-by date 26 Jul 2026 · PO status: NOT ISSUED · quoted lead time 38 weeks · need date 12 Apr 2027.",
           highlight: true,
@@ -191,11 +238,13 @@ export const DEMO_FINDINGS: DemoFinding[] = [
     id: "F4",
     rule: "CZ-RULE-CST-002",
     control_id: "CON-CST-002",
-    aspect_id: "A02",
-    aspect_name: "Budget, Contingency & Change",
+    aspect_id: "A16",
+    aspect_name: "Cost Position & Contingency",
     headline: "61% of construction contingency consumed at 44% complete.",
-    detail: "Burn is running 17 points ahead of progress; at the current rate contingency is exhausted at 71% complete.",
-    detected: "Derived from the contingency ledger against the schedule of values. Confidence: FULL.",
+    detail:
+      "Burn is running 17 points ahead of progress; at the current rate contingency is exhausted at 71% complete.",
+    detected:
+      "Derived from the contingency ledger against the schedule of values. Confidence: FULL.",
     severity: "SERIOUS",
     status: "ADVERSE",
     criticality: "CRITICAL",
@@ -212,7 +261,9 @@ export const DEMO_FINDINGS: DemoFinding[] = [
           text: "Drawn to date: $4,489,600 (61.0%). Work in place per the July requisition: 44.2%.",
           highlight: true,
         },
-        { text: "Remaining contingency: $2,870,400. No reforecast of the remaining exposure is included in this report." },
+        {
+          text: "Remaining contingency: $2,870,400. No reforecast of the remaining exposure is included in this report.",
+        },
       ],
     },
   },
@@ -220,10 +271,11 @@ export const DEMO_FINDINGS: DemoFinding[] = [
     id: "F5",
     rule: "CZ-RULE-UTL-001",
     control_id: "CON-UTL-002",
-    aspect_id: "A04",
-    aspect_name: "Utilities & Infrastructure",
+    aspect_id: "A05",
+    aspect_name: "Utilities, Access & Offsite",
     headline: "Permanent power assumed, never contracted. Energization needed in 240 days.",
-    detail: "No executed service agreement, no written capacity confirmation, no queue position on file.",
+    detail:
+      "No executed service agreement, no written capacity confirmation, no queue position on file.",
     detected: "Evidence not located in the project record. Confidence: LIMITED.",
     severity: "SERIOUS",
     status: "EVIDENCE_NOT_LOCATED",
@@ -236,12 +288,16 @@ export const DEMO_FINDINGS: DemoFinding[] = [
       sourceClass: "CONTEMPORANEOUS_PROJECT_RECORD",
       confidence: "LIMITED",
       lines: [
-        { text: "\"Capacity should not be an issue at this location — we'll get you into the queue once the load letter is final.\"" },
+        {
+          text: '"Capacity should not be an issue at this location — we\'ll get you into the queue once the load letter is final."',
+        },
         {
           text: "No executed service agreement, capacity confirmation letter or queue position document is present in the record. Energization need date: 02 April 2027.",
           highlight: true,
         },
-        { text: "ClaimZero does not infer availability from a verbal representation. Status is EVIDENCE_NOT_LOCATED, not satisfied." },
+        {
+          text: "ClaimZero does not infer availability from a verbal representation. Status is EVIDENCE_NOT_LOCATED, not satisfied.",
+        },
       ],
     },
   },
@@ -319,7 +375,8 @@ export function demoStatus(controlId: string, stageNumber: number, current: numb
   for (const ch of controlId) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
   const r = (h % 1000) / 1000;
   const behind = current - stageNumber;
-  const verifiedTo = behind >= 3 ? 0.63 : behind === 2 ? 0.62 : behind === 1 ? 0.54 : behind === 0 ? 0.17 : 0.4;
+  const verifiedTo =
+    behind >= 3 ? 0.63 : behind === 2 ? 0.62 : behind === 1 ? 0.54 : behind === 0 ? 0.17 : 0.4;
   if (r < verifiedTo) return "COMPLETE_VERIFIED";
   const t = (r - verifiedTo) / (1 - verifiedTo);
   if (t < 0.18) return "COMPLETE_UNVERIFIED";

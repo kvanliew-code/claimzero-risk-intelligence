@@ -1,5 +1,6 @@
 // ClaimZero — project profile field metadata.
-// The 23 intake fields that drive the family applicability engine.
+// The intake fields that drive the family applicability engine. The count is
+// derived (PROFILE_FIELD_COUNT) — never written into copy.
 // Option sets mirror the values the server-side predicate evaluator matches on.
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +13,12 @@ export interface ProfileField {
   kind: FieldKind;
   options?: { value: string; label: string }[];
   help?: string;
-  group: "Identity" | "Delivery & contract" | "Jurisdiction & site" | "Capital & disposition" | "Execution";
+  group:
+    | "Identity"
+    | "Delivery & contract"
+    | "Jurisdiction & site"
+    | "Capital & disposition"
+    | "Execution";
 }
 
 const opt = (...vals: string[]) =>
@@ -28,8 +34,6 @@ import { STAGE_OPTIONS, stageNumberOf } from "./stages";
 
 /** The nine canonical stages. Defined once, in ./stages. */
 export const STAGE_NAMES = STAGE_OPTIONS;
-
-
 
 export const PROFILE_FIELDS: ProfileField[] = [
   { key: "name", label: "Project name", kind: "text", group: "Identity" },
@@ -92,7 +96,14 @@ export const PROFILE_FIELDS: ProfileField[] = [
     label: "Contract form",
     kind: "select",
     group: "Delivery & contract",
-    options: opt("AIA_A102", "AIA_A104", "AIA_A133", "AIA_A141", "CONSENSUSDOCS", "CUSTOM_OWNER_FORM"),
+    options: opt(
+      "AIA_A102",
+      "AIA_A104",
+      "AIA_A133",
+      "AIA_A141",
+      "CONSENSUSDOCS",
+      "CUSTOM_OWNER_FORM",
+    ),
   },
   {
     key: "architect_agreement",
@@ -207,7 +218,12 @@ export const PROFILE_FIELDS: ProfileField[] = [
       "BUILD_TO_SUIT",
     ),
   },
-  { key: "public_funding", label: "Public funding", kind: "boolean", group: "Capital & disposition" },
+  {
+    key: "public_funding",
+    label: "Public funding",
+    kind: "boolean",
+    group: "Capital & disposition",
+  },
   { key: "ground_lease", label: "Ground lease", kind: "boolean", group: "Capital & disposition" },
   {
     key: "schedule_software",
@@ -238,6 +254,13 @@ export const PROFILE_FIELDS: ProfileField[] = [
   },
 ];
 
+/**
+ * The number of intake profile fields, derived from the configuration above.
+ * Defect D-07: the count was written into copy as "23" and would drift the
+ * moment a field was added. Never hardcode it — read it from here.
+ */
+export const PROFILE_FIELD_COUNT = PROFILE_FIELDS.length;
+
 export const FIELD_GROUPS = [
   "Identity",
   "Delivery & contract",
@@ -256,7 +279,6 @@ export function tierFromValueBand(band: string): "ESSENTIAL" | "STANDARD" | "COM
 
 /** Stage label -> number. Resolves legacy labels too. See ./stages. */
 export const stageNumberForLabel = stageNumberOf;
-
 
 export type ProfileDraft = Record<string, string | number | boolean | string[]>;
 

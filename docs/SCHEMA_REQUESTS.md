@@ -71,11 +71,41 @@ This is the largest gap in the schema.
 - RLS: narrow the six methodology tables re-widened by `20260807020709` to staff **plus PMs holding at least one
   project assignment.** Ken has approved this.
 
-## REQ-010 — `report_definitions` seed  ★ OLDEST OPEN BLOCKER
+## REQ-010 — `report_definitions` seed  ★ CONTENT NOW AUTHORED
 
-Table has DDL and zero rows; the reports page renders blank because of it. Seed rows for the nine report types
-plus `PROPOSAL`, `ENGAGEMENT_LETTER`, `OPERATOR_MANUAL`. Definition content is authored by Claude Code in
-parallel — leave `sections` empty rather than guessing at it.
+Original request: table had DDL and zero rows; the reports page rendered blank. Seed rows for the report types
+plus `PROPOSAL`, `ENGAGEMENT_LETTER`, `OPERATOR_MANUAL`.
+
+**Status, 8 Aug 2026.** Eleven rows are present in `public.report_definitions`. The definition content is now
+authored in the repository at **`src/lib/claimzero/report-definitions.ts`** — `REPORT_DEFINITIONS`, typed as
+`ReportDefinition[]`, one entry per key, every `sections[].type` validated against `SECTION_TYPES` by
+`src/lib/claimzero/__tests__/report-definitions.test.ts`.
+
+**Action for Lovable (seed only — no schema change required):** upsert the fourteen rows in
+`REPORT_DEFINITIONS` into `public.report_definitions` on `report_key`, writing `title`, `audience`, `decision`,
+`applicable_stages`, `cadence`, `sections` (jsonb), `active`, `sort_order`. The eleven existing rows are
+reproduced byte-for-byte from the table, so the upsert is a no-op for them; the three new rows are
+`PROPOSAL` (12), `ENGAGEMENT_LETTER` (13) and `OPERATOR_MANUAL` (14), all `active = false` because no generator
+exists for them yet. **Do not activate a definition without a generator** — an active definition with no
+generator renders an empty report.
+
+**Open count discrepancy — Ken.** `CLAIMZERO_OPERATING_BRIEF.md` §14.2 says "all twelve definitions". Eleven
+report types exist in the table and §7.1 / this request add three more, which is fourteen. No three were
+dropped to reach twelve: pruning published methodology to satisfy a number is not a call Claude or Lovable
+should make. Confirm the canonical figure and `CANONICAL_NUMBERS.md` will be updated to match.
+
+## REQ-010b — report-card categories do not exist  ★ BLOCKER, Ken
+
+`CLAIMZERO_OPERATING_BRIEF.md` §14.4 requires the thirty aspects to map to "the website's four report-card
+categories." **Those four categories are not in this repository.** `reportCardGenerator`
+(`src/lib/claimzero/reports.ts`) grades one subject per aspect and groups by nothing above the aspect; the only
+higher grouping anywhere in the code is `DOMAINS` in `controls.ts` (six: cost, schedule, design, quality,
+people, compliance) and the six streams in §2.1. Neither is four.
+
+The thirty-aspect constants landed without the mapping (`src/lib/claimzero/aspect-taxonomy.ts`) rather than
+with four invented category names. **Supply the four category names — or the page they appear on — and the
+mapping plus its unit test is a ten-minute change.**
+
 
 ## REQ-011 — Stages 3 (Schematic) and 7 (Takeout) content  ★ CRITICAL
 

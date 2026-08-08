@@ -11,6 +11,7 @@ import {
   previewApplicability,
   tierFromValueBand,
   type ProfileDraft,
+  PROFILE_FIELD_COUNT,
   type ProfileField,
 } from "@/lib/claimzero/profile";
 
@@ -20,8 +21,7 @@ export const Route = createFileRoute("/_authenticated/intake")({
       { title: "New Project / Intake — ClaimZero" },
       {
         name: "description",
-        content:
-          "The 23-field project profile. Every answer drives the applicability engine: which control families switch on, and which are suppressed with a stated reason.",
+        content: `The ${PROFILE_FIELD_COUNT}-field project profile. Every answer drives the applicability engine: which control families switch on, and which are suppressed with a stated reason.`,
       },
       { property: "og:title", content: "New Project / Intake — ClaimZero" },
       {
@@ -82,9 +82,7 @@ function Field({
               <button
                 key={o.value}
                 type="button"
-                onClick={() =>
-                  onChange(on ? arr.filter((x) => x !== o.value) : [...arr, o.value])
-                }
+                onClick={() => onChange(on ? arr.filter((x) => x !== o.value) : [...arr, o.value])}
                 className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
                   on
                     ? "border-cz-accent bg-cz-accent/15 text-cz-ink-1"
