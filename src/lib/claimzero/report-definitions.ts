@@ -195,7 +195,11 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
         title: "Exit criteria — hard and soft",
         config: { split_blocking: true },
       },
-      { type: "control_table", title: "Critical open controls", config: { filter: "critical_open" } },
+      {
+        type: "control_table",
+        title: "Critical open controls",
+        config: { filter: "critical_open" },
+      },
       {
         type: "finding_list",
         title: "Critical and irreversible open",
@@ -287,11 +291,7 @@ export const REPORT_DEFINITIONS: ReportDefinition[] = [
         type: "signature_block",
         title: "Issued to partners",
         config: {
-          signatories: [
-            "Sponsor / Managing member",
-            "Equity partner representative",
-            "Lender",
-          ],
+          signatories: ["Sponsor / Managing member", "Equity partner representative", "Lender"],
         },
       },
     ],

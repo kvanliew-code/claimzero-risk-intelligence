@@ -36,6 +36,7 @@ retroactively.
 | `pending` | Leaked-password protection (HIBP) enabled on auth | Lovable |
 | `2189095` | **Stage gate fixed** — verdict now keyed off substantive findings, so READY is reachable | Claude |
 | `e1b62ca` | **D-18 (1/2)** — /project/$id/reports rewired onto `useProjectScoring`; real thirty-aspect scores, honest empty state, no silent cap | Claude |
+| `pending` | **Tier 1 §14.1–5** — `transcript` confirmed in `SECTION_TYPES`; fourteen report definitions authored as data (`report-definitions.ts`); thirty-aspect constants + streams + legacy map (`aspect-taxonomy.ts`); demo findings repointed off the twelve-aspect names onto the thirty taxonomy; intake field count derived from `PROFILE_FIELD_COUNT`. 18 unit tests added under `src/lib/claimzero/__tests__/`. | Claude |
 | `7d70716` | **D-18 (2/2)** — `ASPECTS` and `aspectsFor()` deleted from `data.ts`: 234 lines of invented dollar values and fabricated source citations removed | Claude |
 
 ---
@@ -83,7 +84,8 @@ The seed packages, the CZ-002 fixture and the v2 findings were all present in Eg
 |---|---|---|
 | §24 calibration dashboard (17 columns, spec in the master break plan) | Claude Code | **Not started.** Build before running any checkpoint, so a GREEN 4/23 shows the failure rather than hiding it. |
 | REQ-000 four row counts | Lovable | **Unanswered after five asks.** |
-| REQ-010 `report_definitions` seed | Lovable | Pending |
+| REQ-010 `report_definitions` seed | Lovable | Content authored in `src/lib/claimzero/report-definitions.ts`; **seed upsert still owed by Lovable.** Count discrepancy (12 vs 14) filed for Ken. |
+| REQ-010b report-card categories | Ken | **Blocked.** The four categories named in §14.4 do not exist anywhere in the repo; thirty-aspect mapping cannot be authored without them. |
 | REQ-015 bitemporality | Lovable | Filed `c6b266e`. Backfill unblocked by C-1. |
 
 ---
@@ -111,7 +113,8 @@ Full log: `CZ_VERIFIED_DEFECT_MEMO_2026-08-07.md` in `/Shared/11 - ClaimZero/Dev
 | D-18 | Twelve-aspect ghost with invented citations, live on `/project/$id/reports` | **Fixed** `e1b62ca` + `7d70716` |
 | D-19 | `report_definitions.sections` read from the DB and never used | Open |
 | D-20 | Four generators against nine claimed report types | Open |
-| D-21 | `first_active_stage` contradicts the brief ordering claim | Open |
+| D-21 | `first_active_stage` contradicts the brief ordering claim | Open — `aspect-taxonomy.ts` mirrors the table values verbatim rather than resolving it |
+| D-07 | Intake profile-field count hardcoded as "23" | **Fixed** — derived from `PROFILE_FIELD_COUNT` |
 | NEW | **Stage gate could never return READY** — `scoring.ts` pushed the frozen-snapshot reason unconditionally and keyed the verdict off `reasons.length` | **Fixed** `2189095` |
 | NEW | **Auth session does not hold** — bounces to `/auth` while the shell reads "Signed in" | Open |
 | NEW | **Seed contamination** — `RISK-40E-REG-SITEPROTECT.first_signal_date = 2019-02-28` is the occurrence date | Open |
