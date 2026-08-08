@@ -159,6 +159,95 @@ discloses the SWO twice, verbatim. `CLAUDE.md` carries the same correction.)*
 **Enforce quarantine server-side, not with an application-level filter.** One forgotten `.filter()` contaminates
 a report, and contamination is fatal for a product whose value is defensibility.
 
+## REQ-015 — Bitemporality, concretely  ★ SUPERSEDES THE GENERAL FORM OF REQ-001
+
+REQ-001 stated the principle. This states the columns, and it is derived from reading the CZ-001
+calibration seed rather than from first principles. Audit: `claude/CZ_Source_Materials_Audit_2026-08-08.md`.
+
+**Verified state of the fixture.** Exhaustive key search of `CZ001_40E66_FULL_PROJECT_SEED_v1.json`
+returns exactly these date-bearing keys: `date`, `as_of`, `authored_date`, `first_signal_date`,
+`reporting_through`, `scheduled_start`, `scheduled_finish`, `start`, `end`. There is **no**
+`occurred_at`, `known_at`, `disclosed_at`, `observed_at`, `ingested_at` or `visible_from` anywhere.
+Every one of the 15 events carries a single `date`.
+
+The known-vs-occurred distinction survives in **one prose string on 1 of 15 events**:
+
+```
+40E-EVT-20190228-PARTIAL-SWO
+  date:        "2019-02-28"          <- occurrence
+  source_ids:  ["40E66-SRC-MONTHLY-20190423"]
+  evidence_note: "Known through 4/23 report; do not expose before report
+                  availability unless primary DOB record is loaded."
+```
+
+### Three problems, not one
+
+1. **No second date.** As above.
+2. **The workaround fails on the load-bearing source.** `40E66-SRC-MONTHLY-20190423` has **no
+   `authored_date`** — only 5 of 16 sources do. It carries `reporting_through: "2019-03-30"`, which
+   is a coverage boundary, not an availability date. A join through `source_ids` returns NULL
+   exactly where the fixture needs it.
+3. **Quarantine is a date inside an enum.** `historical_use: "QUARANTINED_BEFORE_2020-06-19"`.
+   Enforcing it today requires a regex or a hardcoded constant.
+
+### Live contamination bug already in the fixture
+
+`RISK-40E-REG-SITEPROTECT.first_signal_date = "2019-02-28"` — the occurrence date. Any playback
+filtering risks on that field leaks the Stop Work Order into a 2019-03-01 run. This originates in
+the seed, not the engine, and there is no field available to express the correction.
+
+### The break plan requires THREE dates
+
+§11.G of `CLAIMZERO_MASTER_CALIBRATION_TEST_AND_BREAK_PLAN_v1.md`: the engine must distinguish
+**observation date / document authored date / system ingestion date**, and historical eligibility
+must use the appropriate field. Two columns pass the fixture; they do not pass the break test.
+
+### Requested schema
+
+```sql
+-- events and evidence
+ALTER TABLE public.events        ADD COLUMN occurred_at date NOT NULL,
+                                 ADD COLUMN known_at    date NOT NULL,
+                                 ADD COLUMN ingested_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.events        ADD CONSTRAINT events_known_after_occurred
+                                 CHECK (known_at >= occurred_at);
+
+-- sources: availability is distinct from coverage
+ALTER TABLE public.source_registry ADD COLUMN authored_date  date,
+                                   ADD COLUMN available_from date;
+-- backfill, from the seed evidence_note:
+UPDATE public.source_registry SET available_from = DATE '2019-04-23'
+  WHERE source_id = '40E66-SRC-MONTHLY-20190423';
+
+-- risks: first signal has two dates too
+ALTER TABLE public.risks ADD COLUMN first_signal_known_at date;
+-- RISK-40E-REG-SITEPROTECT: occurred 2019-02-28, known per the disclosing report
+
+-- quarantine as data, not as an enum string
+ALTER TABLE public.source_registry ADD COLUMN visible_from date;
+UPDATE public.source_registry SET visible_from = DATE '2020-06-19'
+  WHERE historical_use LIKE 'QUARANTINED_BEFORE_%';
+```
+
+### Enforcement — server side, not application side
+
+Playback filters on `known_at`, never `occurred_at`. This must be a view or an RLS predicate, not
+a `.filter()` in the client. Per §6 of the break plan: **"Do not calculate the present and then
+hide future rows from the UI. The future data must be unavailable to the engine."**
+
+*Breaks without it:* historical playback is not implementable, the four CZ-001 checkpoints cannot
+be run honestly, and the six-day gap that the whole calibration case exists to demonstrate
+collapses to zero.
+
+### Open question blocking the backfill
+
+The SWO `known_at` is **not settled**. The seed says 2019-04-23 (April monthly report). A
+previous edit to `CLAUDE.md` says 2019-03-06, citing `2019-03-06_Monthy Report - 40 East 66th
+.docx`. Both can be true if the March report also discloses it, in which case 3/6 is correct and
+the seed's `source_ids` is incomplete. **Ken to rule. Do not backfill until he does.**
+
+---
+
 ## REQ-002 → REQ-005 — one line each
 
 Restated in summary; the original statements live in the pre-repo working copy of this file.
