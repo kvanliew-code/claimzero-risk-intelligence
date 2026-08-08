@@ -83,6 +83,13 @@ export function CzSidebar() {
       ? allProjects.find((p) => p.id === Number(params.id))
       : undefined;
 
+  // Commercial pipeline (clients, opportunities, engagements) is Admin/Executive
+  // only — reviewers and project managers must not see client contact data.
+  const isCommercial = role === "admin" || role === "executive";
+  const visibleGroups = isCommercial
+    ? PORTFOLIO_GROUPS
+    : PORTFOLIO_GROUPS.filter((g) => g.label !== "Pipeline");
+
   if (pathname === "/auth") return null;
 
   return (
@@ -115,7 +122,7 @@ export function CzSidebar() {
             ))}
           </>
         ) : (
-          PORTFOLIO_GROUPS.map((g) => (
+          visibleGroups.map((g) => (
             <div key={g.label}>
               <div className="cz-eyebrow mt-3.5 mb-1.5 px-2 text-[9px] tracking-[0.18em]">
                 {g.label}
