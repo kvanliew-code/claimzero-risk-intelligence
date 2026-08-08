@@ -31,6 +31,9 @@ retroactively.
 | `c6b266e` | **REQ-015** — bitemporality stated as columns, derived from the CZ-001 seed | Claude |
 | `4d76447` | This file created — lanes, commit log, corrections, blocked items | Claude |
 | `0e6a753` | SWO `known_at` settled at 2019-03-06; REQ-015 backfill hold lifted | Claude |
+| `pending` | **D-18 fixed** — frozen "August 6, 2026" removed; `src/lib/claimzero/today.ts` is now the single UTC-stable source of today for reports and the document register | Lovable |
+| `pending` | **SEC-01 fixed** — Reviewers and PMs could read the entire commercial pipeline (498 contacts with email/phone, deal values). New `private.is_commercial` (admin+executive) now gates `clients`, `engagements`, `opportunities`, `reviewer_capacity`; Pipeline nav hidden and routes guarded. Walked live in all three roles. | Lovable |
+| `pending` | Leaked-password protection (HIBP) enabled on auth | Lovable |
 | `2189095` | **Stage gate fixed** — verdict now keyed off substantive findings, so READY is reachable | Claude |
 
 ---
@@ -110,3 +113,26 @@ ordering: **Wave 0** correctness/security · **Wave 1** shared report engine · 
 **Wave 5** remaining library · **Wave 6** third case.
 
 The demo acceptance bar is **§29 — fifteen conditions**, not any list invented elsewhere.
+
+---
+
+## Live role walk — 8 Aug 2026, 05:30 UTC
+
+Signed in as `exec@`, `pm@`, `reviewer@` and walked `/`, `/portfolio`, `/reports`, `/queue`,
+`/settings`, `/pipeline`, `/clients`, `/engagements`, `/intake`.
+
+- No route bounced to `/auth`; session holds across navigation for all three roles.
+- No console errors beyond the known extension-induced hydration attribute warning.
+- **SEC-01 found and fixed** — see Done above. Re-walked after the fix: Executive sees the full
+  client and opportunity list; PM and Reviewer get the Restricted card and zero rows at the
+  database layer.
+- Database linter clean. Security scan returns one `warn`:
+  assignment-scoped read policies on `control_register`, `aspects`, `lifecycle_stages`,
+  `escalation_rules`, `stage_exit_criteria`, `aspect_weight_overrides`, `aspect_id_history`
+  do not match `project_id`. **Accepted as designed** — these are global methodology reference
+  tables, not project data. Any assigned user is meant to read the whole register.
+
+### Still untested
+- Evidence upload → storage → `control_evidence` round trip (0 rows in the table).
+- Print/PDF fidelity of the four active report generators.
+- Reviewer Queue triage write path under a non-admin session.
