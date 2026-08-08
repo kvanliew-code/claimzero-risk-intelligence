@@ -28,6 +28,23 @@ import {
   type SpecStageGate,
 } from "./scoring";
 import type { Project } from "./data";
+import { supabase } from "@/integrations/supabase/client";
+
+/** True only when a frozen Stage Gate snapshot exists for this project. */
+async function stageSnapshotExists(projectId: number): Promise<boolean> {
+  const { data: def } = await supabase
+    .from("report_definitions")
+    .select("id")
+    .eq("key", "STAGE_GATE")
+    .maybeSingle();
+  if (!def) return false;
+  const { count } = await supabase
+    .from("report_snapshots")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId)
+    .eq("report_id", (def as { id: string }).id);
+  return (count ?? 0) > 0;
+}
 
 export interface ProjectScoring {
   loading: boolean;
