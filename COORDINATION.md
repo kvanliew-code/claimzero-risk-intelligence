@@ -35,6 +35,8 @@ retroactively.
 | `pending` | **SEC-01 fixed** — Reviewers and PMs could read the entire commercial pipeline (498 contacts with email/phone, deal values). New `private.is_commercial` (admin+executive) now gates `clients`, `engagements`, `opportunities`, `reviewer_capacity`; Pipeline nav hidden and routes guarded. Walked live in all three roles. | Lovable |
 | `pending` | Leaked-password protection (HIBP) enabled on auth | Lovable |
 | `2189095` | **Stage gate fixed** — verdict now keyed off substantive findings, so READY is reachable | Claude |
+| `e1b62ca` | **D-18 (1/2)** — /project/$id/reports rewired onto `useProjectScoring`; real thirty-aspect scores, honest empty state, no silent cap | Claude |
+| `7d70716` | **D-18 (2/2)** — `ASPECTS` and `aspectsFor()` deleted from `data.ts`: 234 lines of invented dollar values and fabricated source citations removed | Claude |
 
 ---
 
@@ -86,6 +88,17 @@ The seed packages, the CZ-002 fixture and the v2 findings were all present in Eg
 
 ---
 
+## Lovable, overnight 7→8 Aug
+
+16 commits and 3 migrations. RLS policy tightening on the commercial tables
+(`20260808052603`), a `user_roles` insert (`20260807221831`), one empty migration, and the
+hardcoded `TODAY` in `reports.tsx` replaced with `TODAY_LONG`.
+
+**REQ-015 bitemporality was NOT implemented.** No `known_at`, `occurred_at`, `visible_from` or
+`available_from` appears in any migration. It remains the critical path.
+
+---
+
 ## Defects
 
 Full log: `CZ_VERIFIED_DEFECT_MEMO_2026-08-07.md` in `/Shared/11 - ClaimZero/Development/`.
@@ -95,7 +108,7 @@ Full log: `CZ_VERIFIED_DEFECT_MEMO_2026-08-07.md` in `/Shared/11 - ClaimZero/Dev
 | D-03 | `transcript` missing from `SECTION_TYPES` | **Fixed** `34e6ca4` |
 | D-16 | Portfolio index fabricated `COMPLETE_VERIFIED` | **Fixed** `003be5c` |
 | D-17 | Weekly and Monthly report bodies are hardcoded literals; `TODAY` frozen at "August 6, 2026" | Open |
-| D-18 | Twelve-aspect ghost in `data.ts` with invented citations, live on `/project/$id/reports` | Open |
+| D-18 | Twelve-aspect ghost with invented citations, live on `/project/$id/reports` | **Fixed** `e1b62ca` + `7d70716` |
 | D-19 | `report_definitions.sections` read from the DB and never used | Open |
 | D-20 | Four generators against nine claimed report types | Open |
 | D-21 | `first_active_stage` contradicts the brief ordering claim | Open |
