@@ -11,6 +11,7 @@ import {
   previewApplicability,
   tierFromValueBand,
   type ProfileDraft,
+  PROFILE_FIELD_COUNT,
   type ProfileField,
 } from "@/lib/claimzero/profile";
 
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/intake")({
       {
         name: "description",
         content:
-          "The 23-field project profile. Every answer drives the applicability engine: which control families switch on, and which are suppressed with a stated reason.",
+          `The ${PROFILE_FIELD_COUNT}-field project profile. Every answer drives the applicability engine: which control families switch on, and which are suppressed with a stated reason.`,
       },
       { property: "og:title", content: "New Project / Intake — ClaimZero" },
       {

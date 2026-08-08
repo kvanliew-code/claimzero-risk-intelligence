@@ -1,5 +1,6 @@
 // ClaimZero — project profile field metadata.
-// The 23 intake fields that drive the family applicability engine.
+// The intake fields that drive the family applicability engine. The count is
+// derived (PROFILE_FIELD_COUNT) — never written into copy.
 // Option sets mirror the values the server-side predicate evaluator matches on.
 
 import { supabase } from "@/integrations/supabase/client";
