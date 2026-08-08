@@ -401,21 +401,36 @@ export function evaluateStageGate(
     return w ? Math.round(100 * ((w - enl) / w)) : 0;
   })();
 
-  const reasons: string[] = [];
+  // Defect fixed 8 Aug 2026. The frozen-snapshot line below used to be pushed into
+  // `reasons` unconditionally, and the verdict was keyed off `reasons.length`. Because
+  // that push always fired, `reasons` was never empty and **no project at any stage on any
+  // data could ever return READY**. The gate was not permissive — it was inert, and it
+  // reported the same thing forever, which masked the genuinely empty stages 3 and 7.
+  //
+  // A missing snapshot is a publishing precondition, not a control finding. It stays
+  // visible in `reasons` so the UI and the Stage Gate report still show it, but the
+  // verdict is now computed from substantive findings only. No closure rule is loosened:
+  // every existing check still blocks exactly as it did.
+  const blockingReasons: string[] = [];
   const hardOpen = unsatisfiedCriteria.filter(
     (x) => x.criterion.blocking.toUpperCase() === "HARD",
   );
   if (hardOpen.length)
-    reasons.push(`${hardOpen.length} hard exit criteria are not satisfied with evidence`);
+    blockingReasons.push(`${hardOpen.length} hard exit criteria are not satisfied with evidence`);
   if (criticalOpen.length)
-    reasons.push(`${criticalOpen.length} CRITICAL controls are not Complete — Verified`);
+    blockingReasons.push(`${criticalOpen.length} CRITICAL controls are not Complete — Verified`);
   if (criticalWithoutSeat.length)
-    reasons.push(`${criticalWithoutSeat.length} CRITICAL controls have no named responsible seat`);
-  if (stageConfidence < 60) reasons.push(`Stage confidence is ${stageConfidence}% — below 60`);
+    blockingReasons.push(
+      `${criticalWithoutSeat.length} CRITICAL controls have no named responsible seat`,
+    );
+  if (stageConfidence < 60)
+    blockingReasons.push(`Stage confidence is ${stageConfidence}% — below 60`);
+
+  const reasons: string[] = [...blockingReasons];
   reasons.push("No frozen evidence snapshot exists for this stage");
 
   let verdict: GateVerdict = "READY";
-  if (reasons.length > 0) verdict = "CONDITIONAL — NOT READY";
+  if (blockingReasons.length > 0) verdict = "CONDITIONAL — NOT READY";
   if (criticalWithoutSeat.length > 0) verdict = "CONDITIONAL — NOT READY";
   if (criticalIrreversibleOpen.length > 0) {
     reasons.unshift(
