@@ -239,12 +239,29 @@ hide future rows from the UI. The future data must be unavailable to the engine.
 be run honestly, and the six-day gap that the whole calibration case exists to demonstrate
 collapses to zero.
 
-### Open question blocking the backfill
+### SETTLED — backfill may proceed (resolved 8 Aug 2026)
 
-The SWO `known_at` is **not settled**. The seed says 2019-04-23 (April monthly report). A
-previous edit to `CLAUDE.md` says 2019-03-06, citing `2019-03-06_Monthy Report - 40 East 66th
-.docx`. Both can be true if the March report also discloses it, in which case 3/6 is correct and
-the seed's `source_ids` is incomplete. **Ken to rule. Do not backfill until he does.**
+The SWO `known_at` is **2019-03-06**. Evidence: `CZ001_40E66_CALIBRATION_FINDINGS_v1.md` lists
+`2019-03-06_Monthy Report - 40 East 66th .docx` as source R1, read in full;
+`HANDOFF_2026-08-07_overnight.md` records the six-day gap as proven against that primary document.
+Both files are in `/Shared/11 - ClaimZero/Development/`.
+
+`CLAUDE.md` is correct as written. **The seed is what is wrong:**
+`40E-EVT-20190228-PARTIAL-SWO.source_ids` lists only `40E66-SRC-MONTHLY-20190423` and is missing
+the March report. Correct the seed, do not correct the doctrine.
+
+```sql
+-- the six-day gap, which is the whole point of the CZ-001 fixture
+UPDATE public.events
+   SET occurred_at = DATE '2019-02-28',
+       known_at    = DATE '2019-03-06'
+ WHERE event_id = '40E-EVT-20190228-PARTIAL-SWO';
+
+-- and the contaminated risk row
+UPDATE public.risks
+   SET first_signal_known_at = DATE '2019-03-06'
+ WHERE risk_id = 'RISK-40E-REG-SITEPROTECT';
+```
 
 ---
 
